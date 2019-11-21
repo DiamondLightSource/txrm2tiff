@@ -15,4 +15,4 @@ def main(input, output=None):
 
 
 if __name__ == "__main__":
-    FileSort(sys.argv[1:])
+    main(sys.argv[1:])
