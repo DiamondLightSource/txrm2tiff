@@ -4,7 +4,7 @@ Converts txrm/xrm files to OME tif/tiff files
 
 ## Instructions
 
-**python run.py {input file path} {output file path (optional, default=None)} {apply reference if available (optional, default=True)}**
+**python run.py {input file path} {output file path (optional, default=None)} {ignore reference (optional, default=False)}**
 
 If no output path is supplied, the output file will be placed at the input path with the extension ".ome.tif"/".ome.tiff" as appropriate. The ".ome" signifies the OME XML metadata header.
 
@@ -15,7 +15,7 @@ If no output path is supplied, the output file will be placed at the input path 
 
 **python run.py input.xrm custom-output.ome.tif** saves custom-output.ome.tif with reference applied, if available.
 
-**python run.py input.xrm None False** saves input.ome.tiff and ignores any reference.
+**python run.py input.xrm None True** saves input.ome.tiff and ignores any reference.
 
 
 ## Features
