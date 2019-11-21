@@ -28,9 +28,9 @@ class ReferenceApplier:
 
 class TxrmToTiff:
 
-    def __init__(self, txrm_extractor, image_divider):
-        self.txrm_extractor = txrm_extractor
-        self.image_divider = image_divider
+    def __init__(self):
+        self.txrm_extractor = TxrmWrapper()
+        self.image_divider = ReferenceApplier()
         self.datatype = "uint16"
 
     def apply_reference(self, images, reference):
