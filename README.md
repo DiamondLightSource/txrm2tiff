@@ -11,11 +11,11 @@ If no output path is supplied, the output file will be placed at the input path 
 **dragndrop.bat** has been supplied allowing windows users to drag and drop individual files for processing (note: you cannot set output path this way). This may require some setup depending on your Python installation, so please see the file.
 
 ### Examples:
-**python run.py input.txrm** outputs input.ome.tiff with reference applied, if available.
+**python run.py input.txrm** saves input.ome.tiff with reference applied, if available.
 
-**python run.py input.xrm custom-output.ome.tif** outputs custom-output.ome.tif with reference applied, if available.
+**python run.py input.xrm custom-output.ome.tif** saves custom-output.ome.tif with reference applied, if available.
 
-**python run.py input.xrm None False** outputs input.ome.tiff and ignores any reference.
+**python run.py input.xrm None False** saves input.ome.tiff and ignores any reference.
 
 
 ## Features
