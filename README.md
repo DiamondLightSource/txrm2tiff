@@ -6,18 +6,16 @@ Converts txrm/xrm files to OME tif/tiff files
 
 **python run.py {input file path} {output file path (optional, default=None)} {apply reference if available (optional, default=True)}**
 
+If no output path is supplied, the output file will be placed at the input path with the extension ".ome.tif"/".ome.tiff" as appropriate. The ".ome" signifies the OME XML metadata header.
 
-###Examples:
+**dragndrop.bat** has been supplied allowing windows users to drag and drop individual files for processing (note: you cannot set output path this way). This may require some setup depending on your Python installation, so please see the file.
+
+### Examples:
 _python run.py input.txrm_ outputs input.ome.tiff with reference applied, if available.
 
 _python run.py input.xrm custom-output.ome.tif_ outputs custom-output.ome.tif with reference applied, if available.
 
 _python run.py input.xrm None False_ outputs input.ome.tiff and ignores any reference.
-
-
-If no output path is supplied, the output file will be placed at the input path with the extension ".ome.tif"/".ome.tiff" as appropriate. The ".ome" signifies the OME XML metadata header.
-
-**dragndrop.bat** has been supplied allowing windows users to drag and drop individual files for processing (note: you cannot set output path this way). This may require some setup depending on your Python installation, so please see the file.
 
 
 ## Features
