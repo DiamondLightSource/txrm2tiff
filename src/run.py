@@ -12,7 +12,7 @@ def main(input, output=None):
     else:
         output_filepath = Path(output)
     if file_can_be_opened(input_filepath) and all_frames_written(input_filepath):
-        TxrmToTiff.convert(input_filepath, output_filepath)
+        TxrmToTiff().convert(input_filepath, output_filepath)
 
 
 if __name__ == "__main__":
