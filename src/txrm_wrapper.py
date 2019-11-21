@@ -105,8 +105,8 @@ class TxrmWrapper:
     def create_reference_mosaic(self, ole, refdata, image_rows, image_columns,):
         mosaic_rows = self.read_imageinfo_as_int(ole, "MosiacRows")
         mosaic_cols = self.read_imageinfo_as_int(ole, "MosiacColumns")
-        ref_num_rows = image_rows / mosaic_rows
-        ref_num_columns = image_columns / mosaic_cols
+        ref_num_rows = image_rows // mosaic_rows
+        ref_num_columns = image_columns // mosaic_cols
         refdata.shape = (ref_num_rows, ref_num_columns)
         return np.tile(refdata, (mosaic_rows, mosaic_cols))
 
