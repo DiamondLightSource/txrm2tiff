@@ -4,7 +4,7 @@ from file_sorting import *
 import sys
 
 
-def main(input, output=None):
+def main(input, output=None, apply_reference=True):
     input_filepath = Path(input)
     if file_can_be_opened(input_filepath) and all_frames_written(input_filepath):
 
@@ -19,7 +19,7 @@ def main(input, output=None):
         else:
             output_filepath = Path(output)
 
-        TxrmToTiff().convert(input_filepath, output_filepath)
+        TxrmToTiff().convert(input_filepath, output_filepath, apply_reference)
 
 
 if __name__ == "__main__":

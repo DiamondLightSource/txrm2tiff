@@ -36,15 +36,15 @@ class TxrmToTiff:
     def apply_reference(self, images, reference):
         return self.image_divider.apply(images, reference)
 
-    def convert(self, txrm_file, tiff_file):
+    def convert(self, txrm_file, tiff_file, apply_reference):
         ole = OleFileIO(str(txrm_file))
         images = self.txrm_extractor.extract_all_images(ole)
-        if ole.exists("ReferenceData/Image"):
+        if ole.exists("ReferenceData/Image") and apply_reference:
             logging.debug("{} is being referenced and processed.".format(txrm_file.name))
             reference = self.txrm_extractor.extract_reference_image(ole)
             image_output = self.apply_reference(images, reference)
         else:
-            logging.warning("No reference data found for non-VLM image '{}'.".format(txrm_file.name))
+            logging.warning("{} is being processed without a reference.".format(txrm_file.name))
             image_output = [image for image in np.around(images).astype(self.datatype)]
 
         # Get image dimensions
@@ -153,8 +153,3 @@ class TxrmToTiff:
             tiffdata.set_PlaneCount(1)
 
         return ox.to_xml().encode()
-
-
-def main(argv):
-    converter = TxrmToTiff(TxrmWrapper(), ReferenceApplier())
-    converter.convert(argv[0], argv[1])
