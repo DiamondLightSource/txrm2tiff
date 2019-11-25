@@ -4,7 +4,7 @@ from file_sorting import *
 import sys
 
 
-def main(input, output=None, ignore_reference=False):
+def main(input, custom_reference=None, output=None, ignore_reference=False):
     input_filepath = Path(input)
     if file_can_be_opened(input_filepath) and all_frames_written(input_filepath):
 
