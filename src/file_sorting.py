@@ -19,7 +19,7 @@ def all_frames_written(path):
         if isOleFile(str(path)):
             ole_file = OleFileIO(str(path))
             # Check for reference frame, if required:
-            if ((ole_file.exists("ReferenceData/Image"))):
+            if (ole_file.exists("ReferenceData/Image")):
                 txrm_wrapper = TxrmWrapper()
                 number_frames_taken = txrm_wrapper.read_imageinfo_as_int(ole_file, "ImagesTaken")
                 expected_number_frames = txrm_wrapper.read_imageinfo_as_int(ole_file, "NoOfImages")

@@ -12,9 +12,13 @@ from txrm_wrapper import TxrmWrapper
 from omexml.omexml import OMEXML
 
 
-class ReferenceApplier:
+class TxrmToTiff:
 
-    def apply(self, images, reference):
+    def __init__(self):
+        self.txrm_extractor = TxrmWrapper()
+        self.datatype = "uint16"
+
+    def apply_reference(self, images, reference):
         floated_and_referenced = [(image * 100.) / reference for image in images]
         referenced_image = []
         for image in floated_and_referenced:
@@ -25,21 +29,20 @@ class ReferenceApplier:
 
         return referenced_image
 
-
-class TxrmToTiff:
-
-    def __init__(self):
-        self.txrm_extractor = TxrmWrapper()
-        self.image_divider = ReferenceApplier()
-        self.datatype = "uint16"
-
-    def apply_reference(self, images, reference):
-        return self.image_divider.apply(images, reference)
-
-    def convert(self, txrm_file, tiff_file, ignore_reference):
+    def convert(self, txrm_file, tiff_file, custom_reference, ignore_reference):
         ole = OleFileIO(str(txrm_file))
         images = self.txrm_extractor.extract_all_images(ole)
-        if ole.exists("ReferenceData/Image") and not ignore_reference:
+        if custom_reference is not None:
+            logging.debug("{} is being referenced using {} and processed.".format(txrm_file.name, custom_reference.name))
+            ref_ole = OleFileIO(str(txrm_file))
+            references = self.txrm_extractor.extract_all_images(ref_ole)  # should be float for averaging & dividing
+            if len(references) > 1:
+                # take median across z-axes (i.e. over time) if an image stack
+                reference = np.median(np.asarray(references), axis=0)
+            else:
+                reference = references[0]
+            image_output = self.apply_reference(images, reference)
+        elif ole.exists("ReferenceData/Image") and not ignore_reference:
             logging.debug("{} is being referenced and processed.".format(txrm_file.name))
             reference = self.txrm_extractor.extract_reference_image(ole)
             image_output = self.apply_reference(images, reference)
