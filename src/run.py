@@ -1,10 +1,9 @@
-#!/usr/bin/python
 from pathlib import Path
 from file_sorting import *
 import sys
 
 
-def main(input, custom_reference=None, output=None, ignore_reference=False):
+def run(input, custom_reference=None, output=None, ignore_reference=False):
     input_filepath = Path(input)
     if file_can_be_opened(input_filepath) and all_frames_written(input_filepath):
 
@@ -20,7 +19,3 @@ def main(input, custom_reference=None, output=None, ignore_reference=False):
             output_filepath = Path(output)
 
         TxrmToTiff().convert(input_filepath, output_filepath, ignore_reference)
-
-
-if __name__ == "__main__":
-    main(*sys.argv[1:])

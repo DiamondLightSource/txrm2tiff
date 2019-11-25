@@ -2,7 +2,7 @@ from nose.tools import with_setup, assert_true
 import numpy as np
 import os
 import logging
-from pathlib2 import Path
+from pathlib import Path
 
 from txrm2image import TxrmToTiff
 from txrm_wrapper import TxrmWrapper

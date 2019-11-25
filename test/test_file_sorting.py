@@ -1,6 +1,6 @@
 from nose.tools import assert_false, assert_true, assert_equals, with_setup, raises
 import re
-from pathlib2 import Path
+from pathlib import Path
 import shutil
 from time import sleep, time
 import uuid
