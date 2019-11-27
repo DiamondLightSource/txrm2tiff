@@ -18,4 +18,4 @@ def run(input, custom_reference=None, output=None, ignore_reference=False):
         else:
             output_filepath = Path(output)
 
-        TxrmToTiff().convert(input_filepath, output_filepath, ignore_reference)
+        TxrmToTiff().convert(input_filepath, output_filepath, custom_reference, ignore_reference)
