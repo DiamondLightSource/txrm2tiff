@@ -1,14 +1,12 @@
-import logging
 from xml.etree import ElementTree
 import uuid
-
 from olefile import OleFileIO
 import datetime
 import numpy as np
 import tifffile as tf
+import logging
 
 from txrm_wrapper import TxrmWrapper
-
 from omexml.omexml import OMEXML
 
 
@@ -47,7 +45,7 @@ class TxrmToTiff:
             reference = self.txrm_extractor.extract_reference_image(ole)
             image_output = self.apply_reference(images, reference)
         else:
-            logging.warning("{} is being processed without a reference.".format(txrm_file.name))
+            logging.debug("{} is being processed without a reference.".format(txrm_file.name))
             image_output = [image for image in np.around(images).astype(self.datatype)]
 
         # Get image dimensions
@@ -55,7 +53,7 @@ class TxrmToTiff:
         z = len(image_output)
         dimensions = (x, y, z)  # X, Y, Z
 
-        logging.debug("Saving image as {} with {} frames".format(tiff_file.name, z))
+        logging.info("Saving image as {} with {} frames".format(tiff_file.name, z))
 
         # Create metadata
         ome_metadata = self.create_ome_metadata(str(tiff_file.name), ole, dimensions)

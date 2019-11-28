@@ -10,6 +10,7 @@ p.add_argument('input', action='store')
 p.add_argument('--reference-using', dest='custom_reference', action='store', default=None)
 p.add_argument('--output', dest='output', action='store', default=None)
 p.add_argument('--ignore-ref', dest='ignore_reference', action='store_true', default=False)
+p.add_argument('--set-logging', dest='logging_level', type=str, action='store', default="info")
 
 if __name__ == "__main__":
     args = p.parse_args()

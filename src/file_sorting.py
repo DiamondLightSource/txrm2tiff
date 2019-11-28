@@ -1,6 +1,7 @@
 from pathlib import Path
 from olefile import OleFileIO, isOleFile
 import logging
+
 from txrm_wrapper import TxrmWrapper
 from txrm2image import TxrmToTiff
 

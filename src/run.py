@@ -1,10 +1,13 @@
 from pathlib import Path
 from file_sorting import *
-import sys
+from logger import create_logger
 
 
-def run(input, custom_reference=None, output=None, ignore_reference=False):
+def run(input, custom_reference=None, output=None, ignore_reference=False, logging_level="info"):
+    create_logger(logging_level.lower())
+    
     input_filepath = Path(input)
+    logging.info(f"Running txrm2tiff on {input_filepath.name}")
     if file_can_be_opened(input_filepath) and all_frames_written(input_filepath):
 
         # If no output is supplied:
