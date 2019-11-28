@@ -4,7 +4,9 @@ Converts txrm/xrm files to OME tif/tiff files
 
 ## Instructions
 
-**python txrm2tiff.py** {input file path (positional, required)} {**--reference-using** reference file path (optional, default=None)} {**--output** path (optional, default=None)} {**--ignore-ref** (optional, default=False)}
+**python txrm2tiff.py** {input file path (positional, required)} {**--reference-using** reference file path (optional, default=None)} {**--output** path (optional, default=None)} {**--ignore-ref** (optional)} {**--set-logging** (optional, default="info"}
+
+---
 
 If no output path is supplied, the output file will be placed at the input path with the extension ".ome.tif"/".ome.tiff" as appropriate. The ".ome" signifies the OME XML metadata header.
 
@@ -12,21 +14,29 @@ If no output path is supplied, the output file will be placed at the input path 
 
 Alternatively, the function **run(args)** can be accessed in "src/run.py" if you wish to use txrm2tiff in iPython. This uses the same inputs as above.
 
+##### Logging options are:
+* debug OR 1
+* info OR 2
+* warning OR 3
+* error OR 4
+* critical OR 5
+
+
 ### Examples:
-**python txrm2tiff.py input.txrm**
+`python txrm2tiff.py input.txrm`
 Saves "input.ome.tiff" with reference applied, if available.
 
-**python txrm2tiff.py input.txrm ref_stack.txrm**
+`python txrm2tiff.py input.txrm ref_stack.txrm`
 Saves "input.ome.tiff" with custom reference applied using the median of a txrm stack.
 
-**python txrm2tiff.py input.txrm --output ref_single.xrm --ignore-ref**
+`python txrm2tiff.py input.txrm --output ref_single.xrm --ignore-ref`
 Saves "input.ome.tiff" with custom reference applied from a single image (e.g. a Despeckled_Ave.xrm file). If a custom reference is supplied, the ignore reference argument will be ignored.
 
-**python txrm2tiff.py input.xrm --output custom-output.ome.tif**
+`python txrm2tiff.py input.xrm --output custom-output.ome.tif`
 Saves "custom-output.ome.tif" with reference applied, if available.
 
-**python txrm2tiff.py input.xrm --ignore-ref**
-Saves "input.ome.tiff" and ignores any reference.
+`python txrm2tiff.py input.xrm --ignore-ref --set-logging debug`
+Saves "input.ome.tiff" and ignores any reference, shows debug level logging.
 
 
 ## Features
