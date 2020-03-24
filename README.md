@@ -1,6 +1,8 @@
 # txrm2tiff
 
-Converts txrm/xrm files to OME tif/tiff files
+Converts txrm/xrm files to OME tif/tiff files.
+
+Txrm2tiff was created for users of beamline B24 of Diamond Light Source by Thomas Fish. This has been adapted from B24's the automatic processing pipeline. Parts of this code were originally written by Kevin Savage, with further additions and amendments by Peter Chang, Victoria Beilsten-Edmands, and Thomas Fish.
 
 ## Instructions
 
@@ -26,10 +28,10 @@ Alternatively, the function **run(args)** can be accessed in "src/run.py" if you
 `python txrm2tiff.py input.txrm`
 Saves "input.ome.tiff" with reference applied, if available.
 
-`python txrm2tiff.py input.txrm ref_stack.txrm`
+`python txrm2tiff.py input.txrm --reference-using ref_stack.txrm`
 Saves "input.ome.tiff" with custom reference applied using the median of a txrm stack.
 
-`python txrm2tiff.py input.txrm --output ref_single.xrm --ignore-ref`
+`python txrm2tiff.py input.txrm --reference-using ref_single.xrm --ignore-ref`
 Saves "input.ome.tiff" with custom reference applied from a single image (e.g. a Despeckled_Ave.xrm file). If a custom reference is supplied, the ignore reference argument will be ignored.
 
 `python txrm2tiff.py input.xrm --output custom-output.ome.tif`
@@ -37,6 +39,21 @@ Saves "custom-output.ome.tif" with reference applied, if available.
 
 `python txrm2tiff.py input.xrm --ignore-ref --set-logging debug`
 Saves "input.ome.tiff" and ignores any reference, shows debug level logging.
+
+**To batch convert:**
+`python txrm2tiff.py path/to/inputDirectory/`
+Converts all xrm/txrm files within input_directory with reference applied, if available.
+
+`python txrm2tiff.py path/to/inputDirectory/ --ignore-ref`
+Converts all xrm/txrm files within input_directory, ignoring all references.
+
+`python txrm2tiff.py path/to/inputDirectory/ --output path/to/outputDirectory/ --ignore-ref`
+Converts all xrm/txrm files within "inputDirectory", saving to the automatic name within the specified output directory, ignoring all references.
+
+Batch conversion notes:
+* `--output` _must_ be a directory or it will be ignored and files placed in the same directory as the xrm/txrms
+* Sub directories containing any xrm/txrm files found within "inputDirectory" will be copied to "outputDirectory" (directories will be created if they don't already exist)
+* `--reference-using` inputs will be ignored.
 
 
 ## Features
@@ -46,6 +63,7 @@ Saves "input.ome.tiff" and ignores any reference, shows debug level logging.
 * A separate file containing reference images can be specified (either a txrm stack or a single xrm image) - this overrides any internally stored reference and the ignore reference option.
 * If it is a mosaic, this is recognised and the reference will be applied to each individual image within the mosaic.
 * Additional metadata will be added in OME XML format to the header.
+* New batch convert options!
 
 
 
