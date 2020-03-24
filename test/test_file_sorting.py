@@ -17,14 +17,14 @@ def teardown_files():
     shutil.rmtree(str(base))
 
 
-def test_all_frames_written():
+def test_ole_file_works():
     real_file = Path("/dls/science/groups/das/ExampleData/B24_test_data/data"
-                     "/2019/cm98765-1/raw/test_tomo2_e3C_full.txrm")
-    assert_true(all_frames_written(real_file))
+                     "/2019/cm98765-1/raw/XMv10/test_tomo2_e3C_full.txrm")
+    assert_true(ole_file_works(real_file))
 
 
 def test_file_can_be_opened():
     real_file = Path("/dls/science/groups/das/ExampleData/B24_test_data/data"
-                     "/2019/cm98765-1/raw/test_tomo2_e3C_full.txrm")
+                     "/2019/cm98765-1/raw/XMv10/test_tomo2_e3C_full.txrm")
     assert_true(file_can_be_opened(real_file))
 
