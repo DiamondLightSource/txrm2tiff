@@ -11,10 +11,14 @@ real_directory = ("/dls/science/groups/das/ExampleData/B24_test_data/data"
                   "/2019/cm98765-1/raw")
 
 real_file_list = [
-    real_directory + '/12_Tomo_F4D_Area1_noref.txrm',
-    real_directory + '/VLM_mosaic.xrm',
-    real_directory + '/test_tomo2_e3C_full.txrm',
-    real_directory + '/Xray_mosaic_F5A.xrm'
+    real_directory + '/XMv10/12_Tomo_F4D_Area1_noref.txrm',
+    real_directory + '/XMv10/VLM_mosaic.xrm',
+    real_directory + '/XMv10/test_tomo2_e3C_full.txrm',
+    real_directory + '/XMv10/Xray_mosaic_F5A.xrm',
+    real_directory + '/XMv13/VLM_mosaic_v13_interrupt.xrm',
+    real_directory + '/XMv13/Xray_mosaic_v13.xrm',
+    real_directory + '/XMv13/tomo_v13_interrupt.txrm',
+    real_directory + '/XMv13/Xray-single-v13-reference-image.xrm'
 ]
 
 
@@ -41,7 +45,7 @@ def test_divides_images_by_reference():
 def test_converts_to_tiff():
     for test_file in real_file_list:
         logging.debug("Running with file {}".format(test_file))
-        output_file = Path(test_file.replace('raw', 'processed')).with_suffix('.ome.tiff')
+        output_file = Path(test_file).with_suffix('.ome.tiff')
         converter = TxrmToTiff()
         converter.convert(Path(test_file), Path(output_file), None, False)
         assert_true(output_file.exists())
@@ -52,7 +56,7 @@ def test_can_apply_custom_reference():
     test_file = real_file_list[2]
     reference_file = real_file_list[0]
     logging.debug("Running with file {}".format(test_file))
-    output_file = Path(test_file.replace('raw', 'processed')).with_suffix('.ome.tiff')
+    output_file = Path(test_file).with_suffix('.ome.tiff')
     converter = TxrmToTiff()
     converter.convert(Path(test_file), Path(output_file), Path(reference_file), False)
     assert_true(output_file.exists())

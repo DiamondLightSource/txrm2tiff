@@ -15,7 +15,7 @@ def file_can_be_opened(path):
     return True
 
 
-def all_frames_written(path):
+def ole_file_works(path):
     if (path.suffix == ".txrm") or (path.suffix == ".xrm"):
         if isOleFile(str(path)):
             ole_file = OleFileIO(str(path))
@@ -24,10 +24,14 @@ def all_frames_written(path):
                 txrm_wrapper = TxrmWrapper()
                 number_frames_taken = txrm_wrapper.read_imageinfo_as_int(ole_file, "ImagesTaken")
                 expected_number_frames = txrm_wrapper.read_imageinfo_as_int(ole_file, "NoOfImages")
-                return (number_frames_taken == expected_number_frames)
+                # Returns true even if all frames aren't written, throwing warning.
+                if number_frames_taken != expected_number_frames:
+                    logging.warn("This is an incomplete %s file: only %i out of %i frames have been written",
+                                 path.suffix, number_frames_taken, expected_number_frames)
+                return True
         else:
-            logging.warn("Could not read ole file {}".format(path))
+            logging.warn("Could not read ole file %s", path)
     else:
-        logging.warn("{} not .txrm or .xrm".format(path))
+        logging.warn("%s not .txrm or .xrm", path)
     return False
 

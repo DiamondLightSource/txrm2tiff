@@ -132,10 +132,9 @@ def test_extracts_wavelength():
 
 @patch('txrm_wrapper.TxrmWrapper.read_stream')
 def test_create_mosaic_of_reference_image(read_stream):
-    read_stream.side_effect = [(2,), (1,)]
     reference_data = np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
 
-    mosaic_reference = TxrmWrapper().create_reference_mosaic(MagicMock(), reference_data, 6, 3)
+    mosaic_reference = TxrmWrapper().create_reference_mosaic(MagicMock(), reference_data, 6, 3, 2, 1)
     expected_reference = np.array([[1, 2, 3],
                                    [4, 5, 6],
                                    [7, 8, 9],
