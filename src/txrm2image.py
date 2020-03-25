@@ -30,57 +30,56 @@ class TxrmToTiff:
         return referenced_image
 
     def convert(self, txrm_file, tiff_file, custom_reference, ignore_reference):
-        ole = OleFileIO(str(txrm_file))
-        images = self.txrm_extractor.extract_all_images(ole)
-        if custom_reference is not None:
-            logging.debug("%s is being referenced using %s and processed.", txrm_file.name, custom_reference.name)
-            ref_ole = OleFileIO(str(txrm_file))
-            references = self.txrm_extractor.extract_all_images(ref_ole)  # should be float for averaging & dividing
-            if len(references) > 1:
-                # take median across z-axes (i.e. over time) if an image stack
-                reference = np.median(np.asarray(references), axis=0)
+        with OleFileIO(str(txrm_file)) as ole:
+            images = self.txrm_extractor.extract_all_images(ole)
+            if custom_reference is not None:
+                logging.debug("%s is being referenced using %s and processed.", txrm_file.name, custom_reference.name)
+                ref_ole = OleFileIO(str(txrm_file))
+                references = self.txrm_extractor.extract_all_images(ref_ole)  # should be float for averaging & dividing
+                if len(references) > 1:
+                    # take median across z-axes (i.e. over time) if an image stack
+                    reference = np.median(np.asarray(references), axis=0)
+                else:
+                    reference = references[0]
+                image_output = self.apply_reference(images, reference)
+            elif ole.exists("ReferenceData/Image") and not ignore_reference:
+                logging.debug("%s is being referenced and processed.", txrm_file.name)
+                reference = self.txrm_extractor.extract_reference_image(ole)
+                image_output = self.apply_reference(images, reference)
             else:
-                reference = references[0]
-            image_output = self.apply_reference(images, reference)
-        elif ole.exists("ReferenceData/Image") and not ignore_reference:
-            logging.debug("%s is being referenced and processed.", txrm_file.name)
-            reference = self.txrm_extractor.extract_reference_image(ole)
-            image_output = self.apply_reference(images, reference)
-        else:
-            logging.debug("%s is being processed without a reference.", txrm_file.name)
-            image_output = [image for image in np.around(images).astype(self.datatype)]
-        if (len(image_output) > 1
-                and ole.exists("ImageInfo/MosiacRows")
-                and ole.exists("ImageInfo/MosiacColumns")):
-            mosaic_rows = self.txrm_extractor.read_imageinfo_as_int(ole, "MosiacRows")
-            mosaic_cols = self.txrm_extractor.read_imageinfo_as_int(ole, "MosiacColumns")
-            if mosaic_rows != 0 and mosaic_cols != 0:
-                image_output = self.stitch_images(image_output, (mosaic_cols, mosaic_rows), 1)
-
-        # Get image dimensions
-        x, y = image_output[0].shape
-        z = len(image_output)
-        dimensions = (x, y, z)  # X, Y, Z
-
-        logging.info("Saving image as %s with %i frames", txrm_file.name, z)
-
-        # Create metadata
-        ome_metadata = self.create_ome_metadata(str(tiff_file.name), ole, dimensions)
-
-        tiff_dir = tiff_file.resolve().parent
-        if not tiff_dir.is_dir():
-            tiff_dir.mkdir(parents=True)
-        with tf.TiffWriter(str(tiff_file)) as tif:
-            tif.save(image_output[0], photometric='minisblack', description=ome_metadata, metadata={'axes':'XYZ'})
-            for i in range(1, z):
-                tif.save(image_output[i], photometric='minisblack', metadata={'axes':'XYZ'})
-            tif.close()
-        ole.close()
+                logging.debug("%s is being processed without a reference.", txrm_file.name)
+                image_output = [image for image in np.around(images).astype(self.datatype)]
+            if (len(image_output) > 1
+                    and ole.exists("ImageInfo/MosiacRows")
+                    and ole.exists("ImageInfo/MosiacColumns")):
+                mosaic_rows = self.txrm_extractor.read_imageinfo_as_int(ole, "MosiacRows")
+                mosaic_cols = self.txrm_extractor.read_imageinfo_as_int(ole, "MosiacColumns")
+                if mosaic_rows != 0 and mosaic_cols != 0:
+                    image_output = self.stitch_images(image_output, (mosaic_cols, mosaic_rows), 1)
+    
+            # Get image dimensions
+            x, y = image_output[0].shape
+            num_frames = len(image_output)
+            dimensions = (x, y, num_frames)  # X, Y, number of frames (T in tilt series)
+    
+            logging.info("Saving image as %s with %i frames", txrm_file.name, num_frames)
+    
+            # Create metadata
+            ome_metadata = self.create_ome_metadata(str(tiff_file.name), ole, dimensions)
+            
+            tiff_dir = tiff_file.resolve().parent
+            if not tiff_dir.is_dir():
+                tiff_dir.mkdir(parents=True)
+            with tf.TiffWriter(str(tiff_file)) as tif:
+                tif.save(image_output[0], photometric='minisblack', description=ome_metadata)
+                for i in range(1, num_frames):
+                    tif.save(image_output[i], photometric='minisblack')
+        
 
     @staticmethod
     def stitch_images(img_list, mosaic_xy_shape, fast_axis):
         slow_axis = 1 - fast_axis
-        logging.debug("Fast axis: %s", fast_axis)
+        logging.debug("Fast axis: %i", fast_axis)
         fast_stacked_list = []
         for i in range(mosaic_xy_shape[slow_axis]):
             idx_start = mosaic_xy_shape[fast_axis] * i
@@ -103,8 +102,8 @@ class TxrmToTiff:
         physical_img_sizes.append(pixel_size * dimensions[0])
         physical_img_sizes.append(pixel_size * dimensions[1])
 
-        x_positions = self.txrm_extractor.extract_x_coords(ole) * 1.e3  # micron to nm
-        y_positions = self.txrm_extractor.extract_y_coords(ole) * 1.e3  # micron to nm
+        x_positions = [coord * 1.e3 for coord in self.txrm_extractor.extract_x_coords(ole)]  # micron to nm
+        y_positions = [coord * 1.e3 for coord in self.txrm_extractor.extract_y_coords(ole)]  # micron to nm
 
         date_time = datetime.datetime.now().isoformat()  # formatted as: "yyyy-mm-ddThh:mm:ss"
         ox = OMEXML()
@@ -116,7 +115,7 @@ class TxrmToTiff:
 
         pixels = image.Pixels
 
-        pixels.set_DimensionOrder("XYZ")
+        pixels.set_DimensionOrder("XYTZC")
         pixels.set_ID("0")
         pixels.set_PixelType(self.datatype)
         pixels.set_SizeX(dimensions[0])
@@ -203,11 +202,11 @@ class TxrmToTiff:
             plane.set_PositionY(y_positions[count])
             plane.set_PositionZ(count)
 
-            tiffdata = pixels.TiffData(count)
+            tiffdata = pixels.tiffdata(count)
             tiffdata.set_FirstC(0)
             tiffdata.set_FirstZ(count)
             tiffdata.set_FirstT(0)
             tiffdata.set_IFD(count)
-            tiffdata.set_PlaneCount(1)
+            tiffdata.set_plane_count(1)
 
         return ox.to_xml().encode()

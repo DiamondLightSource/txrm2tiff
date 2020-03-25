@@ -17,7 +17,7 @@ class TxrmWrapper:
         else:
             logging.error("Stream %s does not exist in ole file", key)
 
-    def extract_unknown_dtype_image_data(img_stream_bytes, img_size, num_mosaic_tiles=1):
+    def extract_unknown_dtype_image_data(self, img_stream_bytes, img_size, num_mosaic_tiles=1):
         img_stream_length = len(img_stream_bytes)
         if (img_stream_length == ((img_size * 2) / num_mosaic_tiles)):
             return np.fromstring(img_stream_bytes, dtype=np.uint16)
@@ -25,7 +25,7 @@ class TxrmWrapper:
             return np.fromstring(img_stream_bytes, dtype=np.float32)
         else:
             logging.error("Unexpected data type with %f bytes per pixel",
-                          (ref_stream_length * num_mosaic_tiles / img_size))
+                          (img_stream_length * num_mosaic_tiles / img_size))
             return None
 
     def extract_single_image(self, ole, numimage, numrows, numcols):
@@ -37,7 +37,7 @@ class TxrmWrapper:
             img_stream_bytes = ole.openstream(img_key).getvalue()
             img_size = numrows * numcols
             imgdata = self.extract_unknown_dtype_image_data(img_stream_bytes, img_size)
-            if imagedata is None:
+            if imgdata is None:
                 raise TypeError("Image is stored as unexpected type. Expecting uint16 or float32.")
             imgdata.shape = (numrows, numcols)
             return imgdata
@@ -164,7 +164,7 @@ class TxrmWrapper:
                 raise TypeError("Reference is stored as unexpected type. Expecting uint16 or float32.")
             refdata = self.create_reference_mosaic(ole, refdata, num_rows, num_columns, mosaic_rows, mosaic_cols)
         else:
-            refdata = self.extract_unknown_dtype_image_data(img_stream_bytes, img_size)
+            refdata = self.extract_unknown_dtype_image_data(ref_stream_bytes, img_size)
             if refdata is None:
                 raise TypeError("Reference is stored as unexpected type. Expecting uint16 or float32.")
         # num_rows and num_columns are from the array shape of the main image (the stitched image if a mosaic)
