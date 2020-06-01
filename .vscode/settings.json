@@ -1,0 +1,25 @@
+{   
+    "python.condaPath": " /dls_sw/apps/python/anaconda/4.6.14/64/envs/b24",
+    "python.pythonPath": "/dls_sw/apps/python/anaconda/4.6.14/64/envs/b24/bin/python",
+    "python.envFile": "${workspaceFolder}/.vscode/test.env",
+    "python.terminal.activateEnvironment": true,
+    "python.testing.nosetestArgs": [
+        "test",
+        "-v",
+        "--logging-level=INFO",
+        // // optional arguments to skip drmaa job submission and end to end tests
+        // "-e=*end*",
+        // "-e=*drmaa*",
+        // "-e=*test_get_cluster_job_data",
+    ],
+    "python.testing.pytestEnabled": false,
+    "python.testing.unittestEnabled": true,
+    "python.testing.nosetestsEnabled": false,
+    "python.testing.unittestArgs": [
+        "-v",
+        "-s",
+        "./test",
+        "-p",
+        "test_*.py"
+    ],
+}
