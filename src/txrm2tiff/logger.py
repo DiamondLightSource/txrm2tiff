@@ -22,11 +22,11 @@ def create_logger(input_level):
     except Exception as e:
         logging.error(e)
 
-    format = logging.Formatter("%(levelname)-8s %(message)s")
+    logging_format = logging.Formatter("%(levelname)-8s %(message)s")
     handler = logging.StreamHandler(sys.stdout)
 
-    logger = logging.getLogger()
+    logger = logging.getLogger(__name__)
 
     logger.setLevel(level)
-    handler.setFormatter(format)
+    handler.setFormatter(logging_format)
     logger.addHandler(handler)

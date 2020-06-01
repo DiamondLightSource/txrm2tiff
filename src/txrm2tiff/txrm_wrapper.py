@@ -12,37 +12,9 @@ class TxrmWrapper:
     def read_stream(self, ole, key, dtype):
         if ole.exists(key):
             stream = ole.openstream(key)
-            # tolist() is needed or the data will be kept in numpy dtypes, which ISPyB can't handle
-            return np.fromstring(stream.getvalue(), dtype).tolist()
+            return np.frombuffer(stream.getvalue(), dtype).tolist()
         else:
             logging.error("Stream %s does not exist in ole file", key)
-
-    def extract_unknown_dtype_image_data(self, img_stream_bytes, img_size, num_mosaic_tiles=1):
-        img_stream_length = len(img_stream_bytes)
-        if (img_stream_length == ((img_size * 2) / num_mosaic_tiles)):
-            return np.fromstring(img_stream_bytes, dtype=np.uint16)
-        elif (img_stream_length == ((img_size * 4) / num_mosaic_tiles)):
-            return np.fromstring(img_stream_bytes, dtype=np.float32)
-        else:
-            logging.error("Unexpected data type with %f bytes per pixel",
-                          (img_stream_length * num_mosaic_tiles / img_size))
-            return None
-
-    def extract_single_image(self, ole, numimage, numrows, numcols):
-        # Read the images - They are stored in the txrm as ImageData1 ...
-        # Each folder contains 100 images 1-100, 101-200
-        img_key = "ImageData%i/Image%i" % \
-            (np.ceil(numimage / 100.0), numimage)
-        if ole.exists(img_key):
-            img_stream_bytes = ole.openstream(img_key).getvalue()
-            img_size = numrows * numcols
-            imgdata = self.extract_unknown_dtype_image_data(img_stream_bytes, img_size)
-            if imgdata is None:
-                raise TypeError("Image is stored as unexpected type. Expecting uint16 or float32.")
-            imgdata.shape = (numrows, numcols)
-            return imgdata
-        else:
-            return np.zeros([])
 
     def read_imageinfo_as_int(self, ole, key_part, ref_data=False):
         stream_key = f"ImageInfo/{key_part}"
@@ -52,14 +24,34 @@ class TxrmWrapper:
         if integer_tuple is not None:
             return integer_tuple[0]
 
+    def extract_single_image(self, ole, numimage, numrows, numcols):
+        # Read the images - They are stored in the txrm as ImageData1 ...
+        # Each folder contains 100 images 1-100, 101-200
+        img_key = f"ImageData{int(np.ceil(numimage / 100.0))}/Image{numimage}"
+        if ole.exists(img_key):
+            img_stream_bytes = ole.openstream(img_key).getvalue()
+            img_stream_length = len(img_stream_bytes)
+            img_size = numrows * numcols
+            if (img_stream_length == (img_size * 2)):
+                imgdata = np.frombuffer(img_stream_bytes, dtype=np.uint16)
+            elif (img_stream_length == (img_size * 4)):
+                imgdata = np.frombuffer(img_stream_bytes, dtype=np.float32)
+            else:
+                logging.error("Unexpected data type with %g bytes per pixel", (img_stream_length / img_size))
+                raise TypeError("Reference is stored as unexpected type. Expecting uint16 or float32.")
+            imgdata.shape = (numrows, numcols)
+            return imgdata
+        else:
+            return np.zeros([])
+
     def extract_image_dims(self, ole):
-        return (self.read_imageinfo_as_int(ole, "ImageHeight"),
-                self.read_imageinfo_as_int(ole, "ImageWidth"))
+        return [self.read_imageinfo_as_int(ole, "ImageHeight"),
+                self.read_imageinfo_as_int(ole, "ImageWidth")]
 
     def extract_ref_dims(self, ole):
         if ole.exists("ReferenceData/ImageInfo/ImageHeight"):
-            return (self.read_imageinfo_as_int(ole, "ImageHeight", ref_data=True),
-                    self.read_imageinfo_as_int(ole, "ImageWidth", ref_data=True))
+            return [self.read_imageinfo_as_int(ole, "ImageHeight", ref_data=True),
+                    self.read_imageinfo_as_int(ole, "ImageWidth", ref_data=True)]
         return self.extract_image_dims(ole)
 
     def extract_number_of_images(self, ole):
@@ -100,7 +92,7 @@ class TxrmWrapper:
         return self.read_stream(ole, 'ImageInfo/PixelSize', "f")[0]
 
     def extract_all_images(self, ole):
-        (num_rows, num_columns) = self.extract_image_dims(ole)
+        num_rows, num_columns = self.extract_image_dims(ole)
         if ole.exists("ImageInfo/ExpTimes"):
             images_taken = self.read_imageinfo_as_int(ole, "ImagesTaken")
         elif ole.exists("ImageInfo/ExpTime"):
@@ -124,17 +116,20 @@ class TxrmWrapper:
         return np.mean(energies)
 
     def extract_wavelength(self, ole):
-        return (h * c) / (self.extract_energy(ole) * e)
-
+        return h * c / (self.extract_energy(ole) * e)
+    
     def create_reference_mosaic(self, ole, refdata, image_rows, image_columns, mosaic_rows, mosaic_columns):
-        ref_num_rows = image_rows // mosaic_rows
-        ref_num_columns = image_columns // mosaic_columns
+        ref_num_rows = self.convert_to_int(image_rows / mosaic_rows)
+        ref_num_columns = self.convert_to_int(image_columns / mosaic_columns)
         refdata.shape = (ref_num_rows, ref_num_columns)
         return np.tile(refdata, (mosaic_rows, mosaic_columns))
 
     def rescale_ref_exposure(self, ole, refdata):
+        # TODO: Improve this in line with ALBA's methodolgy
         # Normalises the reference exposure
-        # (if it is a tomo, it does this relative to the 0 degree image)
+        # Assumes roughly linear response, which is a reasonable estimation
+        # because exposure times are unlikely to be significantly different)
+        # (if it is a tomo, it does this relative to the 0 degree image, not on a per-image basis)
         ref_exp = self.read_stream(ole, "ReferenceData/ExpTime", dtype="f")[0]
         im_exp = self.extract_exposure_time(ole)
         ref_exp_rescale = im_exp / ref_exp
@@ -145,28 +140,44 @@ class TxrmWrapper:
     def extract_reference_image(self, ole):
         # Read the reference image.
         # Reference info is stored under 'ReferenceData/...'
-        (num_rows, num_columns) = self.extract_ref_dims(ole)
+        num_rows, num_columns = self.extract_ref_dims(ole)
         ref_stream_bytes = ole.openstream("ReferenceData/Image").getvalue()
         img_size = num_rows * num_columns
 
         #  In XMController 13+ the reference file is not longer always a float. Additionally, there
         #  are multiple methods to apply a reference now, so this has been kept general, rather than
         #  being dependent on the file version or software version (software version is new metadata
-        #  in to XMController 13).
-        if ole.exists("ImageInfo/MosiacMode") and self.read_imageinfo_as_int(ole, "MosiacMode") == 1:
+        #  introduced in XMController 13).
+        
+        # Version 10 style mosaic:
+        is_mosaic = ole.exists("ImageInfo/MosiacMode") and self.read_imageinfo_as_int(ole, "MosiacMode") == 1
         # This MosiacMode has been removed in v13 but is kept in for backward compatibility:
         # ImageInfo/MosiacMode (genuinely how it's spelled in the file) == 1 if it is a mosaic, 0 if not.
+        if is_mosaic:
             mosaic_rows = self.read_imageinfo_as_int(ole, "MosiacRows")
             mosaic_cols = self.read_imageinfo_as_int(ole, "MosiacColumns")
             mosaic_size_multiplier = mosaic_rows * mosaic_cols
-            refdata = self.extract_unknown_dtype_image_data(ref_stream_bytes, img_size, mosaic_size_multiplier)
-            if refdata is None:
-                raise TypeError("Reference is stored as unexpected type. Expecting uint16 or float32.")
-            refdata = self.create_reference_mosaic(ole, refdata, num_rows, num_columns, mosaic_rows, mosaic_cols)
         else:
-            refdata = self.extract_unknown_dtype_image_data(ref_stream_bytes, img_size)
-            if refdata is None:
-                raise TypeError("Reference is stored as unexpected type. Expecting uint16 or float32.")
-        # num_rows and num_columns are from the array shape of the main image (the stitched image if a mosaic)
+            mosaic_size_multiplier = 1
+        ref_stream_length = len(ref_stream_bytes)
+        mosaic_stream_length = ref_stream_length * mosaic_size_multiplier
+        if mosaic_stream_length == img_size * 2:
+            ref_dtype = np.uint16
+        elif mosaic_stream_length == img_size * 4:
+            ref_dtype = np.float32
+        else:
+            logging.error("Unexpected data type with %g bytes per pixel", mosaic_stream_length / img_size)
+            raise TypeError("Reference is stored as unexpected type. Expecting uint16 or float32.")
+
+        refdata = np.frombuffer(ref_stream_bytes, dtype=ref_dtype)
+        if is_mosaic:
+            refdata = self.create_reference_mosaic(ole, refdata, num_rows, num_columns, mosaic_rows, mosaic_cols)
         refdata.shape = (num_rows, num_columns)
+
         return self.rescale_ref_exposure(ole, refdata)
+
+    @staticmethod
+    def convert_to_int(value):
+        if int(value) == float(value):
+            return int(value)
+        raise ValueError(f"Value '{value}' cannot be converted to an integer")
