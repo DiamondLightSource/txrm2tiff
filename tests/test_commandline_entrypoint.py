@@ -63,21 +63,21 @@ class TestCommandlineEntryPoint(unittest.TestCase):
     def test_script_method(self):
         args = ["path_to/input.txrm"]
         run_args = ["txrm2tiff", "-i", args[0]]
-        with Popen(run_args, stdout=PIPE, stderr=STDOUT, text=True) as p:
+        with Popen(run_args, stdout=PIPE, stderr=STDOUT, universal_newlines=True) as p:
             stdout, _ = p.communicate()
         stdout = stdout.strip("\r\n").strip("\n")
         self.assertIn(f"No such file or directory: {args[0]}", stdout, msg=f"Actual stdout: {stdout}")
 
     def test_script_method_version_number(self):
         run_args = ["txrm2tiff", "--version"]
-        with Popen(run_args, stdout=PIPE, stderr=STDOUT, text=True) as p:
+        with Popen(run_args, stdout=PIPE, stderr=STDOUT, universal_newlines=True) as p:
             stdout, _ = p.communicate()
         stdout = stdout.strip("\r\n").strip("\n")
         self.assertEqual(f"txrm2tiff {__version__}", stdout, msg=f"Actual stdout: {stdout}")
 
     def test_script_method_setup_subparser(self):
         run_args = ["txrm2tiff", "setup"]
-        with Popen(run_args, stdout=PIPE, stderr=STDOUT, text=True) as p:
+        with Popen(run_args, stdout=PIPE, stderr=STDOUT, universal_newlines=True) as p:
             stdout, _ = p.communicate()
         stdout = stdout.strip("\r\n").strip("\n")
         self.assertIn(f"txrm2tiff setup [-w] [-h]", stdout, msg=f"Actual stdout: {stdout}")
@@ -86,7 +86,7 @@ class TestCommandlineEntryPoint(unittest.TestCase):
     def test_module_without_arguments_returns_help(self):
         run_args = [sys.executable, "-m", "txrm2tiff"]
         path = os.environ["PATH"]
-        with Popen(run_args, stdout=PIPE, stderr=STDOUT, text=True) as p:
+        with Popen(run_args, stdout=PIPE, stderr=STDOUT, universal_newlines=True) as p:
             stdout, _ = p.communicate()
         stdout = stdout.strip("\r\n").strip("\n")
         self.assertIn("Converter of txrm/xrm files to OME tif/tiff files", stdout, msg=f"Actual stdout: {stdout}")
@@ -102,7 +102,7 @@ class TestCommandlineEntryPoint(unittest.TestCase):
             if desktop_path.exists():
                 desktop_path.unlink()
 
-        with Popen(run_args, stdout=PIPE, stderr=STDOUT, text=True) as p:
+        with Popen(run_args, stdout=PIPE, stderr=STDOUT, universal_newlines=True) as p:
             stdout, _ = p.communicate()
         stdout = stdout.strip("\r\n").strip("\n")
 
@@ -113,7 +113,7 @@ class TestCommandlineEntryPoint(unittest.TestCase):
         input_arg = "input_file_path"
         ref_arg = "ref_path"
         run_args = [sys.executable, "-m", "txrm2tiff", "--input", input_arg, "--reference", ref_arg]
-        with Popen(run_args, stdout=PIPE, stderr=STDOUT, text=True) as p:
+        with Popen(run_args, stdout=PIPE, stderr=STDOUT, universal_newlines=True) as p:
             stdout, _ = p.communicate()
         stdout = stdout.strip("\r\n").strip("\n")
 
@@ -122,21 +122,21 @@ class TestCommandlineEntryPoint(unittest.TestCase):
     def test_module_method(self):
         args = ["path_to/input.txrm"]
         run_args = [sys.executable, "-m", "txrm2tiff", "-i", args[0]]
-        with Popen(run_args, stdout=PIPE, stderr=STDOUT, text=True) as p:
+        with Popen(run_args, stdout=PIPE, stderr=STDOUT, universal_newlines=True) as p:
             stdout, _ = p.communicate()
         stdout = stdout.strip("\r\n").strip("\n")
         self.assertIn(f"No such file or directory: {args[0]}", stdout, msg=f"Actual stdout: {stdout}")
 
     def test_module_method_version_number(self):
         run_args = [sys.executable, "-m", "txrm2tiff", "--version"]
-        with Popen(run_args, stdout=PIPE, stderr=STDOUT, text=True) as p:
+        with Popen(run_args, stdout=PIPE, stderr=STDOUT, universal_newlines=True) as p:
             stdout, _ = p.communicate()
         stdout = stdout.strip("\r\n").strip("\n")
         self.assertEqual(f"txrm2tiff {__version__}", stdout, msg=f"Actual stdout: {stdout}")
 
     def test_module_method_setup_subparser_without_arguments_returns_help(self):
         run_args = [sys.executable, "-m", "txrm2tiff", "setup"]
-        with Popen(run_args, stdout=PIPE, stderr=STDOUT, text=True) as p:
+        with Popen(run_args, stdout=PIPE, stderr=STDOUT, universal_newlines=True) as p:
             stdout, _ = p.communicate()
         stdout = stdout.strip("\r\n").strip("\n")
         self.assertIn(f"txrm2tiff setup [-w] [-h]", stdout, msg=f"Actual stdout: {stdout}")
