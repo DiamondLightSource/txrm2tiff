@@ -6,7 +6,7 @@ import struct
 import numpy as np
 from scipy.constants import h, c, e
 
-from src.txrm2tiff.txrm_wrapper import TxrmWrapper
+from txrm2tiff.txrm_wrapper import TxrmWrapper
 
 
 def create_ole_that_returns_integer():
@@ -180,8 +180,7 @@ class TestTxrmWrapper(unittest.TestCase):
         self.assertAlmostEqual(float("%.8e" % data), 1.23367361e-8)
 
 
-    @patch('src.txrm2tiff.txrm_wrapper.TxrmWrapper.read_stream')
-    def test_create_mosaic_of_reference_image(self, read_stream):
+    def test_create_mosaic_of_reference_image(self):
         reference_data = np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
 
         mosaic_reference = TxrmWrapper().create_reference_mosaic(MagicMock(), reference_data, 6, 3, 2, 1)

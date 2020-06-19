@@ -4,6 +4,11 @@ Converts txrm/xrm files to OME tif/tiff files.
 
 txrm2tiff was created for users of beamline B24 of Diamond Light Source by Thomas Fish. This has been adapted from B24's the automatic processing pipeline. Parts of this code were originally written by Kevin Savage, with further additions and amendments by Peter Chang, Victoria Beilsten-Edmands, and Thomas Fish.
 
+## Installation
+
+Available on PyPI and conda-forge as `txrm2tiff`. To install using PyPI:
+`python -m pip install txrm2tiff`
+
 ## Instructions
 
 **txrm2tiff** **--input** {input file path (required)} {**--reference** reference file path (optional, default=None)} {**--output** path (optional, default=None)} {**--ignore-ref** (optional)} {**--set-logging** (optional, default="info"}

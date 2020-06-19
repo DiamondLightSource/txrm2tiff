@@ -1,13 +1,13 @@
+import unittest
+from unittest.mock import patch, MagicMock, ANY
+
 import os
 import sys
-import unittest
 from pathlib import Path
-from io import StringIO
-from unittest.mock import patch, MagicMock, ANY
 from subprocess import Popen, PIPE, STDOUT
 
-from src.txrm2tiff import __version__
-from src.txrm2tiff import argparse_entrypoint
+from txrm2tiff import __version__
+from txrm2tiff import argparse_entrypoint
 
 
 class TestCommandlineEntryPoint(unittest.TestCase):
@@ -42,23 +42,23 @@ class TestCommandlineEntryPoint(unittest.TestCase):
 
         mocked_printhelp.assert_called_once()
 
-    @patch('src.txrm2tiff.shortcut_creator.create_Windows_shortcut')
-    def test_argparse_function_setup_windows_shortcut(self, mocked_shortcut_creator):
-        sys.argv = ["txrm2tiff", "setup", "-w"]
-        argparse_entrypoint.main()
-        
-        mocked_shortcut_creator.assert_called_once()
+    def test_argparse_function_setup_windows_shortcut(self):
+        with patch('txrm2tiff.shortcut_creator.create_Windows_shortcut', MagicMock()) as mocked_shortcut_creator:
+            sys.argv = ["txrm2tiff", "setup", "-w"]
+            argparse_entrypoint.main()
+            
+            mocked_shortcut_creator.assert_called_once()
 
-    @patch('src.txrm2tiff.run.run')
-    def test_argparse_function_with_args(self, mock_run):
-        mock_run.return_value = None
-        input_arg = "input_path"
-        ref_arg = "ref_path"
-        sys.argv =["txrm2tiff", "--input", input_arg, "--reference", ref_arg]
-        # argparse_entrypoint imports from the non-
-        argparse_entrypoint.main()
+    def test_argparse_function_with_args(self):
+        with patch('txrm2tiff.run.run', MagicMock()) as mock_run:
+            mock_run.return_value = None
+            input_arg = "input_path"
+            ref_arg = "ref_path"
+            sys.argv =["txrm2tiff", "--input", input_arg, "--reference", ref_arg]
+            # argparse_entrypoint imports from the non-
+            argparse_entrypoint.main()
 
-        mock_run.assert_called_once_with(input_path=input_arg, custom_reference=ref_arg, output_path=None, ignore_reference=False, logging_level='info')
+            mock_run.assert_called_once_with(input_path=input_arg, custom_reference=ref_arg, output_path=None, ignore_reference=False, logging_level='info')
 
     def test_script_method(self):
         args = ["path_to/input.txrm"]
