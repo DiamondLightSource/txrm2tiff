@@ -1,8 +1,9 @@
 import unittest
 from unittest.mock import MagicMock, patch
-from parameterized import parameterized
 from numpy.testing import assert_array_equal
 from datetime import datetime
+
+from parameterized import parameterized
 
 import numpy as np
 import os
@@ -14,8 +15,8 @@ from shutil import rmtree
 from time import time, sleep
 from olefile import OleFileIO
 
-from src.txrm2tiff.txrm_to_image import TxrmToImage
-from src.txrm2tiff.txrm_wrapper import TxrmWrapper
+from txrm2tiff.txrm_to_image import TxrmToImage
+from txrm2tiff.txrm_wrapper import TxrmWrapper
 
 
 class TestTxrmToImageSimple(unittest.TestCase):
@@ -88,8 +89,8 @@ class TestTxrmToImageSimple(unittest.TestCase):
         with self.assertRaises(IOError):
             TxrmToImage().save("output_path")
 
-    @patch('src.txrm2tiff.txrm_to_image.isOleFile', MagicMock(return_value=True))
-    @patch('src.txrm2tiff.txrm_to_image.OleFileIO')
+    @patch('txrm2tiff.txrm_to_image.isOleFile', MagicMock(return_value=True))
+    @patch('txrm2tiff.txrm_to_image.OleFileIO')
     @patch.object(TxrmWrapper, 'extract_all_images')
     def test_get_reference_custom_median(self, mocked_extractor, mocked_olefile):
         custom_reference = []
@@ -103,8 +104,8 @@ class TestTxrmToImageSimple(unittest.TestCase):
         ref = TxrmToImage()._get_reference(ole, "txrm_name", ref_ole, ignore_reference=False)
         assert_array_equal(ref, custom_reference[2])
 
-    @patch('src.txrm2tiff.txrm_to_image.isOleFile', MagicMock(return_value=True))
-    @patch('src.txrm2tiff.txrm_to_image.OleFileIO')
+    @patch('txrm2tiff.txrm_to_image.isOleFile', MagicMock(return_value=True))
+    @patch('txrm2tiff.txrm_to_image.OleFileIO')
     @patch.object(TxrmWrapper, 'extract_all_images')    
     def test_get_reference_custom_flat(self, mocked_extractor, mocked_olefile):
         ole = MagicMock()

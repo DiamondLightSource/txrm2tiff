@@ -5,7 +5,7 @@ from pathlib import Path
 from datetime import datetime
 from tempfile import NamedTemporaryFile
 
-from src.txrm2tiff.file_sorting import file_can_be_opened, ole_file_works
+from txrm2tiff.file_sorting import file_can_be_opened, ole_file_works
 
 class TestFileSorting(unittest.TestCase):
 

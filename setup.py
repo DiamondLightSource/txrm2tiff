@@ -18,13 +18,14 @@ requirements=[
     "pywin32;platform_system=='Windows'",
     ]
 
-batch_script_string = f"""{sys.executable} -m txrm2tiff --input %*
-"""
+if os.name == "nt":
+    batch_script_string = f"""{sys.executable} -m txrm2tiff --input %*
+    """
 
-if dragndrop_bat_file.exists():
-    dragndrop_bat_file.unlink()
-with open(dragndrop_bat_file, "x") as f:
-    f.write(batch_script_string)
+    if dragndrop_bat_file.exists():
+        dragndrop_bat_file.unlink()
+    with open(dragndrop_bat_file, "x") as f:
+        f.write(batch_script_string)
 
 setuptools.setup(
     name="txrm2tiff",
@@ -38,7 +39,7 @@ setuptools.setup(
     license_files=["LICENSE"],
     url="https://github.com/DiamondLightSource/txrm2tiff",
     install_requires=requirements,
-    packages=setuptools.find_packages('src', exclude=['test', 'scripts']),
+    packages=setuptools.find_packages('src', exclude=['scripts']),
     package_dir={'': 'src'},
     classifiers=[
         "Programming Language :: Python :: 3",
@@ -51,4 +52,6 @@ setuptools.setup(
             "txrm2tiff = txrm2tiff.scripts.commandline:main"
             ]
             },
+    test_suite='tests',
+    tests_require=['parameterized']
 )
