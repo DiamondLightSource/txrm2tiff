@@ -46,7 +46,7 @@ setuptools.setup(
         "License :: OSI Approved :: BSD License",
         "Operating System :: OS Independent",
     ],
-    python_requires='>=3.6',
+    python_requires='>=3.5',
     entry_points={
         'console_scripts': [
             "txrm2tiff = txrm2tiff.scripts.commandline:main"
