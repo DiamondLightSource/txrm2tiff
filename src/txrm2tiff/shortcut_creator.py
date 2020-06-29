@@ -6,6 +6,18 @@ from pathlib import Path
 
 dragndrop_bat_file = Path(__file__).resolve().parent / "scripts" / "dragndrop.bat"
 
+def _get_Windows_home_path():
+    try:
+        home = Path(os.getenv("HOMEPATH"))
+    except:
+        logging.warning("Cannot find environment variable 'HOMEPATH', using Path.home() instead")
+        home = Path.home()
+    if "Users" in str(home):
+        return home
+    else:
+        logging.error("Cannot find valid home path. The following path was found: '%s'", str(home))
+        raise OSError(f"Cannot find valid home path. The following path was found: '{str(home)}''")
+
 def _create_lnk_file(shortcut_path):
     try:
         # win23com is from the package pywin32, only available in Windows
@@ -27,7 +39,7 @@ def create_Windows_shortcut():
         return 
     else:
         # Place link on users desktop
-        shortcut_path = Path.home() / "Desktop" / "txrm2tiff.lnk"
+        shortcut_path = _get_Windows_home_path() / "Desktop" / "txrm2tiff.lnk"
         msg = f"Creating shortcut on user desktop: {shortcut_path}"
         logging.info(msg)
         if path.exists(shortcut_path):
