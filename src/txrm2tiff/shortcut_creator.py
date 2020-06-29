@@ -8,7 +8,7 @@ dragndrop_bat_file = Path(__file__).resolve().parent / "scripts" / "dragndrop.ba
 
 def _get_Windows_home_path():
     try:
-        home = Path(os.getenv("HOMEPATH"))
+        home = Path(os.getenv("HOMEPATH")).resolve()
     except:
         logging.warning("Cannot find environment variable 'HOMEPATH', using Path.home() instead")
         home = Path.home()
