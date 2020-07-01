@@ -55,7 +55,6 @@ class TestCommandlineEntryPoint(unittest.TestCase):
             input_arg = "input_path"
             ref_arg = "ref_path"
             sys.argv =["txrm2tiff", "--input", input_arg, "--reference", ref_arg]
-            # argparse_entrypoint imports from the non-
             argparse_entrypoint.main()
 
             mock_run.assert_called_once_with(input_path=input_arg, custom_reference=ref_arg, output_path=None, ignore_reference=False, logging_level='info')
@@ -90,24 +89,6 @@ class TestCommandlineEntryPoint(unittest.TestCase):
             stdout, _ = p.communicate()
         stdout = stdout.strip("\r\n").strip("\n")
         self.assertIn("Converter of txrm/xrm files to OME tif/tiff files", stdout, msg=f"Actual stdout: {stdout}")
-        
-    def test_module_function_setup_windows_shortcut(self):
-        run_args = [sys.executable, "-m", "txrm2tiff", "setup", "-w"]
-
-        if os.name != "nt":
-            expected_stdout = "This command is only valid on Windows installations."
-        else:
-            expected_stdout = "Desktop shortcut created! It can be found here: "
-            desktop_path = Path.home() / "Desktop" / "txrm2tiff.lnk"
-            if desktop_path.exists():
-                desktop_path.unlink()
-
-        with Popen(run_args, stdout=PIPE, stderr=STDOUT, universal_newlines=True) as p:
-            stdout, _ = p.communicate()
-        stdout = stdout.strip("\r\n").strip("\n")
-
-        self.assertIn(expected_stdout, stdout, msg=f"Actual stdout: {stdout}")
-
 
     def test_module_function_with_args(self):
         input_arg = "input_file_path"
