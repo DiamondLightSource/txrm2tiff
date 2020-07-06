@@ -81,7 +81,3 @@ Batch conversion notes:
 * Batch convert options
 * Within Python, xrm/txrm files can be inspected using `from txrm2tiff.txrm_wrapper import TxrmWrapper` and using the `TxrmWrapper` class functions
 * Within Python, xrm/txrm files can be converted using `convert_and_save` or `convert` functions (`from txrm2tiff import convert_and_save, convert`); for more control, use the `TxrmToImage` class functions (`from txrm2tiff.txrm_to_image import TxrmToImage`)
-
-
-## Requirements
-Python 3.6+ (3.8 is recommended)
