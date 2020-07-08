@@ -15,8 +15,7 @@ from shutil import rmtree
 from time import time, sleep
 from olefile import OleFileIO
 
-from txrm2tiff.txrm_to_image import TxrmToImage
-from txrm2tiff.txrm_wrapper import TxrmWrapper
+from txrm2tiff.txrm_to_image import TxrmToImage, _get_reference, _apply_reference, create_ome_metadata
 
 
 class TestTxrmToImageSimple(unittest.TestCase):
@@ -25,36 +24,61 @@ class TestTxrmToImageSimple(unittest.TestCase):
         num_images = 5
         images = [np.array([[0, 2, 4], [6, 8, 10]])] * num_images
         reference = np.arange(6).reshape(2, 3)
-        resultant_images = TxrmToImage()._apply_reference(images, reference)
+        resultant_images = _apply_reference(images, reference, np.uint16)
         self.assertEqual(len(resultant_images), num_images, msg="The result is the wrong length")
         expected_image = np.array([[0, 200, 200], [200, 200, 200]])
         for image in resultant_images:
             assert_array_equal(image, expected_image, err_msg="The result does not match the expected result")
+ 
+    @patch('txrm2tiff.txrm_to_image.txrm_wrapper')
+    def test_metadata_created_correctly(self, mocked_extractor):
+        dims = (45, 40, 1)
+        dtype = "uint16"
+        test_image = [np.zeros(dims[:2], dtype=dtype)] * dims[2]
+        mosaic_rows = 2
+        mosaic_cols = 3
 
-    def test_mosaic_exposure_averaged(self):
-        image_dims = (45, 40, 1)
+        ole = MagicMock()
+        ole.exists.return_value = True
+        mocked_extractor.extract_multiple_exposure_times.return_value = [2., 3., 4., 5., 0., 0.]
+        mocked_extractor.extract_pixel_size.return_value = 0.005
+        mocked_extractor.extract_x_coords.return_value = [7.5, 22.5, 37.5] * 2
+        mocked_extractor.extract_y_coords.return_value = [10, 10, 10, 20, 20, 20]
+        mocked_extractor.read_imageinfo_as_int.side_effect = [mosaic_rows, mosaic_cols]
+
+        ome_metadata = create_ome_metadata(ole, test_image)
+        self.assertEqual(ome_metadata.image().Pixels.get_SizeX(), dims[0])
+        self.assertEqual(ome_metadata.image().Pixels.get_SizeY(), dims[1])
+        self.assertEqual(ome_metadata.image().Pixels.get_SizeT(), dims[2])
+        self.assertEqual(ome_metadata.image().Pixels.get_PixelType(), dtype)
+
+    @patch('txrm2tiff.txrm_to_image.txrm_wrapper')
+    def test_mosaic_exposure_averaged(self, mocked_extractor):
+        dims = (45, 40, 1)
+        dtype = "uint16"
+        test_image = [np.zeros(dims[:2], dtype=dtype)] * dims[2]
         mosaic_rows = 2
         mosaic_cols = 3
         exposure_times = [2., 3., 4., 5., 0., 0.]
         # 0 exposures should be ignored, if they exist, as these will be interrupted frames
         expected_exposure = 3.5
 
-        image_converter = TxrmToImage()
-        image_converter.txrm_extractor = MagicMock()
         ole = MagicMock()
         ole.exists.return_value = True
-        image_converter.txrm_extractor.extract_multiple_exposure_times.return_value = exposure_times
-        image_converter.txrm_extractor.extract_pixel_size.return_value = 0.005
-        image_converter.txrm_extractor.extract_x_coords.return_value = [7.5, 22.5, 37.5] * 2
-        image_converter.txrm_extractor.extract_y_coords.return_value = [10, 10, 10, 20, 20, 20]
-        image_converter.txrm_extractor.read_imageinfo_as_int.side_effect = [mosaic_rows, mosaic_cols]
+        mocked_extractor.extract_multiple_exposure_times.return_value = exposure_times
+        mocked_extractor.extract_pixel_size.return_value = 0.005
+        mocked_extractor.extract_x_coords.return_value = [7.5, 22.5, 37.5] * 2
+        mocked_extractor.extract_y_coords.return_value = [10, 10, 10, 20, 20, 20]
+        mocked_extractor.read_imageinfo_as_int.side_effect = [mosaic_rows, mosaic_cols]
 
-        ome_metadata = image_converter._create_ome_metadata(ole, image_dims)
+        ome_metadata = create_ome_metadata(ole, test_image)
         self.assertEqual(ome_metadata.image().Pixels.Plane(0).get_ExposureTime(), expected_exposure)
 
-
-    def test_mosaic_centre_found_correctly(self):
-        image_dims = (45, 40, 1)
+    @patch('txrm2tiff.txrm_to_image.txrm_wrapper')
+    def test_mosaic_centre_found_correctly(self, mocked_extractor):
+        dims = (45, 40, 1)
+        dtype = "uint16"
+        test_image = [np.zeros(dims[:2], dtype=dtype)] * dims[2]
         pixel_size = 0.005
         mosaic_cols = 3
         mosaic_rows = 2
@@ -66,21 +90,20 @@ class TestTxrmToImageSimple(unittest.TestCase):
         
         image_divider = MagicMock()
         txrm_converter = TxrmToImage()
-        txrm_converter.txrm_extractor = MagicMock()
         ole = MagicMock()
         ole.exists.return_value = True
-        txrm_converter.txrm_extractor.extract_multiple_exposure_times.return_value = exposure_times
-        txrm_converter.txrm_extractor.extract_pixel_size.return_value = pixel_size
+        mocked_extractor.extract_multiple_exposure_times.return_value = exposure_times
+        mocked_extractor.extract_pixel_size.return_value = pixel_size
 
         # This should only need the coords of the first frame as mosaic may not complete
-        txrm_converter.txrm_extractor.extract_x_coords.return_value = [
+        mocked_extractor.extract_x_coords.return_value = [
             (7.5 + offset[0]) * pixel_size, 0, 0, 0, 0, 0]
-        txrm_converter.txrm_extractor.extract_y_coords.return_value = [
+        mocked_extractor.extract_y_coords.return_value = [
             (10 + offset[1]) * pixel_size, 0, 0, 0, 0, 0]
 
-        txrm_converter.txrm_extractor.read_imageinfo_as_int.side_effect = [mosaic_rows, mosaic_cols]
+        mocked_extractor.read_imageinfo_as_int.side_effect = [mosaic_rows, mosaic_cols]
 
-        ome_metadata = txrm_converter._create_ome_metadata(ole, image_dims)
+        ome_metadata = create_ome_metadata(ole, test_image)
         plane = ome_metadata.image().Pixels.Plane(0)
         ome_centre = (float(plane.get_PositionX()), float(plane.get_PositionY()))
         [self.assertAlmostEqual(ome, expected) for ome, expected in zip(ome_centre, expected_centre)]
@@ -91,7 +114,7 @@ class TestTxrmToImageSimple(unittest.TestCase):
 
     @patch('txrm2tiff.txrm_to_image.isOleFile', MagicMock(return_value=True))
     @patch('txrm2tiff.txrm_to_image.OleFileIO')
-    @patch.object(TxrmWrapper, 'extract_all_images')
+    @patch('txrm2tiff.txrm_wrapper.extract_all_images')
     def test_get_reference_custom_median(self, mocked_extractor, mocked_olefile):
         custom_reference = []
         ole = MagicMock()
@@ -101,19 +124,19 @@ class TestTxrmToImageSimple(unittest.TestCase):
         mocked_extractor.return_value = custom_reference
         ref_ole = MagicMock()
         mocked_olefile.return_value = ref_ole
-        ref = TxrmToImage()._get_reference(ole, "txrm_name", ref_ole, ignore_reference=False)
+        ref = _get_reference(ole, "txrm_name", ref_ole, ignore_reference=False)
         assert_array_equal(ref, custom_reference[2])
 
     @patch('txrm2tiff.txrm_to_image.isOleFile', MagicMock(return_value=True))
     @patch('txrm2tiff.txrm_to_image.OleFileIO')
-    @patch.object(TxrmWrapper, 'extract_all_images')    
+    @patch('txrm2tiff.txrm_wrapper.extract_all_images') 
     def test_get_reference_custom_flat(self, mocked_extractor, mocked_olefile):
         ole = MagicMock()
         custom_reference = [np.full((5,5), 4)]
         mocked_extractor.return_value = custom_reference
         ref_ole = MagicMock()
         mocked_olefile.return_value = ref_ole
-        ref = TxrmToImage()._get_reference(ole, "txrm_name", ref_ole, ignore_reference=False)
+        ref = _get_reference(ole, "txrm_name", ref_ole, ignore_reference=False)
         assert_array_equal(ref, custom_reference[0])
 
 
