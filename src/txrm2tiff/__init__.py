@@ -1,4 +1,4 @@
-version_info = (1, 0, 2)
+version_info = (1, 0, 3)
 __version__ = '.'.join(str(c) for c in version_info)
 __author__ = "Thomas Fish"
 
@@ -44,5 +44,5 @@ def save(output_path, image_list, metadata=None):
 
     Saves as .ome.tiff to output
     """
-    from .txrm_to_image import TxrmToImage
-    TxrmToImage.manual_save(output_path, image_list, metadata)
+    from .txrm_to_image import manual_save
+    manual_save(output_path, image_list, metadata)

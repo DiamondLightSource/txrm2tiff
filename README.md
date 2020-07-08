@@ -79,5 +79,5 @@ Batch conversion notes:
 * If it is a mosaic, this is recognised and the reference will be applied to each individual image within the mosaic
 * Additional metadata will be added in OME XML format to the header
 * Batch convert options
-* Within Python, xrm/txrm files can be inspected using `from txrm2tiff.txrm_wrapper import TxrmWrapper` and using the `TxrmWrapper` class functions
+* Within Python, xrm/txrm files can be inspected using `from txrm2tiff import txrm_wrapper` and using the contained functions
 * Within Python, xrm/txrm files can be converted using `convert_and_save` or `convert` functions (`from txrm2tiff import convert_and_save, convert`); for more control, use the `TxrmToImage` class functions (`from txrm2tiff.txrm_to_image import TxrmToImage`)
