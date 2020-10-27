@@ -59,6 +59,12 @@ def _get_reference(ole, txrm_name, custom_reference, ignore_reference):
 def _stitch_images(img_list, mosaic_xy_shape, fast_axis):
     slow_axis = 1 - fast_axis
     logging.debug("Fast axis: %i", fast_axis)
+    
+    num_images = len(img_list)
+    expected_num_images = mosaic_xy_shape[0] * mosaic_xy_shape[1]
+    if expected_num_images > num_images:  # Pad with zeros if mosaic interrupted
+        img_list.extend([np.zeros((img_list[0].shape), dtype=img_list[0].dtype)] * (expected_num_images - num_images))
+    
     fast_stacked_list = []
     for i in range(mosaic_xy_shape[slow_axis]):
         idx_start = mosaic_xy_shape[fast_axis] * i

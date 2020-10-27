@@ -147,6 +147,7 @@ xm13_path = raw_path / "XMv13"
 
 test_files = [
     (xm13_path / 'Xray_mosaic_v13.xrm', ),
+    (xm13_path / 'Xray_mosaic_v13_interrupt.xrm', ),
     (xm13_path / 'Xray_single_v13.xrm', ),
     (xm13_path / 'tomo_v13_full.txrm', ),
     (xm13_path / 'tomo_v13_full_noref.txrm', ),
