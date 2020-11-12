@@ -26,7 +26,7 @@ def _batch_convert_files(input_filepath, output, ignore_reference):
     filepath_list = list(input_filepath.rglob("*xrm"))
     logging.info(f"Batch converting files {[filepath.name for filepath in filepath_list]}")
     if output is not None and Path(output).is_dir():
-        logging.info(f"Output directory: {output}")
+        logging.info(f"Output directory set to: {output}")
         output_path_base = Path(output)
         # Replace input_filepath with output, maintaining sub directory structure, and find output file suffix
         output_path_list = [_define_output_suffix(output_path_base / filepath.relative_to(input_filepath)) for filepath in filepath_list]
