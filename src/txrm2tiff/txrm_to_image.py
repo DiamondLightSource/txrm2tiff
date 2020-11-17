@@ -29,7 +29,7 @@ def _apply_reference(images, reference, np_dtype):
 
 def _get_reference(ole, txrm_name, custom_reference, ignore_reference):
     if custom_reference is not None:
-        logging.debug("%s is being referenced using %s and processed.", txrm_name, custom_reference.name)
+        logging.info("%s is being processed with file %s as a reference.", txrm_name, custom_reference.name)
         reference_path = str(custom_reference)
         try:
             if isOleFile(reference_path):
@@ -50,7 +50,7 @@ def _get_reference(ole, txrm_name, custom_reference, ignore_reference):
         return references[0]
 
     elif ole.exists("ReferenceData/Image") and not ignore_reference:
-        logging.debug("%s is being referenced and processed using an internal reference.", txrm_name)
+        logging.info("internal reference will be applied to %s", txrm_name)
         return txrm_wrapper.extract_reference_image(ole)
 
     logging.debug("%s is being processed without a reference.", txrm_name)
