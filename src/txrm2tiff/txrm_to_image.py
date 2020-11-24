@@ -12,18 +12,15 @@ from oxdls import OMEXML
 
 from . import txrm_wrapper
 
-DEFAULT_STR_DTYPE="uint16"
-DEFAULT_NP_DTYPE = np.uint16
 
-
-def _apply_reference(images, reference, np_dtype):
+def _apply_reference(images, reference):
     floated_and_referenced = [(image * 100.) / reference for image in images]
     referenced_image = []
     for image in floated_and_referenced:
         if np.isnan(image).any() or np.isinf(image).any():
             logging.warning("Potential dead pixels found. "
                             "NaN was output for at least one pixel in the referenced image.")
-        referenced_image.append(np.around(image).astype(np_dtype))
+        referenced_image.append(np.around(image))
     return referenced_image
 
 
@@ -218,21 +215,7 @@ def create_ome_metadata(ole, image_list, filename=None):
 
 class TxrmToImage:
 
-    def __init__(self, dtype=DEFAULT_NP_DTYPE):
-        """
-        Arguments:
-            dtype = np.uint16 - accepts datatype strings or numpy types (e.g. np.uint16)
-        """
-        if issubclass(dtype, np.number):
-            self.str_dtype = str(np.dtype(np.uint16))
-            self.np_dtype = dtype
-        elif isinstance(dtype, str):
-            self.str_dtype = dtype
-            self.np_dtype = getattr(np, dtype)
-        else:
-            logging.error("Invalid dtype '%s'. Reverting to default '%s'", dtype, DEFAULT_STR_DTYPE)
-            self.str_dtype = DEFAULT_STR_DTYPE
-            self.np_dtype = DEFAULT_NP_DTYPE
+    def __init__(self):
         self.image_output = None
         self.ome_metadata = None
 
@@ -241,16 +224,16 @@ class TxrmToImage:
             images = txrm_wrapper.extract_all_images(ole)
             reference = _get_reference(ole, txrm_file.name, custom_reference, ignore_reference)
             if reference is not None:
-                self.image_output = _apply_reference(images, reference, self.np_dtype)
+                self.image_output = _apply_reference(images, reference)
             else:
-                self.image_output = [image for image in np.around(images).astype(self.np_dtype)]
+                self.image_output = [image for image in np.around(images)]
             if (len(self.image_output) > 1
                     and ole.exists("ImageInfo/MosiacRows")
                     and ole.exists("ImageInfo/MosiacColumns")):
-                    # Version 13 style mosaic:
                 mosaic_rows = txrm_wrapper.read_imageinfo_as_int(ole, "MosiacRows")
                 mosaic_cols = txrm_wrapper.read_imageinfo_as_int(ole, "MosiacColumns")
                 if mosaic_rows != 0 and mosaic_cols != 0:
+                    # Version 13 style mosaic:
                     self.image_output = _stitch_images(self.image_output, (mosaic_cols, mosaic_rows), 1)
             # Create metadata
             self.ome_metadata = create_ome_metadata(ole, self.image_output)
