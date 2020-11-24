@@ -6,8 +6,9 @@ txrm2tiff was created for users of beamline B24 of Diamond Light Source by Thoma
 
 ## Installation
 
-Available on PyPI and conda-forge as `txrm2tiff`. To install using PyPI:
-`python -m pip install txrm2tiff`
+Available on PyPI and conda-forge as `txrm2tiff`. To install:
+- PyPI: `python -m pip install txrm2tiff`
+- conda-forge: `conda install -c conda-forge txrm2tiff`
 
 ## Instructions
 
@@ -19,6 +20,8 @@ Available on PyPI and conda-forge as `txrm2tiff`. To install using PyPI:
 **txrm2tiff setup** {**--windows-shortcut** (WINDOWS ONLY: optional, creates shortcut to .bat file on the desktop for dragndrop processing )}
 
 **txrm2tiff setup -h** or **txrm2tiff setup --help** will give more info
+
+**NOTE:** any commands beginning with `txrm2tiff` are essentially equivalent to usng `python -m txrm2tiff` (arguments will be parsed by the same parser via either method). This may be useful if there were any installation issues.
 
 ---
 

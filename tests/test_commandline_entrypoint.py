@@ -78,10 +78,9 @@ class TestCommandlineEntryPoint(unittest.TestCase):
         run_args = ["txrm2tiff", "setup"]
         with Popen(run_args, stdout=PIPE, stderr=STDOUT, universal_newlines=True) as p:
             stdout, _ = p.communicate()
-        stdout = stdout.strip("\r\n").strip("\n")
-        self.assertIn(f"txrm2tiff setup [-w] [-h]", stdout, msg=f"Actual stdout: {stdout}")
+        stdout = stdout.replace("\r\n", " ").replace("\n", " ")
+        self.assertIn("usage: txrm2tiff setup [-w] [-h]", stdout, msg=f"Actual stdout: {stdout}")
 
-    
     def test_module_without_arguments_returns_help(self):
         run_args = [sys.executable, "-m", "txrm2tiff"]
         path = os.environ["PATH"]
@@ -91,22 +90,38 @@ class TestCommandlineEntryPoint(unittest.TestCase):
         self.assertIn("Converter of txrm/xrm files to OME tif/tiff files", stdout, msg=f"Actual stdout: {stdout}")
 
     def test_module_function_with_args(self):
-        input_arg = "input_file_path"
-        ref_arg = "ref_path"
-        run_args = [sys.executable, "-m", "txrm2tiff", "--input", input_arg, "--reference", ref_arg]
+        input_path = "input_file_path"
+        custom_reference = "ref_path"
+        output_path = None
+        ignore_reference = False
+        logging_level = 1
+        
+        run_args = [sys.executable, "-m", "txrm2tiff", "--input", input_path, "--reference", custom_reference, "--set-logging", str(logging_level)]
         with Popen(run_args, stdout=PIPE, stderr=STDOUT, universal_newlines=True) as p:
             stdout, _ = p.communicate()
-        stdout = stdout.strip("\r\n").strip("\n")
-
-        self.assertIn(f"No such file or directory: {input_arg}", stdout, msg=f"Actual stdout: {stdout}")
+        stdout = stdout.replace("\r\n", " ").replace("\n", " ")
+        self.assertIn(
+            f"Running with arguments: input_path={input_path}, custom_reference={custom_reference}, output_path={output_path}, ignore_reference={ignore_reference}, logging_level={logging_level}",
+            stdout,
+            msg=f"Actual stdout: {stdout}")
+        self.assertIn(f"No such file or directory: {input_path}", stdout, msg=f"Actual stdout: {stdout}")
 
     def test_module_method(self):
-        args = ["path_to/input.txrm"]
-        run_args = [sys.executable, "-m", "txrm2tiff", "-i", args[0]]
+        input_path = "path_to/input.txrm"
+        custom_reference = None
+        output_path = None
+        ignore_reference = False
+        logging_level = 1
+        args = [input_path]
+        run_args = [sys.executable, "-m", "txrm2tiff", "-i", args[0], "--set-logging", str(logging_level)]
         with Popen(run_args, stdout=PIPE, stderr=STDOUT, universal_newlines=True) as p:
             stdout, _ = p.communicate()
-        stdout = stdout.strip("\r\n").strip("\n")
-        self.assertIn(f"No such file or directory: {args[0]}", stdout, msg=f"Actual stdout: {stdout}")
+        stdout = stdout.replace("\r\n", " ").replace("\n", " ")
+        self.assertIn(
+            f"Running with arguments: input_path={input_path}, custom_reference={custom_reference}, output_path={output_path}, ignore_reference={ignore_reference}, logging_level={logging_level}",
+            stdout,
+            msg=f"Actual stdout: {stdout}")
+        self.assertIn(f"No such file or directory: {input_path}", stdout, msg=f"Actual stdout: {stdout}")
 
     def test_module_method_version_number(self):
         run_args = [sys.executable, "-m", "txrm2tiff", "--version"]

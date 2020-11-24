@@ -7,8 +7,11 @@ from .txrm_to_image import TxrmToImage
 
 
 def run(input_path, custom_reference=None, output_path=None, ignore_reference=False, logging_level="info"):
-    create_logger(logging_level.lower())
-
+    create_logger(str(logging_level).lower())
+    logging.debug(
+        "Running with arguments: "
+        "input_path=%s, custom_reference=%s, output_path=%s, ignore_reference=%s, logging_level=%s",
+        input_path, custom_reference, output_path, ignore_reference, logging_level)
     input_filepath = Path(input_path)
     if input_filepath.exists():
         if input_filepath.is_dir():
@@ -19,7 +22,7 @@ def run(input_path, custom_reference=None, output_path=None, ignore_reference=Fa
             _convert_and_save(input_filepath, output_path, custom_reference, ignore_reference)
     else:
         logging.error("No such file or directory: %s", input_path)
-        raise IOError("No such file or directory: {input_file}")
+        raise IOError(f"No such file or directory: {input_path}")
 
 
 def _batch_convert_files(input_filepath, output, ignore_reference):
