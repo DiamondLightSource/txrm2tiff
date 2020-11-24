@@ -79,7 +79,7 @@ class TestCommandlineEntryPoint(unittest.TestCase):
         with Popen(run_args, stdout=PIPE, stderr=STDOUT, universal_newlines=True) as p:
             stdout, _ = p.communicate()
         stdout = stdout.replace("\r\n", " ").replace("\n", " ")
-        self.assertIn(f"usage: txrm2tiff setup [-w] [-h]", stdout, msg=f"Actual stdout: {stdout}")
+        self.assertIn("usage: txrm2tiff setup [-w] [-h]", stdout, msg=f"Actual stdout: {stdout}")
 
     def test_module_without_arguments_returns_help(self):
         run_args = [sys.executable, "-m", "txrm2tiff"]
