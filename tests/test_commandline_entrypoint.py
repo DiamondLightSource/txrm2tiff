@@ -33,7 +33,7 @@ class TestCommandlineEntryPoint(unittest.TestCase):
         sys.argv = ["txrm2tiff"]
         argparse_entrypoint.main()
 
-        mocked_printhelp.assert_called_once()
+        mocked_printhelp.assert_called()
 
     @patch('argparse.ArgumentParser.print_help')
     def test_argparse_function_setup_subpaser(self, mocked_printhelp):
@@ -80,6 +80,13 @@ class TestCommandlineEntryPoint(unittest.TestCase):
             stdout, _ = p.communicate()
         stdout = stdout.replace("\r\n", " ").replace("\n", " ")
         self.assertIn("usage: txrm2tiff setup [-w] [-h]", stdout, msg=f"Actual stdout: {stdout}")
+
+    def test_script_method_inspect_subparser(self):
+        run_args = ["txrm2tiff", "inspect"]
+        with Popen(run_args, stdout=PIPE, stderr=STDOUT, universal_newlines=True) as p:
+            stdout, _ = p.communicate()
+        stdout = " ".join([text.strip() for text in stdout.replace("\r\n", " ").split('\n')])
+        self.assertIn("txrm2tiff inspect [-i INPUT_PATH] [-e] [-l] [-s STREAMS [STREAMS ...]] [-h]", stdout, msg=f"Actual stdout: {stdout}")
 
     def test_module_without_arguments_returns_help(self):
         run_args = [sys.executable, "-m", "txrm2tiff"]

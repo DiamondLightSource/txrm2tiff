@@ -5,6 +5,32 @@ from itertools import takewhile
 from scipy.constants import h, c, e
 import logging
 
+data_type_dict = {
+    1: ("XRM_BIT", None),
+    2:  ("XRM_CHAR", np.byte),
+    3:  ("XRM_UNSIGNED_CHAR", np.ubyte),
+    4:  ("XRM_SHORT", np.short),
+    5:  ("XRM_UNSIGNED_SHORT", np.ushort),
+    6:  ("XRM_INT", np.intc),
+    7:  ("XRM_UNSIGNED_INT", np.uintc),
+    8:  ("XRM_LONG", np.int_),
+    9:  ("XRM_UNSIGNED_LONG", np.uint),
+    10: ("XRM_FLOAT", np.single),
+    11: ("XRM_DOUBLE", np.double),
+    12: ("XRM_STRING", np.str_),
+    13: ("XRM_DATATYPE_SIZE", None)
+}
+
+
+def extract_image_dtype(ole, key_part):
+    key = f"{key_part}/DataType"
+    if ole.exists(key):
+        integer_tuple = read_stream(ole, key, "i")
+        if integer_tuple is not None:
+            return data_type_dict.get(integer_tuple[0], None)
+    else:
+        logging.error("Stream %s does not exist in ole file", key)   
+
 
 # Returns a list of type "dtype".
 def read_stream(ole, key, dtype):
@@ -28,17 +54,16 @@ def extract_single_image(ole, numimage, numrows, numcols):
     # Read the images - They are stored in the txrm as ImageData1 ...
     # Each folder contains 100 images 1-100, 101-200
     img_key = f"ImageData{int(np.ceil(numimage / 100.0))}/Image{numimage}"
+    image_dtype = extract_image_dtype(ole, "ImageInfo")
     if ole.exists(img_key):
         img_stream_bytes = ole.openstream(img_key).getvalue()
         img_stream_length = len(img_stream_bytes)
         img_size = numrows * numcols
-        if (img_stream_length == (img_size * 2)):
-            imgdata = np.frombuffer(img_stream_bytes, dtype=np.uint16)
-        elif (img_stream_length == (img_size * 4)):
-            imgdata = np.frombuffer(img_stream_bytes, dtype=np.float32)
-        else:
-            logging.error("Unexpected data type with %g bytes per pixel", (img_stream_length / img_size))
-            raise TypeError("Reference is stored as unexpected type. Expecting uint16 or float32.")
+        try:
+            imgdata = np.frombuffer(img_stream_bytes, dtype=image_dtype[1])
+        except:
+            logging.error("Image could not be extracted using expected dtype '%s'", image_dtype[0])
+            imgdata = fallback_image_extractor(img_stream_bytes, img_stream_length, img_size)
         imgdata.shape = (numrows, numcols)
         return imgdata
     else:
@@ -71,6 +96,10 @@ def extract_x_coords(ole):
 
 def extract_y_coords(ole):
     return np.asarray(read_stream(ole, "ImageInfo/YPosition", "f"))
+
+
+def extract_z_coords(ole):
+    return np.asarray(read_stream(ole, "ImageInfo/ZPosition", "f"))
 
 
 def extract_exposure_time(ole):
@@ -125,8 +154,11 @@ def extract_xray_magnification(ole):
 
 
 def extract_energy(ole):
-    energies = read_stream(ole, "ImageInfo/Energy", "f")
-    return np.mean(energies)
+    return np.mean(extract_energies(ole))
+
+
+def extract_energies(ole):
+    return read_stream(ole, "ImageInfo/Energy", "f")
 
 
 def extract_wavelength(ole):
@@ -158,6 +190,7 @@ def extract_reference_image(ole):
     # Read the reference image.
     # Reference info is stored under 'ReferenceData/...'
     num_rows, num_columns = extract_ref_dims(ole)
+    ref_dtype = extract_image_dtype(ole, "ReferenceData")
     ref_stream_bytes = ole.openstream("ReferenceData/Image").getvalue()
     img_size = num_rows * num_columns
 
@@ -176,17 +209,14 @@ def extract_reference_image(ole):
         mosaic_size_multiplier = mosaic_rows * mosaic_cols
     else:
         mosaic_size_multiplier = 1
-    ref_stream_length = len(ref_stream_bytes)
-    mosaic_stream_length = ref_stream_length * mosaic_size_multiplier
-    if mosaic_stream_length == img_size * 2:
-        ref_dtype = np.uint16
-    elif mosaic_stream_length == img_size * 4:
-        ref_dtype = np.float32
-    else:
-        logging.error("Unexpected data type with %g bytes per pixel", mosaic_stream_length / img_size)
-        raise TypeError("Reference is stored as unexpected type. Expecting uint16 or float32.")
 
-    refdata = np.frombuffer(ref_stream_bytes, dtype=ref_dtype)
+    try:
+        refdata = np.frombuffer(ref_stream_bytes, dtype=ref_dtype[1])
+    except:
+        logging.error("Image could not be extracted using expected dtype '%s'", ref_dtype[0])
+        ref_stream_length = len(ref_stream_bytes)
+        mosaic_stream_length = ref_stream_length * mosaic_size_multiplier
+        refdata = fallback_image_extractor(ref_stream_bytes, mosaic_stream_length, img_size)
     if is_mosaic:
         refdata = create_reference_mosaic(ole, refdata, num_rows, num_columns, mosaic_rows, mosaic_cols)
     refdata.shape = (num_rows, num_columns)
@@ -198,3 +228,52 @@ def convert_to_int(value):
     if int(value) == float(value):
         return int(value)
     raise ValueError(f"Value '{value}' cannot be converted to an integer")
+
+
+def fallback_image_extractor(stream_bytes, stream_length, image_size):        
+        if stream_length == image_size * 2:
+            dtype = np.uint16
+        elif stream_length == image_size * 4:
+            dtype = np.float32
+        else:
+            logging.error("Unexpected data type with %g bytes per pixel", stream_length / image_size)
+            raise TypeError("Reference is stored as unexpected type. Expecting uint16 or float32.")
+        return np.frombuffer(stream_bytes, dtype=dtype)
+
+
+def get_axis_dict(ole):
+    return dict(zip(
+        get_axis_ids(ole), zip(
+            get_axis_names(ole),
+            get_all_units(ole))
+            ))
+
+
+def get_all_units(ole):
+    return axis_string_helper(ole, "AxisUnits")
+
+
+def get_axis_names(ole):
+    return axis_string_helper(ole, "AxisNames")
+
+
+def axis_string_helper(ole, key_part):
+    if ole.exists(f"PositionInfo/{key_part}"):
+        try:
+            steam_bytes = ole.openstream(f"PositionInfo/{key_part}").getvalue()
+            return [item.decode('utf8') for item in ole.openstream(f"PositionInfo/{key_part}").getvalue().split(b'\x00') if item]
+        except UnicodeDecodeError:
+            logging.error("Unicode failed: %s", ole.openstream(f"PositionInfo/{key_part}").getvalue(), exc_info=True)
+            return [item.decode('iso-8859-1') for item in ole.openstream(f"PositionInfo/{key_part}").getvalue().split(b'\x00') if item]
+    elif ole.exists("AcquisitionSettings/AxisNames"):
+        try:
+            return [item.decode('utf8') for item in ole.openstream(f"AcquisitionSettings/{key_part}").getvalue().split(b'\x00') if item]
+        except UnicodeDecodeError:
+            return [item.decode('iso-8859-1') for item in ole.openstream(f"AcquisitionSettings/{key_part}").getvalue().split(b'\x00') if item]
+
+
+def get_axis_ids(ole):
+    if ole.exists("PositionInfo/IndexToXradiaID"):
+        return read_stream(ole, "PositionInfo/IndexToXradiaID", "i")
+    elif ole.exists("AcquisitionSettings/IndexToXradiaID"):
+        return read_stream(ole, "AcquisitionSettings/IndexToXradiaID", "i")

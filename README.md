@@ -10,16 +10,33 @@ Available on PyPI and conda-forge as `txrm2tiff`. To install:
 - PyPI: `python -m pip install txrm2tiff`
 - conda-forge: `conda install -c conda-forge txrm2tiff`
 
-## Instructions
+### Instructions
 
-**txrm2tiff** **--input** {input file path (required)} {**--reference** reference file path (optional, default=None)} {**--output** path (optional, default=None)} {**--ignore-ref** (optional)} {**--set-logging** (optional, default="info"}
+**txrm2tiff** {**--input** input file path (required)} {**--reference** reference file path (optional, default=None)} {**--output** path (optional, default=None)} {**--ignore-ref** (optional)} {**--set-logging** (optional, default="info"}
 
-**txrm2tiff -h** or **txrm2tiff --help** will give more info
+**txrm2tiff -h** or **txrm2tiff --help** will give more info.
+&nbsp;
 
-- Optional setup arguments:
-**txrm2tiff setup** {**--windows-shortcut** (WINDOWS ONLY: optional, creates shortcut to .bat file on the desktop for dragndrop processing )}
+##### Setup options:
+**txrm2tiff setup** {**--windows-shortcut** (WINDOWS ONLY: optional, creates shortcut to .bat file on the desktop for drag'n'drop processing )}
 
-**txrm2tiff setup -h** or **txrm2tiff setup --help** will give more info
+**txrm2tiff setup -h** or **txrm2tiff setup --help** will give more info.
+&nbsp;
+
+##### Inspector options:
+**txrm2tiff inspect** {**--input** input file path (required)} {**--extra** (optional, default=False)} {**--list-streams** (optional, default=False)} {**--inspect-streams** space separated streams (optional)}
+
+**txrm2tiff inspect --input** or **txrm2tiff inspect -i** followed by the path of a txrm/xrm file will output some basic information about the images contained.
+  - Adding **--extra** or **-e** will add further information to this output.
+  - Adding **--list-streams** or **-l** will list all of the streams\* in addition to the any previous output. This will be a lot so it may be useful to save this to a file using ` > file.txt`.
+  - Adding **--inspect-streams** or **-s** followed by a 1 or more space separated stream names will read each stream using a variety of formats. As txrm and xrm files do not save the streams with information on what data type is being used\*\*, the output will take some interpreting.
+
+**txrm2tiff inspect -h** or **txrm2tiff inspect --help** will give more info.
+
+
+\*xrm and txrm files are '[OLE](https://en.wikipedia.org/wiki/Object_Linking_and_Embedding)' type files. These files to separate and store information in streams.
+
+\*\* with the exception of images, which do get the image data type saved separately.
 
 **NOTE:** any commands beginning with `txrm2tiff` are essentially equivalent to usng `python -m txrm2tiff` (arguments will be parsed by the same parser via either method). This may be useful if there were any installation issues.
 

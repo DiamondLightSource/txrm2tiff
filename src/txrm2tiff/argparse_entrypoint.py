@@ -17,22 +17,50 @@ package_group = parser.add_argument_group("Package info")
 package_group.add_argument('-v', '--version', action='version', version="%(prog)s {}".format(__version__))
 package_group.add_argument('-h', '--help', action='help', help="show this help message and exit")
 
-setup_subparsers = parser.add_subparsers(title="Setup options", description="enter `txrm2tiff setup -h` for details")
-setup_parser = setup_subparsers.add_parser(name="setup", add_help=False)
-setup_parser.add_argument("-w", "--windows-shortcut", action='store_true', help="creates a Windows shortcut on the user's desktop that accepts drag and dropped files (allows batch processing)")
-setup_info_group = setup_parser.add_argument_group("Setup info")
+subparsers = parser.add_subparsers(title="Additional options", help='Additional functionality options')
+inspect_parser = subparsers.add_parser(name="inspect", add_help=False)
+inspect_info_group = inspect_parser.add_argument_group("Inspection options")
+inspect_info_group.add_argument('-i', '--input', dest='input_path', default="", type=str, action='store', help='txrm or xrm file to inspect')
+inspect_info_group.add_argument('-e', '--extra', action='store_true', help="Shows additional file info")
+inspect_info_group.add_argument('-l', '--list-streams', action='store_true', help="List all streams")
+inspect_info_group.add_argument('-s', '--inspect-streams', dest='streams', nargs='+', help="Inspect stream")
+inspect_info_group.add_argument('-h', '--help', action='help', help="show this help message and exit")
+
+setup_parser = subparsers.add_parser(name="setup", add_help=False)
+setup_info_group = setup_parser.add_argument_group("Setup options")
+setup_info_group.add_argument("-w", "--windows-shortcut", action='store_true', help="creates a Windows shortcut on the user's desktop that accepts drag and dropped files (allows batch processing)")
 setup_info_group.add_argument('-h', '--help', action='help', help="show this help message and exit")
 
+
 def main():
-    args = parser.parse_args()
-    if hasattr(args, 'windows_shortcut'):
-        if args.windows_shortcut:
+    if "inspect" in sys.argv:
+        inspect_args = parser.parse_args(namespace=inspect_parser)
+        if inspect_args.input_path:
+            from .inspector import Inspector
+            with Inspector(inspect_args.input_path) as inspector:
+                inspector.inspect(extra=bool(inspect_args.extra))
+                if inspect_args.list_streams:
+                    inspector.list_streams()
+                if inspect_args.streams:
+                    inspector.inspect_streams(*inspect_args.streams)
+                print(inspector.get_text())
+                return
+        else:
+            inspect_parser.print_help()
+            return
+
+    if "setup" in sys.argv:
+        setup_args = parser.parse_args(namespace=setup_parser)
+        if setup_args.windows_shortcut:
             from .shortcut_creator import create_Windows_shortcut
             create_Windows_shortcut()
+            return
         else:
             setup_parser.print_help()
-        return
-    if len(sys.argv) > 1 and args.input_path:
+            return
+
+    args = parser.parse_args()
+    if args.input_path:
         from .run import run
         if not args.custom_reference:
             args.custom_reference = None
@@ -40,3 +68,7 @@ def main():
 
     else:
         parser.print_help()
+        print("\n\n\ntxrm2tiff inspect:\n")
+        inspect_parser.print_help()
+        print("\n\n\ntxrm2tiff setup:\n")
+        setup_parser.print_help()
