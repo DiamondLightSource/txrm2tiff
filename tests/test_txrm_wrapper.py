@@ -37,7 +37,7 @@ class TestTxrmWrapper(unittest.TestCase):
         ole = MagicMock()
         stream = MagicMock()
         ole.openstream.return_value = stream
-        ole.exists.return_value = True
+        ole.exists.side_effect = [True, False]
         stream.getvalue.return_value = struct.pack('<6H', *list(range(6)))
 
         data = txrm_wrapper.extract_single_image(ole, 1, 2, 3)
@@ -50,7 +50,7 @@ class TestTxrmWrapper(unittest.TestCase):
         ole = MagicMock()
         stream = MagicMock()
         ole.openstream.return_value = stream
-        ole.exists.return_value = True
+        ole.exists.side_effect = [True, False]
         stream.getvalue.return_value = struct.pack('<6f', *list(range(6)))
 
         data = txrm_wrapper.extract_single_image(ole, 1, 2, 3)
@@ -63,12 +63,13 @@ class TestTxrmWrapper(unittest.TestCase):
         ole = MagicMock()
         stream = MagicMock()
         ole.openstream.return_value = stream
-        ole.exists.return_value = True
+        ole.exists.side_effect = [True, False]
         stream.getvalue.return_value = struct.pack('<6q', *list(range(6)))
 
         with self.assertRaises(TypeError):
             data = txrm_wrapper.extract_single_image(ole, 1, 2, 3)
             ole.openstream.assert_called_with('ImageData1/Image1')
+            ole.openstream.assert_called_with('ImageInfo/DataType')
 
     def test_read_stream_failure(self):
         ole = MagicMock()
@@ -103,7 +104,7 @@ class TestTxrmWrapper(unittest.TestCase):
     def test_extracts_multiple_images(self):
         ole = MagicMock()
         stream = MagicMock()
-        ole.exists.side_effect = ([True] * 9) + [False]
+        ole.exists.side_effect = ([True] * 5) + ([False, True] * 5) + [False]
         ole.openstream.return_value = stream
         dimensions = [pack_int(i) for i in [2, 3]]
         images = [struct.pack('<6H', *list(range(6)))] * 5
@@ -113,6 +114,23 @@ class TestTxrmWrapper(unittest.TestCase):
         data = txrm_wrapper.extract_all_images(ole)
 
         self.assertEqual(len(data), 5)
+
+
+    def test_extracts_multiple_images_with_dtypes(self):
+        ole = MagicMock()
+        stream = MagicMock()
+        ole.exists.side_effect = ([True] * 5) + ([True, True] * 5) + [False]
+        ole.openstream.return_value = stream
+        dimensions = [pack_int(i) for i in [2, 3]]
+        dtype = pack_int(5)
+        images_and_dtypes = [struct.pack('<6H', *list(range(6))), dtype] * 5
+        images_taken = [pack_int(5)]
+        stream.getvalue.side_effect = dimensions + images_taken + images_and_dtypes
+
+        data = txrm_wrapper.extract_all_images(ole)
+
+        self.assertEqual(len(data), 5)
+
 
 
     def test_extracts_tilt_angles(self):

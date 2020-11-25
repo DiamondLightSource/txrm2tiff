@@ -20,6 +20,9 @@ def _apply_reference(images, reference):
         if np.isnan(image).any() or np.isinf(image).any():
             logging.warning("Potential dead pixels found. "
                             "NaN was output for at least one pixel in the referenced image.")
+            # Replace any infinite pixels (nan or inf) with 0:
+            invalid = np.where(np.logical_not(np.isfinite(image)))
+            image[invalid] = 0
         referenced_image.append(np.around(image))
     return referenced_image
 
