@@ -47,21 +47,21 @@ def create_Windows_shortcut():
     if os.name != "nt":
         logging.error("This command is only valid on Windows installations.")
         return 
-    else:
-        # Place link on users desktop
-        shortcut_path = _get_Windows_home_path() / "Desktop" / "txrm2tiff.lnk"
-        msg = f"Creating shortcut on user desktop: {shortcut_path}"
-        logging.info(msg)
-        if shortcut_path.exists():
-            msg = f"Existing txrm2tiff shortcut found:'{shortcut_path}'. Are you sure you want to replace it? (y/N)"
-            user_input = str(input(msg))
-            logging.debug(msg)
-            logging.debug("User input: %s", user_input)
-            if user_input.lower() == "y" or user_input.lower() == "yes":
-                logging.info("The existing shortcut will be replaced.")
-            elif user_input.lower() == "n" or user_input.lower() == "no":
-                logging.info("The existing shortcut will not be modified.")
-            else:
-                logging.info("Invalid input: %s. The existing shortcut will not be modified.", user_input)
-                return
-        _create_lnk_file(shortcut_path)
+    # Place link on users desktop
+    shortcut_path = _get_Windows_home_path() / "Desktop" / "txrm2tiff.lnk"
+    msg = f"Creating shortcut on user desktop: {shortcut_path}"
+    logging.info(msg)
+    if shortcut_path.exists():
+        msg = f"Existing txrm2tiff shortcut found:'{shortcut_path}'. Are you sure you want to replace it? (y/N)"
+        user_input = str(input(msg))
+        logging.debug(msg)
+        logging.debug("User input: %s", user_input)
+        if user_input.lower() == "y" or user_input.lower() == "yes":
+            logging.info("The existing shortcut will be replaced.")
+        elif user_input.lower() == "n" or user_input.lower() == "no":
+            logging.info("The existing shortcut will not be modified.")
+            return
+        else:
+            logging.info("Invalid input: %s. The existing shortcut will not be modified.", user_input)
+            return
+    _create_lnk_file(shortcut_path)

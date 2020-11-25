@@ -24,9 +24,9 @@ class TestTxrmToImageSimple(unittest.TestCase):
         num_images = 5
         images = [np.array([[0, 2, 4], [6, 8, 10]])] * num_images
         reference = np.arange(6).reshape(2, 3)
-        resultant_images = _apply_reference(images, reference, np.uint16)
+        resultant_images = _apply_reference(images, reference)
         self.assertEqual(len(resultant_images), num_images, msg="The result is the wrong length")
-        expected_image = np.array([[0, 200, 200], [200, 200, 200]])
+        expected_image = np.array([[0, 200, 200], [200, 200, 200]]).astype(resultant_images[0].dtype)
         for image in resultant_images:
             assert_array_equal(image, expected_image, err_msg="The result does not match the expected result")
  
