@@ -237,10 +237,28 @@ def fallback_image_extractor(stream_bytes, stream_length, image_size):
 
 
 def get_axis_dict(ole):
-    return dict(zip(
-        get_axis_ids(ole), zip(
-            get_axis_names(ole),
-            get_all_units(ole))
+    """
+    Gets a dictionary of all Xradia axis IDs found within the file, with a tuple of (axis name, unit) for each.
+    If this fails, it returns a dictionary with keys 1-30 and a tuple of (None, None) for axis names and units.
+
+    Args:
+        ole: ole file object
+
+    Returns:
+        dict: a dictionary with the Xradia axis IDs (ints) as keys and a tuple of (axis name, unit) as the value.
+    """
+    ids_ = get_axis_ids(ole)
+    names = get_axis_names(ole)
+    units = get_all_units(ole)
+    
+    if (len(ids_) > 0 and len(ids_) == len(names) and len(names) == len(units)):
+        return dict(zip(
+            get_axis_ids(ole), zip(get_axis_names(ole), get_all_units(ole))
+                ))
+    else:
+        num_axes = 30
+        return dict(zip(
+            range(1, num_axes + 1), [(None, None)] * num_axes
             ))
 
 
