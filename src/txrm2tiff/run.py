@@ -6,26 +6,26 @@ from .logger import create_logger
 from .txrm_to_image import TxrmToImage
 
 
-def run(input_path, custom_reference=None, output_path=None, ignore_reference=False, logging_level="info"):
+def run(input_path, custom_reference=None, output_path=None, data_type=None, ignore_reference=False, logging_level="info"):
     create_logger(str(logging_level).lower())
     logging.debug(
         "Running with arguments: "
-        "input_path=%s, custom_reference=%s, output_path=%s, ignore_reference=%s, logging_level=%s",
-        input_path, custom_reference, output_path, ignore_reference, logging_level)
+        "input_path=%s, custom_reference=%s, output_path=%s, data_type=%s, ignore_reference=%s, logging_level=%s",
+        input_path, custom_reference, output_path, data_type, ignore_reference, logging_level)
     input_filepath = Path(input_path)
     if input_filepath.exists():
         if input_filepath.is_dir():
             logging.info("Converting files in directory '%s'", input_path)
-            _batch_convert_files(input_filepath, output_path, ignore_reference)
+            _batch_convert_files(input_filepath, output_path, data_type, ignore_reference)
         else:
             logging.info("Converting file '%s'", input_path)
-            _convert_and_save(input_filepath, output_path, custom_reference, ignore_reference)
+            _convert_and_save(input_filepath, output_path, custom_reference, data_type, ignore_reference)
     else:
         logging.error("No such file or directory: %s", input_path)
         raise IOError(f"No such file or directory: {input_path}")
 
 
-def _batch_convert_files(input_filepath, output, ignore_reference):
+def _batch_convert_files(input_filepath, output, data_type, ignore_reference):
     filepath_list = list(input_filepath.rglob("*xrm"))
     logging.info(f"Batch converting files {[filepath.name for filepath in filepath_list]}")
     if output is not None and Path(output).is_dir():
@@ -41,14 +41,14 @@ def _batch_convert_files(input_filepath, output, ignore_reference):
         output_path_list = [_define_output_suffix(filepath) for filepath in filepath_list]
         
     for filepath, output_path in zip(filepath_list, output_path_list):
-        _convert_and_save(filepath, output_path, None, ignore_reference)
+        _convert_and_save(filepath, output_path, None, data_type, ignore_reference)
 
 
-def _convert_and_save(input_filepath, output, custom_reference, ignore_reference):
+def _convert_and_save(input_filepath, output, custom_reference, data_type, ignore_reference):
     converter = _convert_file(input_filepath, custom_reference, ignore_reference)
     if converter is not None:
         output_path = _decide_output(input_filepath, output)
-        converter.save(output_path)
+        converter.save(output_path, data_type)
 
 
 def _convert_file(input_filepath, custom_reference, ignore_reference):
