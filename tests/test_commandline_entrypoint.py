@@ -53,11 +53,23 @@ class TestCommandlineEntryPoint(unittest.TestCase):
         with patch('txrm2tiff.run.run', MagicMock()) as mock_run:
             mock_run.return_value = None
             input_arg = "input_path"
-            ref_arg = "ref_path"
-            sys.argv =["txrm2tiff", "--input", input_arg, "--reference", ref_arg]
+            ref_arg = None
+            data_type_arg = None
+            sys.argv =["txrm2tiff", "--input", input_arg]
             argparse_entrypoint.main()
 
-            mock_run.assert_called_once_with(input_path=input_arg, custom_reference=ref_arg, output_path=None, ignore_reference=False, logging_level='info')
+            mock_run.assert_called_once_with(input_path=input_arg, custom_reference=ref_arg, output_path=None, data_type=data_type_arg, ignore_reference=False, logging_level='info')
+
+    def test_argparse_function_with_all_args(self):
+        with patch('txrm2tiff.run.run', MagicMock()) as mock_run:
+            mock_run.return_value = None
+            input_arg = "input_path"
+            ref_arg = "ref_path"
+            data_type_arg = "uint16"
+            sys.argv =["txrm2tiff", "--input", input_arg, "--reference", ref_arg, "--datatype", data_type_arg]
+            argparse_entrypoint.main()
+
+            mock_run.assert_called_once_with(input_path=input_arg, custom_reference=ref_arg, output_path=None, data_type=data_type_arg, ignore_reference=False, logging_level='info')
 
     def test_script_method(self):
         args = ["path_to/input.txrm"]
@@ -100,6 +112,7 @@ class TestCommandlineEntryPoint(unittest.TestCase):
         input_path = "input_file_path"
         custom_reference = "ref_path"
         output_path = None
+        data_type = None
         ignore_reference = False
         logging_level = 1
         
@@ -108,7 +121,7 @@ class TestCommandlineEntryPoint(unittest.TestCase):
             stdout, _ = p.communicate()
         stdout = stdout.replace("\r\n", " ").replace("\n", " ")
         self.assertIn(
-            f"Running with arguments: input_path={input_path}, custom_reference={custom_reference}, output_path={output_path}, ignore_reference={ignore_reference}, logging_level={logging_level}",
+            f"Running with arguments: input_path={input_path}, custom_reference={custom_reference}, output_path={output_path}, data_type={data_type}, ignore_reference={ignore_reference}, logging_level={logging_level}",
             stdout,
             msg=f"Actual stdout: {stdout}")
         self.assertIn(f"No such file or directory: {input_path}", stdout, msg=f"Actual stdout: {stdout}")
@@ -117,6 +130,7 @@ class TestCommandlineEntryPoint(unittest.TestCase):
         input_path = "path_to/input.txrm"
         custom_reference = None
         output_path = None
+        data_type = None
         ignore_reference = False
         logging_level = 1
         args = [input_path]
@@ -125,7 +139,7 @@ class TestCommandlineEntryPoint(unittest.TestCase):
             stdout, _ = p.communicate()
         stdout = stdout.replace("\r\n", " ").replace("\n", " ")
         self.assertIn(
-            f"Running with arguments: input_path={input_path}, custom_reference={custom_reference}, output_path={output_path}, ignore_reference={ignore_reference}, logging_level={logging_level}",
+            f"Running with arguments: input_path={input_path}, custom_reference={custom_reference}, output_path={output_path}, data_type={data_type}, ignore_reference={ignore_reference}, logging_level={logging_level}",
             stdout,
             msg=f"Actual stdout: {stdout}")
         self.assertIn(f"No such file or directory: {input_path}", stdout, msg=f"Actual stdout: {stdout}")

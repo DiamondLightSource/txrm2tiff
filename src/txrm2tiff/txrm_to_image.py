@@ -13,8 +13,14 @@ from oxdls import OMEXML
 from . import txrm_wrapper
 
 
+dtype_dict = {
+    'uint16': np.uint16,
+    'float32': np.float32,
+    'float64': np.float64
+}
+
 def _apply_reference(images, reference):
-    floated_and_referenced = [(image * 100.) / reference for image in images]
+    floated_and_referenced = [((image * 100.) / reference) for image in images]
     referenced_image = []
     for image in floated_and_referenced:
         if np.isnan(image).any() or np.isinf(image).any():
@@ -23,6 +29,8 @@ def _apply_reference(images, reference):
             # Replace any infinite pixels (nan or inf) with 0:
             invalid = np.where(np.logical_not(np.isfinite(image)))
             image[invalid] = 0
+            # convert to float32 as divide returns float64
+            image = image.astype(np.float32)
         referenced_image.append(np.around(image))
     return referenced_image
 
@@ -77,11 +85,22 @@ def _stitch_images(img_list, mosaic_xy_shape, fast_axis):
     return [final_image]
 
 
-def manual_save(tiff_file, image, metadata=None):
+def manual_save(tiff_file, image, data_type=None, metadata=None):
     tiff_path = Path(tiff_file)
 
+    if data_type is not None:
+        try:
+            dtype = np.dtype(data_type).type
+            image = [frame.astype(dtype) for frame in image]
+        except Exception as e:
+            logging.error("Invalid data type given: %s aka %s. Saving with default data type.", data_type, dtype)
+    else:
+        logging.error("No data type specified. Saving with default data type.")
+
     if metadata is not None:
-        metadata.image().set_Name(tiff_path.name)
+        meta_img = metadata.image()
+        meta_img.Pixels.set_PixelType(str(image[0].dtype))
+        meta_img.set_Name(tiff_path.name)
         metadata = metadata.to_xml().encode()
 
     tiff_dir = tiff_path.resolve().parent
@@ -247,9 +266,9 @@ class TxrmToImage:
         return self.image_output, self.ome_metadata
 
 
-    def save(self, tiff_file):
+    def save(self, tiff_file, data_type=None):
         if (self.image_output is not None) and (self.ome_metadata is not None):
-            manual_save(tiff_file, self.image_output, self.ome_metadata)
+            manual_save(tiff_file, self.image_output, data_type, self.ome_metadata)
         else:
             logging.error("Nothing to save! Please convert the image first")
             raise IOError("Nothing to save! Please convert the image first")

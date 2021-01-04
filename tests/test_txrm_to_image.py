@@ -9,6 +9,7 @@ import numpy as np
 import os
 import logging
 import sys
+import tifffile as tf
 from pathlib import Path
 from functools import partial
 from shutil import rmtree
@@ -30,6 +31,16 @@ class TestTxrmToImageSimple(unittest.TestCase):
         for image in resultant_images:
             assert_array_equal(image, expected_image, err_msg="The result does not match the expected result")
  
+    def test_referenced_image_is_float32(self):
+        expected_dtype = np.float32
+        num_images = 5
+        images = [np.array([[0, 2, 4], [6, 8, 10]])] * num_images
+        reference = np.arange(6).reshape(2, 3)
+        resultant_images = _apply_reference(images, reference)
+        self.assertEqual(len(resultant_images), num_images, msg="The result is the wrong length")
+        for image in resultant_images:
+            self.assertEqual(image.dtype, expected_dtype, msg=f"The dtype is {image.dtype} not {expected_dtype}")
+
     @patch('txrm2tiff.txrm_to_image.txrm_wrapper')
     def test_metadata_created_correctly(self, mocked_extractor):
         dims = (45, 40, 1)
@@ -201,6 +212,26 @@ class TestTxrmToImageWithFiles(unittest.TestCase):
 
         converter.convert(test_file, None, False)
         converter.save(output_path)
+
+        self.assertTrue(output_path.exists())
+
+
+    def test_converts_to_tiff_with_dtype(self):
+        test_file = test_files[0][0]
+        dtypes = ['uint16', 'float32', 'float64', np.float32, np.float64, np.uint16]
+        logging.debug("Running with file %s", test_file)
+        converter = TxrmToImage()
+
+        converter.convert(test_file, None, False)
+        for dtype in dtypes:
+            output_path = self.processed_path / (test_file.parent / f"{test_file.stem}_{dtype}.ome.tiff").relative_to(self.raw_path)
+            # Make processed/ subfolders:
+            output_path.parent.mkdir(parents=True, exist_ok=True)
+            converter.save(output_path, data_type=dtype)
+            self.assertTrue(output_path.exists())
+            with tf.TiffFile(str(output_path)) as tif:
+                a = tif.asarray()
+            self.assertEqual(a.dtype, np.dtype(dtype), msg=f"dtype is {a.dtype} not {dtype}")
 
         self.assertTrue(output_path.exists())
 

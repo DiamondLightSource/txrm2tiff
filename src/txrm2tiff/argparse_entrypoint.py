@@ -7,9 +7,10 @@ from .__init__ import __version__
 
 parser = argparse.ArgumentParser(prog="txrm2tiff", description="Converter of txrm/xrm files to OME tif/tiff files", add_help=False)
 convert_group = parser.add_argument_group("Converter arguments")
-convert_group.add_argument('-i', '--input', dest='input_path', default="", type=str, action='store', help='txrm or xrm file to convert, or directory containing txrm and/or xrm files')
-convert_group.add_argument('-r', '--reference', dest='custom_reference', default="", type=str, action='store', help='specify a custom file (tiff, txrm or xrm) for reference (ignores internal reference)')
+convert_group.add_argument('-i', '--input', dest='input_path', default=None, type=str, action='store', help='txrm or xrm file to convert, or directory containing txrm and/or xrm files')
+convert_group.add_argument('-r', '--reference', dest='custom_reference', default=None, type=str, action='store', help='specify a custom file (tiff, txrm or xrm) for reference (ignores internal reference)')
 convert_group.add_argument('-o', '--output-path', dest='output_path', default=None, action='store', help='specify output (can be directory or file) - specified directories that do not exist will be created')
+convert_group.add_argument('-d', '--datatype', dest='data_type', default=None, action='store', choices=['uint16', 'float32', 'float64'], help='specify output data type (default: decides data type from input)')
 convert_group.add_argument('--ignore-ref', dest='ignore_reference', default=False, action='store_true', help='if specified ignore any internal reference')
 convert_group.add_argument('--set-logging', dest='logging_level', default="info", type=str, action='store', help='pick logging level (options: debug, info, warning, error, critical)')
 
@@ -62,8 +63,6 @@ def main():
     args = parser.parse_args()
     if args.input_path:
         from .run import run
-        if not args.custom_reference:
-            args.custom_reference = None
         run(**vars(args))
 
     else:
