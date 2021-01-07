@@ -1,7 +1,8 @@
 import unittest
 from unittest.mock import MagicMock, patch
-from numpy.testing import assert_array_equal
+from numpy.testing import assert_array_equal, assert_array_almost_equal
 from datetime import datetime
+from random import randint
 
 from parameterized import parameterized
 
@@ -126,28 +127,34 @@ class TestTxrmToImageSimple(unittest.TestCase):
     @patch('txrm2tiff.txrm_to_image.isOleFile', MagicMock(return_value=True))
     @patch('txrm2tiff.txrm_to_image.OleFileIO')
     @patch('txrm2tiff.txrm_wrapper.extract_all_images')
-    def test_get_reference_custom_median(self, mocked_extractor, mocked_olefile):
+    def test_get_reference_custom_despeckle_ave(self, mocked_extractor, mocked_olefile):
         custom_reference = []
         ole = MagicMock()
-        for i in range(1, 5):
-            custom_reference.append(np.full((5,5), i))
-        custom_reference.append(np.full((5,5), 7))
+        dims = (250, 250)
+        speckle_per_frame = 5
+        mid_point = 10
+        for i in range(0, mid_point * 2 + 1):
+            speckle_array = np.full(dims, i)
+            for _ in range(speckle_per_frame):
+                speckle_idx = (randint(0, dims[0] - 1), randint(0, dims[1] - 1))
+                speckle_array[speckle_idx] = i * randint(500, 1000)  # Should be well beyond 2.8 standard devs
+            custom_reference.append(speckle_array)
         mocked_extractor.return_value = custom_reference
         ref_ole = MagicMock()
         mocked_olefile.return_value = ref_ole
-        ref = _get_reference(ole, "txrm_name", ref_ole, ignore_reference=False)
-        assert_array_equal(ref, custom_reference[2])
+        ref = _get_reference(ole, "txrm_name", Path("ref/path.txrm"), ignore_reference=False)
+        assert_array_almost_equal(ref, np.full(dims, mid_point, dtype=np.float32), decimal=0)
 
     @patch('txrm2tiff.txrm_to_image.isOleFile', MagicMock(return_value=True))
     @patch('txrm2tiff.txrm_to_image.OleFileIO')
-    @patch('txrm2tiff.txrm_wrapper.extract_all_images') 
+    @patch('txrm2tiff.txrm_wrapper.extract_all_images')
     def test_get_reference_custom_flat(self, mocked_extractor, mocked_olefile):
         ole = MagicMock()
         custom_reference = [np.full((5,5), 4)]
         mocked_extractor.return_value = custom_reference
         ref_ole = MagicMock()
         mocked_olefile.return_value = ref_ole
-        ref = _get_reference(ole, "txrm_name", ref_ole, ignore_reference=False)
+        ref = _get_reference(ole, "txrm_name", Path("ref/path.txrm"), ignore_reference=False)
         assert_array_equal(ref, custom_reference[0])
 
 

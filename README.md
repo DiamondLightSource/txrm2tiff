@@ -61,7 +61,7 @@ If no output path is supplied, the output file will be placed at the input path 
 Saves "input.ome.tiff" with reference applied, if available.
 
 `txrm2tiff -i input.txrm -r ref_stack.txrm`
-Saves "input.ome.tiff" with custom reference applied using the median of a txrm stack.
+Saves "input.ome.tiff" with a reference image applied from running Despeckle \& Average on the the txrm stack. This Despeckle \& Average algorithm is near-identical to the Zeiss algorithm, based on their logic.
 
 `txrm2tiff --input input.txrm --reference ref_single.xrm --ignore-ref`
 Saves "input.ome.tiff" with custom reference applied from a single image (e.g. a Despeckled_Ave.xrm file). If a custom reference is supplied, the ignore reference argument will be ignored.
