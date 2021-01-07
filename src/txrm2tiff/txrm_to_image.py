@@ -19,6 +19,59 @@ dtype_dict = {
     'float64': np.float64
 }
 
+def _dynamic_despeckle_and_average_series(images, average=True):
+    """
+    Despeckle and average a series of images (requires min 3 images)
+    This uses the same or similar logic to Xradia/Zeiss' API.
+
+    Args:
+        images (list): List of 2D numpy arrays
+        average (bool, optional): Defaults to True.
+
+    Returns:
+        numpy array: single image (2D array) containing despeckle and averaged data
+    """
+    from os import name
+    import ctypes as ct
+    if name == "nt":
+        libc = ct.cdll.msvcrt
+    else:
+        libc = ct.cdll.LoadLibrary("libc.so.6")
+    libc.memcpy.argtypes = [ct.c_void_p, ct.c_void_p, ct.c_size_t]
+    
+    nimages = len(images)
+    if nimages < 3:
+        logging.error('Despeckle averaging requires a minimum of 3 images')
+        return None
+    # Takes a list of XradiaData.FloatArray as input
+    # outputs a 2D ndarray
+    height, width = images[0].shape
+    block = np.asarray([image.flatten() for image in images], dtype=np.float32)
+    # Sort pixels stack-wise
+    vals = np.sort(block, axis=0)
+    # Set number of sorted frames to split off
+    maligned_idxs = [nimages-1]
+    if nimages >= 9:
+        maligned_idxs.extend([nimages-2, nimages-3, 0])
+        good_vals = vals[1: -3]
+    else:
+        good_vals = vals[:-1]
+    maligned = vals[maligned_idxs, :]
+    # Calculate mean and sigma of 'good' pixels
+    mean = np.mean(good_vals, axis=0, keepdims=True)
+    sigma = np.std(good_vals, axis=0, ddof=1, keepdims=True)
+    # Create boolean mask for cutting out 'bad' pixels
+    bad_pixels = np.fabs(maligned - mean) > 2.8 * sigma
+    # Set bad pixels to nan and apply to vals
+    maligned[bad_pixels] = np.nan
+    vals[maligned_idxs] = maligned
+    # Get stack-wise mean (ignoring invalid nans)
+    output_image = np.nanmean(vals, axis=0, dtype=np.float32)
+    if not average:
+        output_image *= nimages
+    return output_image.reshape(height, width)
+
+
 def _apply_reference(images, reference):
     floated_and_referenced = [((image * 100.) / reference) for image in images]
     referenced_image = []
@@ -47,14 +100,15 @@ def _get_reference(ole, txrm_name, custom_reference, ignore_reference):
                 with tf.TiffFile(reference_path) as tif:
                     references = [page for page in tif.pages[:]]
             else:
-                logging.error("Unable to open file '%s'. Only tif/tiff or xrm/txrm files are supported for custom references.", reference_path)
-                raise IOError(f"Unable to open file '{reference_path}'. Only tif/tiff or xrm/txrm files are supported for custom references.")
+                msg = f"Unable to open file '{reference_path}'. Only tif/tiff or xrm/txrm files are supported for custom references."
+                logging.error(msg)
+                raise IOError(msg)
         except:
             logging.error("Error occurred reading custom reference", exc_info=True)
             raise
         if len(references) > 1:
             # if reference file is an image stack take median of the images
-            return np.median(np.asarray(references), axis=0)
+            return _dynamic_despeckle_and_average_series(references)
         return references[0]
 
     elif ole.exists("ReferenceData/Image") and not ignore_reference:
