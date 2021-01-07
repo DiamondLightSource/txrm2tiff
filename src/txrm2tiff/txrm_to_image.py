@@ -31,14 +31,6 @@ def _dynamic_despeckle_and_average_series(images, average=True):
     Returns:
         numpy array: single image (2D array) containing despeckle and averaged data
     """
-    from os import name
-    import ctypes as ct
-    if name == "nt":
-        libc = ct.cdll.msvcrt
-    else:
-        libc = ct.cdll.LoadLibrary("libc.so.6")
-    libc.memcpy.argtypes = [ct.c_void_p, ct.c_void_p, ct.c_size_t]
-    
     nimages = len(images)
     if nimages < 3:
         logging.error('Despeckle averaging requires a minimum of 3 images')
