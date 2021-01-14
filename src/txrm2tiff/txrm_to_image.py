@@ -138,7 +138,7 @@ def manual_save(tiff_file, image, data_type=None, metadata=None):
         except Exception as e:
             logging.error("Invalid data type given: %s aka %s. Saving with default data type.", data_type, dtype)
     else:
-        logging.error("No data type specified. Saving with default data type.")
+        logging.warning("No data type specified. Saving with default data type.")
 
     if metadata is not None:
         meta_img = metadata.image()
