@@ -130,13 +130,13 @@ def _stitch_images(img_list, mosaic_xy_shape, fast_axis):
 
 def manual_save(tiff_file, image, data_type=None, metadata=None):
     tiff_path = Path(tiff_file)
-
+    image = np.asarray(image)
     if data_type is not None:
         try:
             dtype = np.dtype(data_type).type
             if dtype == np.uint16 and isinstance(image.flat[0], np.floating):
                 image = np.around(image, decimals=0)
-            image = [frame.astype(dtype) for frame in image]
+            image = image.astype(dtype)
         except Exception as e:
             logging.error("Invalid data type given: %s aka %s. Saving with default data type.", data_type, dtype)
     else:
@@ -144,7 +144,7 @@ def manual_save(tiff_file, image, data_type=None, metadata=None):
 
     if metadata is not None:
         meta_img = metadata.image()
-        meta_img.Pixels.set_PixelType(str(image[0].dtype))
+        meta_img.Pixels.set_PixelType(str(image.dtype))
         meta_img.set_Name(tiff_path.name)
         metadata = metadata.to_xml().encode()
 
