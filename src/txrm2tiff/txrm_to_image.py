@@ -134,6 +134,8 @@ def manual_save(tiff_file, image, data_type=None, metadata=None):
     if data_type is not None:
         try:
             dtype = np.dtype(data_type).type
+            if dtype == np.uint16 and isinstance(image.flat[0], np.floating):
+                image = np.around(image, decimals=0)
             image = [frame.astype(dtype) for frame in image]
         except Exception as e:
             logging.error("Invalid data type given: %s aka %s. Saving with default data type.", data_type, dtype)
