@@ -154,7 +154,7 @@ def manual_save(tiff_file, image, data_type=None, metadata=None):
     num_frames = len(image)
     logging.info("Saving image as %s with %i frames", tiff_path.name, num_frames)
 
-    with tf.TiffWriter(str(tiff_path)) as tif:
+    with tf.TiffWriter(str(tiff_path), bigtiff=True) as tif:
         tif.save(image[0], photometric='minisblack', description=metadata, metadata={'axes':'XYZCT'})
         for i in range(1, num_frames):
             tif.save(image[i], photometric='minisblack', metadata={'axes':'XYZCT'})
