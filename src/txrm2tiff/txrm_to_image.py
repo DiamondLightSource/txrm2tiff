@@ -70,8 +70,7 @@ def _apply_reference(images, reference):
         logging.warning("Potential dead pixels found. "
                         "NaN was output for at least one pixel in the referenced image.")
         # Replace any infinite pixels (nan or inf) with 0:
-        invalid = np.where(np.logical_not(np.isfinite(floated_and_referenced)))
-        floated_and_referenced[invalid] = 0
+        floated_and_referenced[~np.isfinite(floated_and_referenced)] = 0
     # convert to float32 as divide returns float64
     floated_and_referenced = floated_and_referenced.astype(np.float32)
     return [image for image in floated_and_referenced]
