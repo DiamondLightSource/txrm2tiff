@@ -131,17 +131,7 @@ def _stitch_images(img_list, mosaic_xy_shape, fast_axis):
 def manual_save(tiff_file, image, data_type=None, metadata=None):
     tiff_path = Path(tiff_file)
     image = np.asarray(image)
-    if data_type is not None:
-        try:
-            dtype = np.dtype(data_type).type
-            if dtype == np.uint16 and isinstance(image.flat[0], np.floating):
-                image = np.around(image, decimals=0)
-            image = image.astype(dtype)
-        except Exception as e:
-            logging.error("Invalid data type given: %s aka %s. Saving with default data type.", data_type, dtype)
-    else:
-        logging.warning("No data type specified. Saving with default data type.")
-
+    image = _cast_to_dtype(image, data_type)
     if metadata is not None:
         meta_img = metadata.image()
         meta_img.Pixels.set_PixelType(str(image.dtype))
@@ -157,6 +147,30 @@ def manual_save(tiff_file, image, data_type=None, metadata=None):
         tif.save(image[0], photometric='minisblack', description=metadata, metadata={'axes':'XYZCT'})
         for i in range(1, num_frames):
             tif.save(image[i], photometric='minisblack', metadata={'axes':'XYZCT'})
+
+
+def _cast_to_dtype(image, data_type):
+    if data_type is not None:
+        try:
+            dtype = np.dtype(data_type).type
+            if np.issubdtype(dtype, np.integer) and np.issubdtype(image.dtype, np.floating):
+                dtype_info = np.iinfo(dtype)
+                img_min, img_max = image.min(), image.max()
+                if round(dtype_info.min) > img_min:
+                    logging.warning(
+                        "Image min %f below %s minimum of %i, values below this will be cut off",
+                        img_min, dtype, dtype_info.min)
+                if round(dtype_info.max, 0) < img_max:
+                    logging.warning(
+                        "Image max %f above %s maximum of %i, values above this will be cut off",
+                        img_max, dtype, dtype_info.max)
+            return np.around(image, decimals=0).astype(dtype)
+        except Exception:
+            logging.error("Invalid data type given: %s aka %s. Saving with default data type.", data_type, dtype)
+    else:
+        logging.warning("No data type specified. Saving with default data type.")
+    return image
+
 
 def create_ome_metadata(ole, image_list, filename=None):
     # Get image dimensions
