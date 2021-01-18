@@ -71,7 +71,7 @@ def _apply_reference(images, reference):
                         "NaN was output for at least one pixel in the referenced image.")
         # Replace any infinite pixels (nan or inf) with 0:
         _conditional_replace(floated_and_referenced, 0, lambda x: ~np.isfinite(x))
-    return [image for image in floated_and_referenced]
+    return [image for image in floated_and_referenced.astype(np.float32)]
 
 
 def _conditional_replace(array, replacement, condition_func):
