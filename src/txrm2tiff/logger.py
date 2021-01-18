@@ -23,7 +23,7 @@ def create_logger(input_level):
         logging.error(e)
 
     date_format = "%H:%M:%S %d-%m-%Y"
-    log_format = "%(module)s.%(funcName)s - %(levelname)s: %(message)s"
+    log_format = "%(levelname)8s: %(message)s"
     logging_format = logging.Formatter(log_format, date_format)
 
     logger = logging.getLogger()
