@@ -65,14 +65,12 @@ def _dynamic_despeckle_and_average_series(images, average=True):
 
 
 def _apply_reference(images, reference):
-    floated_and_referenced = np.asarray(images) * 100 / reference
+    floated_and_referenced = np.asarray(images, dtype=np.float32) * 100. / reference
     if np.isnan(floated_and_referenced).any() or np.isinf(floated_and_referenced).any():
         logging.warning("Potential dead pixels found. "
                         "NaN was output for at least one pixel in the referenced image.")
         # Replace any infinite pixels (nan or inf) with 0:
-        _conditional_replace(floated_and_referenced, 0, lambda x: ~(np.isfinite(x)))
-    # convert to float32 as divide returns float64
-    floated_and_referenced = floated_and_referenced.astype(np.float32)
+        _conditional_replace(floated_and_referenced, 0, lambda x: ~np.isfinite(x))
     return [image for image in floated_and_referenced]
 
 
@@ -104,7 +102,7 @@ def _get_reference(ole, txrm_name, custom_reference, ignore_reference):
         return references[0]
 
     elif ole.exists("ReferenceData/Image") and not ignore_reference:
-        logging.info("internal reference will be applied to %s", txrm_name)
+        logging.info("Internal reference will be applied to %s", txrm_name)
         return txrm_wrapper.extract_reference_image(ole)
 
     logging.debug("%s is being processed without a reference.", txrm_name)
