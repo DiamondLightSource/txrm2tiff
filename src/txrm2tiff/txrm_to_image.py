@@ -70,10 +70,14 @@ def _apply_reference(images, reference):
         logging.warning("Potential dead pixels found. "
                         "NaN was output for at least one pixel in the referenced image.")
         # Replace any infinite pixels (nan or inf) with 0:
-        floated_and_referenced[~np.isfinite(floated_and_referenced)] = 0
+        _conditional_replace(floated_and_referenced, 0, lambda x: ~(np.isfinite(x)))
     # convert to float32 as divide returns float64
     floated_and_referenced = floated_and_referenced.astype(np.float32)
     return [image for image in floated_and_referenced]
+
+
+def _conditional_replace(array, replacement, condition_func):
+    array[condition_func(array)] = replacement
 
 
 def _get_reference(ole, txrm_name, custom_reference, ignore_reference):
@@ -151,18 +155,21 @@ def manual_save(tiff_file, image, data_type=None, metadata=None):
 def _cast_to_dtype(image, data_type):
     if data_type is not None:
         try:
-            dtype = np.dtype(data_type).type
+            dtype = np.dtype(data_type)
             if np.issubdtype(dtype, np.integer) and np.issubdtype(image.dtype, np.floating):
                 dtype_info = np.iinfo(dtype)
-                img_min, img_max = image.min(), image.max()
-                if round(dtype_info.min) > img_min:
+                # Round min/max to avoid this warning when the issue is just going to be rounded away.
+                img_min, img_max = round(image.min()), round(image.max())
+                if dtype_info.min > img_min:
                     logging.warning(
                         "Image min %f below %s minimum of %i, values below this will be cut off",
                         img_min, dtype, dtype_info.min)
-                if round(dtype_info.max, 0) < img_max:
+                    _conditional_replace(image, dtype_info.min, lambda x: x < dtype_info.min)
+                if dtype_info.max < img_max:
                     logging.warning(
                         "Image max %f above %s maximum of %i, values above this will be cut off",
                         img_max, dtype, dtype_info.max)
+                    _conditional_replace(image, dtype_info.max, lambda x: x > dtype_info.max)
             return np.around(image, decimals=0).astype(dtype)
         except Exception:
             logging.error("Invalid data type given: %s aka %s. Saving with default data type.", data_type, dtype)
