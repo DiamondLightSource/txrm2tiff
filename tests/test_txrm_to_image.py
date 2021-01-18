@@ -17,7 +17,7 @@ from shutil import rmtree
 from time import time, sleep
 from olefile import OleFileIO
 
-from txrm2tiff.txrm_to_image import TxrmToImage, _get_reference, _apply_reference, create_ome_metadata
+from txrm2tiff.txrm_to_image import TxrmToImage, _get_reference, _apply_reference, create_ome_metadata, _conditional_replace
 
 
 class TestTxrmToImageSimple(unittest.TestCase):
@@ -41,6 +41,18 @@ class TestTxrmToImageSimple(unittest.TestCase):
         self.assertEqual(len(resultant_images), num_images, msg="The result is the wrong length")
         for image in resultant_images:
             self.assertEqual(image.dtype, expected_dtype, msg=f"The dtype is {image.dtype} not {expected_dtype}")
+
+
+    def test_conditional_replace(self):
+        array = np.repeat(np.arange(0, 9000, 0.1).reshape(300,300), 10, 0)
+        threshold = 100
+
+        _conditional_replace(array, np.nan, lambda x: x < threshold)
+
+        self.assertEqual(
+            np.nanmin(array), threshold,
+            msg="Array values below threshold {} have not been replaced with nan".format(threshold))
+
 
     @patch('txrm2tiff.txrm_to_image.txrm_wrapper')
     def test_metadata_created_correctly(self, mocked_extractor):
