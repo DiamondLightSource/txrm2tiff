@@ -12,7 +12,7 @@ Available on PyPI and conda-forge as `txrm2tiff`. To install:
 
 ### Instructions
 
-**txrm2tiff** {**--input** input file path (required)} {**--reference** reference file path (optional, default=None)} {**--output** path (optional, default=None)} {**--annotate** (optional)} {**--datetype** output data type (optional, choices=[uint16, float32, float64], default=None)} {**--ignore-ref** (optional)} {**--set-logging** (optional, default="info"}
+**txrm2tiff** {**--input** input file path (required)} {**--reference** reference file path (optional, default=None)} {**--output** path (optional, default=None)} {**--ignore-ref** (optional)} {**--set-logging** (optional, default="info"}
 
 **txrm2tiff -h** or **txrm2tiff --help** will give more info.
 &nbsp;
@@ -69,9 +69,6 @@ Saves "input.ome.tiff" with custom reference applied from a single image (e.g. a
 `txrm2tiff -i input.xrm -o custom-output.ome.tif`
 Saves "custom-output.ome.tif" with reference applied, if available.
 
-`txrm2tiff -i input.xrm --annotate`
-Saves "input.ome.tiff", as well as a separate file "input_Annotated.tif", which has annotations overlaid (if annotations are found) and scale bar.
-
 `txrm2tiff --input input.xrm --ignore-ref --set-logging debug`
 Saves "input.ome.tiff" and ignores any reference, shows debug and above level log messages.
 
@@ -97,12 +94,10 @@ Batch conversion notes:
 ## Features
 * xrm/txrm files will be converted to tif/tiff
 * If a reference has been applied within XMController, it will automatically apply the reference (_image * 100.0 / reference_, as done by XMController)
-* Any annotations from the latest version xrm/txrm files can be exported and saved (along with a scale bar)
-* The data type of the saved image can be specified (warnings will be given if the data type limits off the dynamic range of the image, also values are rounded before casting float -> integer)
 * Internally stored reference images can be ignored
 * A separate file containing reference images can be specified (can be a txrm stack, single xrm image, tiff stack, or tif image) - this overrides any internally stored reference and the ignore reference option
 * If it is a mosaic, this is recognised and the reference will be applied to each individual image within the mosaic
 * Additional metadata will be added in OME XML format to the header
 * Batch convert options
 * Within Python, xrm/txrm files can be inspected using `from txrm2tiff import txrm_wrapper` and using the contained functions
-* Within Python, xrm/txrm files can be converted and saved using the following functions: `convert_and_save`, `convert`, `convert_with_annotations`, `save` (`from txrm2tiff import convert_and_save, convert, convert_with_annotations, save`). For more control, use the `TxrmToImage` class functions (`from txrm2tiff.txrm_to_image import TxrmToImage`)
+* Within Python, xrm/txrm files can be converted using `convert_and_save` or `convert` functions (`from txrm2tiff import convert_and_save, convert`); for more control, use the `TxrmToImage` class functions (`from txrm2tiff.txrm_to_image import TxrmToImage`)
