@@ -136,7 +136,7 @@ def extract_all_images(ole):
         # Iterates through images until the number of images taken
         # lambda check has been left in in case stream is wrong
         images = (extract_single_image(ole, i, num_rows, num_columns) for i in range(1, images_taken + 1))
-        return np.asarray(tuple(takewhile(lambda image: image.size > 1, images)))
+        return list(takewhile(lambda image: image.size > 1, images))
     raise AttributeError("No image dimensions found")
 
 

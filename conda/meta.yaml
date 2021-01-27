@@ -26,7 +26,6 @@ requirements:
     - tifffile >=2019.7.26
     - omexml-dls >=1.0.3
     - olefile >=0.46
-    - Pillow >= 5.1
     - pywin32  # [win]
 
 test:

@@ -112,7 +112,6 @@ class TestCommandlineEntryPoint(unittest.TestCase):
         input_path = "input_file_path"
         custom_reference = "ref_path"
         output_path = None
-        annotate = False
         data_type = None
         ignore_reference = False
         logging_level = 1
@@ -122,7 +121,7 @@ class TestCommandlineEntryPoint(unittest.TestCase):
             stdout, _ = p.communicate()
         stdout = stdout.replace("\r\n", " ").replace("\n", " ")
         self.assertIn(
-            f"Running with arguments: input_path={input_path}, custom_reference={custom_reference}, output_path={output_path}, annotate={annotate}, data_type={data_type}, ignore_reference={ignore_reference}, logging_level={logging_level}",
+            f"Running with arguments: input_path={input_path}, custom_reference={custom_reference}, output_path={output_path}, data_type={data_type}, ignore_reference={ignore_reference}, logging_level={logging_level}",
             stdout,
             msg=f"Actual stdout: {stdout}")
         self.assertIn(f"No such file or directory: {input_path}", stdout, msg=f"Actual stdout: {stdout}")
@@ -131,7 +130,6 @@ class TestCommandlineEntryPoint(unittest.TestCase):
         input_path = "path_to/input.txrm"
         custom_reference = None
         output_path = None
-        annotate = False
         data_type = None
         ignore_reference = False
         logging_level = 1
@@ -141,7 +139,7 @@ class TestCommandlineEntryPoint(unittest.TestCase):
             stdout, _ = p.communicate()
         stdout = stdout.replace("\r\n", " ").replace("\n", " ")
         self.assertIn(
-            f"Running with arguments: input_path={input_path}, custom_reference={custom_reference}, output_path={output_path}, annotate={annotate}, data_type={data_type}, ignore_reference={ignore_reference}, logging_level={logging_level}",
+            f"Running with arguments: input_path={input_path}, custom_reference={custom_reference}, output_path={output_path}, data_type={data_type}, ignore_reference={ignore_reference}, logging_level={logging_level}",
             stdout,
             msg=f"Actual stdout: {stdout}")
         self.assertIn(f"No such file or directory: {input_path}", stdout, msg=f"Actual stdout: {stdout}")
