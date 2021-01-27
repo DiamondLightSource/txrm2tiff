@@ -11,6 +11,7 @@ import tifffile as tf
 from oxdls import OMEXML
 
 from . import txrm_wrapper
+from .annotator import Annotator
 
 
 dtype_dict = {
@@ -31,14 +32,13 @@ def _dynamic_despeckle_and_average_series(images, average=True):
     Returns:
         numpy array: single image (2D array) containing despeckle and averaged data
     """
-    nimages = len(images)
+    nimages, height, width = images.shape
     if nimages < 3:
         logging.error('Despeckle averaging requires a minimum of 3 images')
         return None
     # Takes a list of XradiaData.FloatArray as input
     # outputs a 2D ndarray
-    height, width = images[0].shape
-    block = np.asarray([image.flatten() for image in images], dtype=np.float32)
+    block = images.astype(np.float32).reshape((nimages, height * width))
     # Sort pixels stack-wise
     vals = np.sort(block, axis=0)
     # Set number of sorted frames to split off
@@ -71,7 +71,7 @@ def _apply_reference(images, reference):
                         "NaN was output for at least one pixel in the referenced image.")
         # Replace any infinite pixels (nan or inf) with 0:
         _conditional_replace(floated_and_referenced, 0, lambda x: ~np.isfinite(x))
-    return [image for image in floated_and_referenced.astype(np.float32)]
+    return floated_and_referenced.astype(np.float32)
 
 
 def _conditional_replace(array, replacement, condition_func):
@@ -88,7 +88,7 @@ def _get_reference(ole, txrm_name, custom_reference, ignore_reference):
                     references = txrm_wrapper.extract_all_images(ref_ole)  # should be float for averaging & dividing
             elif ".tif" in reference_path:
                 with tf.TiffFile(reference_path) as tif:
-                    references = [page for page in tif.pages[:]]
+                    references = np.asarray(tif.pages[:])
             else:
                 msg = f"Unable to open file '{reference_path}'. Only tif/tiff or xrm/txrm files are supported for custom references."
                 logging.error(msg)
@@ -148,6 +148,24 @@ def manual_save(tiff_file, image, data_type=None, metadata=None):
         tif.save(image[0], photometric='minisblack', description=metadata, metadata={'axes':'XYZCT'})
         for i in range(1, num_frames):
             tif.save(image[i], photometric='minisblack', metadata={'axes':'XYZCT'})
+
+def save_colour(tiff_file, image):
+    tiff_path = Path(tiff_file)
+    num_frames = len(image)
+    logging.info("Saving image as %s with %i frames", tiff_path.name, num_frames)
+    with tf.TiffWriter(str(tiff_path), bigtiff=True) as tif:
+        for i in range(0, num_frames):
+            tif.save(image[i], photometric='rgb')
+
+
+def _convert_output_path_to_annotated_path(output_path):
+    """
+    Args:
+        output_path (pathlib.Path): output path to add "_Annotated" to
+    """""
+    annotated_name = output_path.name.split(".")
+    annotated_name[0] += "_Annotated"
+    return output_path.parent / ".".join([s for s in annotated_name if s != "ome"])
 
 
 def _cast_to_dtype(image, data_type):
@@ -302,16 +320,17 @@ class TxrmToImage:
 
     def __init__(self):
         self.image_output = None
+        self.annotator = None
         self.ome_metadata = None
 
-    def convert(self, txrm_file, custom_reference=None, ignore_reference=False):
+    def convert(self, txrm_file, custom_reference=None, ignore_reference=False, annotate=False):
         with OleFileIO(str(txrm_file)) as ole:
             images = txrm_wrapper.extract_all_images(ole)
             reference = _get_reference(ole, txrm_file.name, custom_reference, ignore_reference)
             if reference is not None:
                 self.image_output = _apply_reference(images, reference)
             else:
-                self.image_output = [image for image in np.around(images)]
+                self.image_output = np.around(images)
             if (len(self.image_output) > 1
                     and ole.exists("ImageInfo/MosiacRows")
                     and ole.exists("ImageInfo/MosiacColumns")):
@@ -320,6 +339,11 @@ class TxrmToImage:
                 if mosaic_rows != 0 and mosaic_cols != 0:
                     # Version 13 style mosaic:
                     self.image_output = _stitch_images(self.image_output, (mosaic_cols, mosaic_rows), 1)
+            if annotate:
+                # Extract annotations
+                annotator = Annotator(self.image_output[0].shape[::-1])
+                if annotator.extract_annotations(ole):  # True if any annotations were drawn
+                    self.annotator = annotator
             # Create metadata
             self.ome_metadata = create_ome_metadata(ole, self.image_output)
 
@@ -328,10 +352,25 @@ class TxrmToImage:
             logging.warning("Image has not been converted, returning (None, None)")
         return self.image_output, self.ome_metadata
 
+    def get_annotator(self):
+        return self.annotator
+
+    def get_annotated_images(self):
+        if self.annotator is not None:
+            return self.annotator.apply_annotations(self.image_output)
+        return None
 
     def save(self, tiff_file, data_type=None):
+        tiff_path = Path(tiff_file)
         if (self.image_output is not None) and (self.ome_metadata is not None):
-            manual_save(tiff_file, self.image_output, data_type, self.ome_metadata)
+            manual_save(tiff_path, self.image_output, data_type, self.ome_metadata)
+            if self.annotator is None:
+                logging.error("No annotations to save")
+            else:
+                annotationed_images = self.annotator.apply_annotations(self.image_output)
+                if annotationed_images is not None:
+                    annotated_path = _convert_output_path_to_annotated_path(tiff_path)
+                    save_colour(annotated_path, annotationed_images)
         else:
             logging.error("Nothing to save! Please convert the image first")
             raise IOError("Nothing to save! Please convert the image first")
