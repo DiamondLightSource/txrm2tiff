@@ -17,7 +17,7 @@ from shutil import rmtree
 from time import time, sleep
 from olefile import OleFileIO
 
-from txrm2tiff.txrm_to_image import TxrmToImage, _get_reference, _apply_reference, create_ome_metadata, _conditional_replace
+from txrm2tiff.txrm_to_image import TxrmToImage, _get_reference, _apply_reference, create_ome_metadata, _conditional_replace, _stitch_images
 
 
 class TestTxrmToImageSimple(unittest.TestCase):
@@ -132,6 +132,25 @@ class TestTxrmToImageSimple(unittest.TestCase):
         ome_centre = (float(plane.get_PositionX()), float(plane.get_PositionY()))
         [self.assertAlmostEqual(ome, expected) for ome, expected in zip(ome_centre, expected_centre)]
 
+    def test_stitch_mosaic(self):
+        mosaic_xy_shape = (3, 4)
+        image_size = (400, 400)
+        fast_axis = 1
+        slow_axis = 1 - fast_axis
+        images = np.zeros((mosaic_xy_shape[slow_axis] * mosaic_xy_shape[fast_axis], image_size[fast_axis], image_size[slow_axis]))
+        range_array = np.repeat(np.arange(0, mosaic_xy_shape[fast_axis]), image_size[0] *  image_size[1])
+        images.flat = list(range_array) * mosaic_xy_shape[slow_axis]
+
+        output_image = _stitch_images(images, mosaic_xy_shape, fast_axis)
+
+        expected_array = np.concatenate(
+            [np.concatenate(
+                [np.full(image_size, i) for i in range(0, mosaic_xy_shape[fast_axis])],
+                axis=fast_axis) for j in range(0, mosaic_xy_shape[slow_axis])],
+                axis=slow_axis)[np.newaxis, :, :]
+        
+        assert_array_equal(output_image, expected_array)
+
     def test_save_before_convert(self):
         with self.assertRaises(IOError):
             TxrmToImage().save("output_path")
@@ -151,7 +170,7 @@ class TestTxrmToImageSimple(unittest.TestCase):
                 speckle_idx = (randint(0, dims[0] - 1), randint(0, dims[1] - 1))
                 speckle_array[speckle_idx] = i * randint(500, 1000)  # Should be well beyond 2.8 standard devs
             custom_reference.append(speckle_array)
-        mocked_extractor.return_value = custom_reference
+        mocked_extractor.return_value = np.asarray(custom_reference)
         ref_ole = MagicMock()
         mocked_olefile.return_value = ref_ole
         ref = _get_reference(ole, "txrm_name", Path("ref/path.txrm"), ignore_reference=False)
