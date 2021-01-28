@@ -13,6 +13,7 @@ test_file = test_path / "Xray_mosaic_F3C.xrm"
 
 class TestAnnotator(unittest.TestCase):
 
+    @unittest.skipUnless(test_path.exists(), "dls paths cannot be accessed")
     def test_with_real_image(self):
         output_file = test_file.parent / (test_file.stem + "_Annotated.tif")
 

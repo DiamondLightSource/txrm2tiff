@@ -210,7 +210,7 @@ test_files = [
 ]
 
 
-@unittest.skipIf(not base_path.exists(), "dls paths cannot be accessed")
+@unittest.skipUnless(base_path.exists(), "dls paths cannot be accessed")
 class TestTxrmToImageWithFiles(unittest.TestCase):
 
     @classmethod
