@@ -36,11 +36,12 @@ setuptools.setup(
     long_description=long_description,
     long_description_content_type="text/markdown",
     license="BSD 3-Clause",
-    license_files=["LICENSE"],
+    license_files=["LICENSE", os.path.join('font', 'License.txt')],
     url="https://github.com/DiamondLightSource/txrm2tiff",
     install_requires=requirements,
     packages=setuptools.find_packages('src', exclude=['scripts']),
     package_dir={'': 'src'},
+    package_data={'': [os.path.join('font', 'CallingCode-Regular.otf')]},
     classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: BSD License",
