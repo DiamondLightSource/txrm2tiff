@@ -86,9 +86,11 @@ class TestAnnotator(unittest.TestCase):
     @patch('txrm2tiff.annotator.txrm_wrapper.read_stream')
     def test_ellipse(self, mocked_stream_reader):
         fill = 125
-        x0, x1 = 0, 4
-        y0, y1 = 2, 4
-        im_size = 5
+        xs = 0, 18
+        ys = 2, 16
+        x_mid = round(np.mean(xs))
+        y_mid = round(np.mean(ys))
+        im_size = 20
         im = np.zeros((1, im_size, im_size))
 
         ann = annotator.Annotator(im[0].shape[::-1])
@@ -97,7 +99,7 @@ class TestAnnotator(unittest.TestCase):
             with patch.object(ann, "_get_thickness") as patched_thickness:
                 patched_colour.return_value = (0, fill, 0, 255)
                 patched_thickness.return_value = 1
-                mocked_stream_reader.side_effect = [[x0], [y0], [x1], [y1]]
+                mocked_stream_reader.side_effect = [[xs[0]], [ys[0]], [xs[1]], [ys[1]]]
                 ole = MagicMock()
                 stream_stem = ""
                 ann._plot_ellipse(ole, stream_stem)
@@ -106,8 +108,8 @@ class TestAnnotator(unittest.TestCase):
 
         self.assertTrue((output[:, :, 0] == 0).any())  # Red
         self.assertTrue((output[:, :, 2] == 0).any())  # Blue
-        for x, y in ann._flip_y((x0, y0), (x1, y1)):
-            self.assertEqual(output[y, x, 1], fill)
+        for (x, y) in ann._flip_y((x_mid, ys[0]), (xs[0], y_mid), (x_mid, ys[1]), (xs[1], y_mid)):
+            self.assertEqual(output[y, x, 1], fill, msg="Failed for y, x of %i, %i" %(y, x))
     
     @patch('txrm2tiff.annotator.txrm_wrapper.read_stream')
     def test_polyline(self, mocked_stream_reader):

@@ -145,6 +145,7 @@ class Annotator:
         x2 = txrm_wrapper.read_stream(ole, f"{stream_stem}/X2", np.single)[0]
         y1 = txrm_wrapper.read_stream(ole, f"{stream_stem}/Y1", np.single)[0]
         y2 = txrm_wrapper.read_stream(ole, f"{stream_stem}/Y2", np.single)[0]
+
         self._draw.line(self._flip_y((x1, y1), (x2, y2)), fill=colour, width=thickness)
 
     def _plot_rect(self, ole, stream_stem):
@@ -154,16 +155,19 @@ class Annotator:
         y0 = txrm_wrapper.read_stream(ole, f"{stream_stem}/Rectangle/Bottom", np.intc)[0]
         x1 = txrm_wrapper.read_stream(ole, f"{stream_stem}/Rectangle/Right", np.intc)[0]
         y1 = txrm_wrapper.read_stream(ole, f"{stream_stem}/Rectangle/Top", np.intc)[0]
+
         self._draw.rectangle(self._flip_y((x0, y0), (x1, y1)), outline=colour, width=thickness)
 
     def _plot_ellipse(self, ole, stream_stem):
         colour = self._get_colour(ole, stream_stem)
         thickness = self._get_thickness(ole, stream_stem)
         x0 = txrm_wrapper.read_stream(ole, f"{stream_stem}/Rectangle/Left", np.intc)[0]
-        y1 = txrm_wrapper.read_stream(ole, f"{stream_stem}/Rectangle/Bottom", np.intc)[0]
+        y0 = txrm_wrapper.read_stream(ole, f"{stream_stem}/Rectangle/Bottom", np.intc)[0]
         x1 = txrm_wrapper.read_stream(ole, f"{stream_stem}/Rectangle/Right", np.intc)[0]
-        y0 = txrm_wrapper.read_stream(ole, f"{stream_stem}/Rectangle/Top", np.intc)[0]
-        self._draw.ellipse(self._flip_y((x0, y0), (x1, y1)), outline=colour, width=thickness)
+        y1 = txrm_wrapper.read_stream(ole, f"{stream_stem}/Rectangle/Top", np.intc)[0]
+        # Values in the first tuple must be smaller than their respective second tuple value.
+        # Therefore y1 must be first and y0 second because they are flipped.
+        self._draw.ellipse(self._flip_y((x0, y1), (x1, y0)), outline=colour, width=thickness)
 
     def _plot_polygon(self, ole, stream_stem):
         colour = self._get_colour(ole, stream_stem)
@@ -176,13 +180,13 @@ class Annotator:
         
         self._draw.line(self._flip_y(*zip(xs, ys)), fill=colour, width=thickness)
 
-
     def _plot_polyline(self, ole, stream_stem, joint=None):
         colour = self._get_colour(ole, stream_stem)
         thickness = self._get_thickness(ole, stream_stem)
         total_points = txrm_wrapper.read_stream(ole, f"{stream_stem}/TotalPts", np.uintc)[0]
         xs = txrm_wrapper.read_stream(ole, f"{stream_stem}/PointX", np.single)
         ys = txrm_wrapper.read_stream(ole, f"{stream_stem}/PointY", np.single)
+
         self._draw.line(self._flip_y(*zip(xs[:total_points], ys[:total_points])), fill=colour, width=thickness, joint=joint)
 
     def _plot_freehand(self, ole, stream_stem):
