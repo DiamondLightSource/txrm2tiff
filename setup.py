@@ -14,7 +14,7 @@ requirements=[
     "omexml-dls>=1.0.3",
     "olefile>=0.46",
     "scipy>=1.3.3",
-    "Pillow>=5.3"
+    "pillow>=5.3",
     "pywin32;platform_system=='Windows'",
     ]
 
