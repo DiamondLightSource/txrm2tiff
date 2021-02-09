@@ -74,8 +74,8 @@ class Annotator:
                     except Exception:
                         # Create error message but don't stop other annotations from being extracted
                         logging.error("Failed to get annotation %i", i, exc_info=True)
-            if self._add_scale_bar(ole):  # Returns True if scale bar successfully added
-                self._saved_annotations = True
+        # _add_scale_bar() returns True if scale bar successfully added
+        self._saved_annotations = self._add_scale_bar(ole) or self._saved_annotations
         return self._saved_annotations
 
     def apply_annotations(self, images):
