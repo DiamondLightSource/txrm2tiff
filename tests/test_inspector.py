@@ -10,8 +10,8 @@ import string
 
 from txrm2tiff.inspector import Inspector
 
-base_path = Path("/dls/science/groups/das/ExampleData/B24_test_data/data/2019/cm98765-1")
-raw_path = base_path / "raw"
+visit_path = Path("/dls/science/groups/das/ExampleData/B24_test_data/data/2019/cm98765-1")
+raw_path = visit_path / "raw"
 xm10_path = raw_path / "XMv10"
 xm13_path = raw_path / "XMv13"
 
@@ -30,7 +30,7 @@ test_files = [
     (xm10_path / 'Xray_mosaic_F5A.xrm', ),
 ]
 
-@unittest.skipIf(not base_path.exists(), "dls paths cannot be accessed")
+@unittest.skipIf(not visit_path.exists(), "dls paths cannot be accessed")
 class TestInspectorFunctions(unittest.TestCase):
 
     @parameterized.expand(test_files)

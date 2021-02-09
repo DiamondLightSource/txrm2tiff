@@ -1,5 +1,6 @@
 import unittest
 from unittest.mock import MagicMock, patch
+from parameterized import parameterized
 
 import numpy as np
 from numpy.testing import assert_array_equal
@@ -8,13 +9,35 @@ from pathlib import Path
 from txrm2tiff.txrm_to_image import TxrmToImage, save_colour
 from txrm2tiff import annotator
 
-test_path = Path("/dls/science/groups/das/ExampleData/B24_test_data/annotation_test")
-test_file = test_path / "Xray_mosaic_F3C.xrm"
+test_data_path = Path("/dls/science/groups/das/ExampleData/B24_test_data/")
+test_file = test_data_path / "annotation_test" / "Xray_mosaic_F3C.xrm"
+
+visit_path = test_data_path / "data" / "2019" / "cm98765-1"
+raw_path = visit_path / "raw"
+xm10_path = raw_path / "XMv10"
+xm13_path = raw_path / "XMv13"
+
+test_files = [
+    (test_file, ),
+    (xm13_path / 'Xray_mosaic_v13.xrm', ),
+    (xm13_path / 'Xray_mosaic_v13_interrupt.xrm', ),
+    (xm13_path / 'Xray_single_v13.xrm', ),
+    (xm13_path / 'tomo_v13_full.txrm', ),
+    (xm13_path / 'tomo_v13_full_noref.txrm', ),
+    (xm13_path / 'tomo_v13_interrupt.txrm', ),
+    (xm13_path / 'VLM_mosaic_v13.xrm', ),
+    (xm13_path / 'VLM_mosaic_v13_interrupt.xrm', ),
+    (xm10_path / '12_Tomo_F4D_Area1_noref.txrm', ),
+    (xm10_path / 'VLM_mosaic.xrm', ),
+    (xm10_path / 'test_tomo2_e3C_full.txrm', ),
+    (xm10_path / 'Xray_mosaic_F5A.xrm', ),]
+
 
 class TestAnnotator(unittest.TestCase):
 
-    @unittest.skipUnless(test_path.exists(), "dls paths cannot be accessed")
-    def test_with_real_image(self):
+    @unittest.skipUnless(visit_path.exists(), "dls paths cannot be accessed")
+    @parameterized.expand(test_files)
+    def test_with_real_image(self, test_file):
         output_file = test_file.parent / (test_file.stem + "_Annotated.tif")
 
         converter = TxrmToImage()
@@ -88,8 +111,8 @@ class TestAnnotator(unittest.TestCase):
         fill = 125
         xs = 0, 18
         ys = 2, 16
-        x_mid = round(np.mean(xs))
-        y_mid = round(np.mean(ys))
+        x_mid = int(round(np.mean(xs)))
+        y_mid = int(round(np.mean(ys)))
         im_size = 20
         im = np.zeros((1, im_size, im_size))
 
@@ -140,8 +163,6 @@ class TestAnnotator(unittest.TestCase):
 
     @patch('txrm2tiff.annotator.txrm_wrapper.read_stream')
     def test_scale_bar(self, mocked_stream_reader):
-        x0, x1 = 1, 4
-        y = 4
         im_size = 5
         im = np.zeros((1, im_size, im_size))
 

@@ -110,10 +110,7 @@ class TestTxrmToImageSimple(unittest.TestCase):
         offset = [3., -2.]
         # Multiplier of 1.e3 required as units from xrm files are micrometres and the output should be in nanometres
         expected_centre = ((22.5 + offset[0]) * pixel_size * 1.e3, (20. + offset[1]) * pixel_size * 1.e3)
-
         
-        image_divider = MagicMock()
-        txrm_converter = TxrmToImage()
         ole = MagicMock()
         ole.exists.return_value = True
         mocked_extractor.extract_multiple_exposure_times.return_value = exposure_times
@@ -189,8 +186,8 @@ class TestTxrmToImageSimple(unittest.TestCase):
         assert_array_equal(ref, custom_reference[0])
 
 
-base_path = Path("/dls/science/groups/das/ExampleData/B24_test_data/data/2019/cm98765-1")
-raw_path = base_path / "raw"
+visit_path = Path("/dls/science/groups/das/ExampleData/B24_test_data/data/2019/cm98765-1")
+raw_path = visit_path / "raw"
 xm10_path = raw_path / "XMv10"
 xm13_path = raw_path / "XMv13"
 
@@ -210,14 +207,14 @@ test_files = [
 ]
 
 
-@unittest.skipUnless(base_path.exists(), "dls paths cannot be accessed")
+@unittest.skipUnless(visit_path.exists(), "dls paths cannot be accessed")
 class TestTxrmToImageWithFiles(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.base_path = base_path
+        cls.visit_path = visit_path
         cls.raw_path = raw_path
-        cls.processed_path = cls.base_path / "processed"
+        cls.processed_path = cls.visit_path / "processed"
         if cls.processed_path.exists():
             cleanup_timeout = 40
             # rmtree is asynchronous, so a wait may be required:
