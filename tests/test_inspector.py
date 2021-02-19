@@ -30,7 +30,7 @@ test_files = [
     (xm10_path / 'Xray_mosaic_F5A.xrm', ),
 ]
 
-@unittest.skipIf(not visit_path.exists(), "dls paths cannot be accessed")
+@unittest.skipUnless(visit_path.exists(), "dls paths cannot be accessed")
 class TestInspectorFunctions(unittest.TestCase):
 
     @parameterized.expand(test_files)
