@@ -163,9 +163,19 @@ def _convert_output_path_to_annotated_path(output_path):
     Args:
         output_path (pathlib.Path): output path to add "_Annotated" to
     """""
-    annotated_name = output_path.name.split(".")
-    annotated_name[0] += "_Annotated"
-    return output_path.parent / ".".join([s for s in annotated_name if s != "ome"])
+    split_name = output_path.name.split(".")
+    num_parts = len(split_name)
+    name_idx = num_parts
+    suffix = ""
+    if num_parts > 1:
+        suffix = f".{split_name[-1]}"
+        name_idx -= 1
+        if num_parts > 2 and split_name[-2].lower() == "ome":
+            suffix = f".{split_name[-2]}{suffix}"
+            name_idx -= 1
+    annotated_name = ".".join([s for s in split_name[:name_idx]])
+    annotated_name += f"_Annotated{suffix}"
+    return output_path.parent / annotated_name
 
 
 def _cast_to_dtype(image, data_type):
@@ -344,6 +354,8 @@ class TxrmToImage:
                 annotator = Annotator(self.image_output[0].shape[::-1])
                 if annotator.extract_annotations(ole):  # True if any annotations were drawn
                     self.annotator = annotator
+                else:
+                    self.annotator = False
             # Create metadata
             self.ome_metadata = create_ome_metadata(ole, self.image_output)
 
@@ -365,7 +377,9 @@ class TxrmToImage:
         if (self.image_output is not None) and (self.ome_metadata is not None):
             manual_save(tiff_path, self.image_output, data_type, self.ome_metadata)
             if self.annotator is None:
-                logging.error("No annotations or scale bar to save")
+                pass
+            elif not self.annotator:
+                logging.error("No annotations or scale bar to save with %s", tiff_path)
             else:
                 annotationed_images = self.annotator.apply_annotations(self.image_output)
                 if annotationed_images is not None:

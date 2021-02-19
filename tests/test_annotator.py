@@ -36,7 +36,7 @@ test_files = [
 class TestAnnotator(unittest.TestCase):
 
     @parameterized.expand(test_files)
-    @unittest.skipUnless(False, "dls paths cannot be accessed")
+    @unittest.skipUnless(visit_path.exists(), "dls paths cannot be accessed")
     def test_with_real_image(self, test_file):
         output_file = test_file.parent / (test_file.stem + "_Annotated.tif")
 
