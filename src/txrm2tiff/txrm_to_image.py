@@ -13,6 +13,7 @@ from oxdls import OMEXML
 from . import txrm_wrapper
 from .annotator import Annotator
 
+from .__init__ import __version__
 
 dtype_dict = {
     'uint16': np.uint16,
@@ -136,26 +137,37 @@ def manual_save(tiff_file, image, data_type=None, metadata=None):
     if metadata is not None:
         meta_img = metadata.image()
         meta_img.Pixels.set_PixelType(str(image.dtype))
-        meta_img.set_Name(tiff_path.name)
+        meta_img.set_Name(tiff_path.stem)
         metadata = metadata.to_xml().encode()
 
     tiff_dir = tiff_path.resolve().parent
     tiff_dir.mkdir(parents=True, exist_ok=True)
     num_frames = len(image)
+    bigtiff = image.size * image.itemsize >= np.iinfo(np.uint32).max  # Check if data bigger than 4GB TIFF limit
+
     logging.info("Saving image as %s with %i frames", tiff_path.name, num_frames)
 
-    with tf.TiffWriter(str(tiff_path), bigtiff=True) as tif:
-        tif.save(image[0], photometric='minisblack', description=metadata, metadata={'axes':'XYZCT'})
-        for i in range(1, num_frames):
-            tif.save(image[i], photometric='minisblack', metadata={'axes':'XYZCT'})
-
+    with tf.TiffWriter(str(tiff_path), bigtiff=bigtiff, ome=False) as tif:
+        tif.write(
+            image,
+            photometric='MINISBLACK',
+            description=metadata,
+            metadata={'axes': 'ZYX'},
+            software=f"txrm2tiff {__version__}"
+            )
+    
 def save_colour(tiff_file, image):
     tiff_path = Path(tiff_file)
     num_frames = len(image)
-    logging.info("Saving image as %s with %i frames", tiff_path.name, num_frames)
-    with tf.TiffWriter(str(tiff_path), bigtiff=True) as tif:
-        for i in range(0, num_frames):
-            tif.save(image[i], photometric='rgb')
+    logging.info("Saving annotated image as %s with %i frames", tiff_path.name, num_frames)
+    bigtiff = image.size * image.itemsize >= np.iinfo(np.uint32).max  # Check if data bigger than 4GB TIFF limit
+    with tf.TiffWriter(str(tiff_path), bigtiff=bigtiff, ome=False) as tif:
+        tif.write(
+            image,
+            photometric='RGB',
+            metadata={'axes':'ZYXC'},
+            software=f"txrm2tiff {__version__}"
+            )
 
 
 def _convert_output_path_to_annotated_path(output_path):
@@ -171,7 +183,6 @@ def _convert_output_path_to_annotated_path(output_path):
         suffix = f".{split_name[-1]}"
         name_idx -= 1
         if num_parts > 2 and split_name[-2].lower() == "ome":
-            suffix = f".{split_name[-2]}{suffix}"
             name_idx -= 1
     annotated_name = ".".join([s for s in split_name[:name_idx]])
     annotated_name += f"_Annotated{suffix}"
