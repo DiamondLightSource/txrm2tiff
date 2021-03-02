@@ -42,9 +42,9 @@ def convert_with_annotations(input_file, custom_reference=None, ignore_reference
         ignore_reference (bool, optional): Ignore any internal reference. Defaults to False.
 
     Returns:
-        list of numpy.ndarrays: list of frames in the image
+        numpy.ndarray: image with axis order ZYX
         omexml-dls object: OME metadata
-        PIL Image or None: Annotated image (if annotations were found)
+        numpy array or None: Annotated image (if annotations were found) with axis order ZYXC
     """
     from .run import _convert_file
     converter = _convert_file(input_file, custom_reference, ignore_reference, annotate=True)

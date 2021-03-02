@@ -1,7 +1,6 @@
 {   
-    "python.condaPath": " /dls_sw/apps/python/anaconda/4.6.14/64/envs/b24",
+    "python.condaPath": "/dls_sw/apps/python/anaconda/4.6.14/64/envs/b24",
     "python.pythonPath": "/dls_sw/apps/python/anaconda/4.6.14/64/envs/b24/bin/python",
-    "python.envFile": "${workspaceFolder}/.vscode/test.env",
     "python.terminal.activateEnvironment": true,
     "python.testing.nosetestArgs": [
         "test",
@@ -20,6 +19,7 @@
         "-s",
         "tests",
         "-p",
-        "test_*.py"
+        "test_*.py",
+        "-b"
     ],
 }

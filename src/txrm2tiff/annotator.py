@@ -1,4 +1,3 @@
-
 import logging
 from pathlib import Path
 from math import ceil
@@ -80,24 +79,27 @@ class Annotator:
 
     def apply_annotations(self, images):
         """
-        Apply annotations to images returning a list of numpy.ndarrays
+        Apply annotations to images returning a numpy.ndarray
 
         Args:
             images (3D NumPy array): Images that will be annotated
 
         Returns:
-            list of RGB numpy arrays or None: Annotated images, if successfully applied
+            RGB numpy array or None: Annotated images, if successfully applied
         """
-        output_images = []
+        # Create output array with shape of input, plus 3 channels for RGB
+        output_images = np.zeros((*images.shape, 3), dtype="uint8")
         try:
             if not self._saved_annotations:
                 raise AttributeError("Annotations cannot be as no annotations were successfully extracted")
             images = np.flip(images, 1)
-            for image in images:
-                # make PIL image from 2D array, autocontrast, then convert to RGB 
-                image = autocontrast(Image.fromarray(image).convert("RGB"))
-                image.paste(self._annotations)
-                output_images.append(np.asarray(image))
+            for idx, image in enumerate(images, 0):
+                # Make 'L' type PIL image from 2D array, autocontrast, then convert to RGBA 
+                image = autocontrast(Image.fromarray(image).convert("L")).convert("RGBA")
+                # Combine annotations and image by alpha
+                image.alpha_composite(self._annotations)
+                # Throw away alpha and fill into output array
+                output_images[idx] = image.convert("RGB")
             return output_images
         except Exception:
             logging.error("Failed to apply annotations", exc_info=True)
@@ -112,10 +114,10 @@ class Annotator:
                 bar_length = ceil(self._xy[0] / 4.)
                 bar_width = int(6 * self._thickness_multiplier)
                 # Set up scale bar text:
-                f = ImageFont.FreeTypeFont(str(font_path), int(15 * self._thickness_multiplier))
+                f = ImageFont.truetype(str(font_path), int(15 * self._thickness_multiplier))
                 text_len = f.size
                 text_height = f.font.height
-                text = "%iµm" %(bar_length * pixel_size)
+                text = "%iμm" %(bar_length * pixel_size)
                 text_x = x0 + bar_length // 2 - text_len
                 text_y = y0 - bar_width - text_height
                 # Draw:
