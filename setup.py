@@ -9,7 +9,7 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 
 requirements=[
-    "tifffile>=2020.11.26",
+    "tifffile>=2019.7.26",
     "numpy>=1.17.4",
     "omexml-dls>=1.0.3",
     "olefile>=0.46",
