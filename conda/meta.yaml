@@ -13,7 +13,7 @@ build:
   script: "{{ PYTHON }} -m pip install . -vv"
   entry_points:
     - {{ name }} = {{ name }}.scripts.commandline:main
-  skip: True  # [py<36]
+  skip: True  # [py<37]
 
 requirements:
   host:
@@ -23,7 +23,7 @@ requirements:
     - python
     - numpy >=1.17.4
     - scipy
-    - tifffile >=2019.7.26
+    - tifffile >=2020.9.30
     - omexml-dls >=1.0.3
     - olefile >=0.46
     - pillow >=5.3

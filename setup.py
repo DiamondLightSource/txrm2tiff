@@ -9,7 +9,7 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 
 requirements=[
-    "tifffile>=2019.7.26",
+    "tifffile>=2020.9.30",
     "numpy>=1.17.4",
     "omexml-dls>=1.0.3",
     "olefile>=0.46",
@@ -47,7 +47,7 @@ setuptools.setup(
         "License :: OSI Approved :: BSD License",
         "Operating System :: OS Independent",
     ],
-    python_requires='>=3.6',
+    python_requires='>3.6',
     entry_points={
         'console_scripts': [
             "txrm2tiff = txrm2tiff.scripts.commandline:main"
