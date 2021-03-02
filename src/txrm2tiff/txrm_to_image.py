@@ -243,7 +243,7 @@ def create_ome_metadata(ole, image_list, filename=None):
         image.set_Name(filename)
 
     pixels = image.Pixels
-    pixels.set_DimensionOrder("XYTZC")
+    pixels.set_DimensionOrder("XYZCT")
     pixels.set_ID("0")
     pixels.set_PixelType(str_dtype)
     pixels.set_SizeX(dimensions[0])
