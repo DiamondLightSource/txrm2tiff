@@ -189,6 +189,25 @@ def _convert_output_path_to_annotated_path(output_path):
     return output_path.parent / annotated_name
 
 
+def normalise_to_datatype(array, datatype, clip=False):
+    logging.debug("Re-scaling array to %s", datatype)
+    array = array.astype(np.float64)  # Convert to float for rescaling
+
+    # Clip outliers before normalisation to avoid any speckles
+    # that can lead to the normalised image to be dark:
+    if clip:
+        num_std = 3.
+        logging.info("Clipping outliers (>%g std from mean)", num_std)
+        new_max = np.mean(array) + num_std * np.std(array)
+        np.clip(array, 0, new_max, out=array)
+
+    # Move minimum value of all corrected images to 0:
+    array -= array.min()
+    # New max should be the max allowed by datatype
+    new_max = np.iinfo(datatype).max
+    return array * (new_max / array.max())
+
+
 def _cast_to_dtype(image, data_type):
     if data_type is not None:
         try:
@@ -201,12 +220,11 @@ def _cast_to_dtype(image, data_type):
                     logging.warning(
                         "Image min %f below %s minimum of %i, values below this will be cut off",
                         img_min, dtype, dtype_info.min)
-                    _conditional_replace(image, dtype_info.min, lambda x: x < dtype_info.min)
                 if dtype_info.max < img_max:
                     logging.warning(
                         "Image max %f above %s maximum of %i, values above this will be cut off",
                         img_max, dtype, dtype_info.max)
-                    _conditional_replace(image, dtype_info.max, lambda x: x > dtype_info.max)
+                np.clip(image, dtype_info.min, dtype_info.max, out=image)
             return np.around(image, decimals=0).astype(dtype)
         except Exception:
             logging.error("Invalid data type given: %s aka %s. Saving with default data type.", data_type, dtype)
@@ -380,7 +398,10 @@ class TxrmToImage:
 
     def get_annotated_images(self):
         if self.annotator is not None:
-            return self.annotator.apply_annotations(self.image_output)
+            logging.info("Creating a normalised image to apply annotations to")
+            return self.annotator.apply_annotations(
+                normalise_to_datatype(self.image_output, np.uint8, True)
+            )
         return None
 
     def save(self, tiff_file, data_type=None):
@@ -392,7 +413,7 @@ class TxrmToImage:
             elif not self.annotator:
                 logging.error("No annotations or scale bar to save with %s", tiff_path)
             else:
-                annotationed_images = self.annotator.apply_annotations(self.image_output)
+                annotationed_images = self.get_annotated_images()
                 if annotationed_images is not None:
                     annotated_path = _convert_output_path_to_annotated_path(tiff_path)
                     save_colour(annotated_path, annotationed_images)
