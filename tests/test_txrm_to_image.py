@@ -194,18 +194,19 @@ xm13_path = raw_path / "XMv13"
 test_files = [
     (xm13_path / 'Xray_mosaic_v13.xrm', ),
     (xm13_path / 'Xray_mosaic_v13_interrupt.xrm', ),
+    (xm13_path / 'Xray_mosaic_7x7_v13.xrm', ),
     (xm13_path / 'Xray_single_v13.xrm', ),
     (xm13_path / 'tomo_v13_full.txrm', ),
     (xm13_path / 'tomo_v13_full_noref.txrm', ),
     (xm13_path / 'tomo_v13_interrupt.txrm', ),
     (xm13_path / 'VLM_mosaic_v13.xrm', ),
     (xm13_path / 'VLM_mosaic_v13_interrupt.xrm', ),
+    (xm13_path / 'VLM_grid_mosaic_large_v13.xrm', ),
     (xm10_path / '12_Tomo_F4D_Area1_noref.txrm', ),
     (xm10_path / 'VLM_mosaic.xrm', ),
     (xm10_path / 'test_tomo2_e3C_full.txrm', ),
     (xm10_path / 'Xray_mosaic_F5A.xrm', ),
-]
-
+    ]
 
 @unittest.skipUnless(visit_path.exists(), "dls paths cannot be accessed")
 class TestTxrmToImageWithFiles(unittest.TestCase):
@@ -224,7 +225,7 @@ class TestTxrmToImageWithFiles(unittest.TestCase):
                 sleep(1)
 
     def setUp(self):
-        self.processed_path.mkdir()
+        self.processed_path.mkdir(exist_ok=True)
         self.assertTrue(self.processed_path.exists(), msg="Processed folder not correctly created")
     
     def tearDown(self):
