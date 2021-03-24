@@ -76,7 +76,7 @@ class TestTxrmWrapper(unittest.TestCase):
         ole.exists.return_value = False
         data = txrm_wrapper.read_stream(ole, "key", 'i')
 
-        self.assertIsNone(data)
+        self.assertFalse(data)
 
 
     def test_extracts_dimensions(self):

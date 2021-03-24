@@ -25,7 +25,7 @@ data_type_dict = {
 def extract_image_dtype(ole, key_part):
     key = f"{key_part}/DataType"
     integer_list = read_stream(ole, key, "i")
-    if integer_list is not None:
+    if integer_list:
         return data_type_dict.get(integer_list[0], (None, None))
     logging.error("Stream %s does not exist in ole file", key)
     return (None, None)
@@ -37,7 +37,7 @@ def read_stream(ole, key, dtype):
         stream_value = ole.openstream(key).getvalue()
         return np.frombuffer(stream_value, dtype).tolist()
     logging.error("Stream %s does not exist in ole file", key)
-    return None
+    return []
 
 
 def read_imageinfo_as_int(ole, key_part, ref_data=False):
@@ -45,7 +45,7 @@ def read_imageinfo_as_int(ole, key_part, ref_data=False):
     if ref_data:
         stream_key = "ReferenceData/" + stream_key
     integer_list = read_stream(ole, stream_key, "i")
-    if integer_list is not None:
+    if integer_list:
         return integer_list[0]
 
 
@@ -101,15 +101,14 @@ def extract_z_coords(ole):
 
 
 def extract_exposure_time(ole):
-    if ole.exists('ImageInfo/ExpTimes'):
-        # Returns the exposure of the image at the closest angle to 0 degrees:
-        exposures = read_stream(ole, "ImageInfo/ExpTimes", "f")
+    """Returns the exposure of the image at the closest angle to 0 degrees"""
+    exposures = extract_multiple_exposure_times(ole)
+    if len(exposures) > 1:
         absolute_angles = np.array([abs(angle) for angle in extract_tilt_angles(ole)])
-        min_angle = absolute_angles.argmin()
-        return exposures[min_angle]
-    elif ole.exists("ImageInfo/ExpTime"):
-        return read_stream(ole, "ImageInfo/ExpTime", dtype="f")[0]
-    raise Exception("No exposure time available in ole file.")
+        idx = absolute_angles.argmin()
+    else:
+        idx = 0
+    return exposures[idx]
 
 
 def extract_multiple_exposure_times(ole):
@@ -123,7 +122,9 @@ def extract_multiple_exposure_times(ole):
 
 
 def extract_pixel_size(ole):
-    return read_stream(ole, 'ImageInfo/PixelSize', "f")[0]
+    pixel_size = read_stream(ole, 'ImageInfo/PixelSize', "f")
+    if pixel_size:
+        return pixel_size[0]
 
 
 def extract_all_images(ole):
@@ -145,11 +146,15 @@ def extract_first_image(ole):
 
 
 def extract_xray_magnification(ole):
-    return read_stream(ole, "ImageInfo/XrayMagnification", "f")[0]
+    xray_mag = read_stream(ole, "ImageInfo/XrayMagnification", "f")
+    if xray_mag:
+        return xray_mag[0]
 
 
 def extract_energy(ole):
-    return np.mean(extract_energies(ole))
+    energies = extract_energies(ole)
+    if energies:
+        return np.mean(energies)
 
 
 def extract_energies(ole):
@@ -157,7 +162,9 @@ def extract_energies(ole):
 
 
 def extract_wavelength(ole):
-    return h * c / (extract_energy(ole) * e)
+    energy = extract_energy(ole)
+    if energy:
+        return h * c / (energy * e)
 
 
 def create_reference_mosaic(ole, refdata, image_rows, image_columns, mosaic_rows, mosaic_columns):

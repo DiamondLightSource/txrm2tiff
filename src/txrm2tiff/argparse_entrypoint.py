@@ -39,14 +39,18 @@ def main():
         inspect_args = parser.parse_args(namespace=inspect_parser)
         if inspect_args.input_path:
             from .inspector import Inspector
-            with Inspector(inspect_args.input_path) as inspector:
-                inspector.inspect(extra=bool(inspect_args.extra))
-                if inspect_args.list_streams:
-                    inspector.list_streams()
-                if inspect_args.streams:
-                    inspector.inspect_streams(*inspect_args.streams)
-                print(inspector.get_text())
-                return
+            try:
+                with Inspector(inspect_args.input_path) as inspector:
+                    inspector.inspect(extra=bool(inspect_args.extra))
+                    if inspect_args.list_streams:
+                        inspector.list_streams()
+                    if inspect_args.streams:
+                        inspector.inspect_streams(*inspect_args.streams)
+                    print(inspector.get_text())
+                    return
+            except Exception as e:
+                print("Exception occurred while inspecting %s: %s" %(inspect_args.input_path, e))
+            return
         else:
             inspect_parser.print_help()
             return
