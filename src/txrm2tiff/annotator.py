@@ -1,6 +1,6 @@
 import logging
+import math
 from pathlib import Path
-from math import ceil
 from collections import defaultdict
 
 import numpy as np
@@ -111,14 +111,25 @@ class Annotator:
                 colour = (0, 255, 0, 255) # Solid green
                 # Set up scale bar dims:
                 x0, y0 = self._flip_y((self._xy[0] // 50, self._xy[1] // 30))[0]
-                bar_length = ceil(self._xy[0] / 4.)
                 bar_width = int(6 * self._thickness_multiplier)
                 # Set up scale bar text:
                 f = ImageFont.truetype(str(font_path), int(15 * self._thickness_multiplier))
-                text_len = f.size
-                text_height = f.font.height
-                text = "%iμm" %(bar_length * pixel_size)
-                text_x = x0 + bar_length // 2 - text_len
+
+                tmp_bar_length = self._xy[0] / 5.  # Get initial bar length based on image width
+                tmp_bar_size = tmp_bar_length * pixel_size  # Calculate physical size
+
+                # Round to nearest multiple of the order of magnitude
+                exponent = math.floor(math.log10(tmp_bar_size))
+                step_size = 10. ** exponent
+                bar_size = round(
+                    round(tmp_bar_size / step_size) * step_size,   # Find nearest multiple of step_size
+                    -exponent)  # round to -exponent decimal places (to mitigate rounding errors)
+                bar_length = bar_size / pixel_size  # Calculate number of pixels that wide new bar size bar should be
+                
+                # Set text and calculate text positions:
+                text = "%gμm" % bar_size
+                text_width, text_height = self._draw.textsize(text, font=f)
+                text_x = round(x0 + bar_length / 2 - (text_width / 2))  # Centre text above bar
                 text_y = y0 - bar_width - text_height
                 # Draw:
                 self._draw.text((text_x, text_y), text, font=f, fill=colour)
