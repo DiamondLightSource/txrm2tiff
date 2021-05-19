@@ -37,7 +37,7 @@ class TestRun(unittest.TestCase):
         _convert_and_save(input_filepath, None, None, False, None, False)
 
         mocked_convert.assert_called_with(input_filepath, None, False, False)
-        mocked_save.assert_called_with(_define_output_suffix(input_filepath), None)
+        mocked_save.assert_called_with(input_filepath.with_suffix(".ome.tiff"), None)
 
     @patch('pathlib.Path.mkdir', MagicMock())
     @patch('txrm2tiff.run.file_can_be_opened', MagicMock(return_value=True))
@@ -50,7 +50,34 @@ class TestRun(unittest.TestCase):
         _convert_and_save(input_filepath, output_str, None, False, None, False)
 
         mocked_convert.assert_called_with(input_filepath, None, False, False)
-        mocked_save.assert_called_with(Path(output_str).with_suffix('.ome.tiff'), None)
+        mocked_save.assert_called_with(Path(output_str), None)
+
+    @patch('pathlib.Path.mkdir', MagicMock())
+    @patch('txrm2tiff.run.file_can_be_opened', MagicMock(return_value=True))
+    @patch('txrm2tiff.run.ole_file_works', MagicMock(return_value=True))
+    @patch.object(TxrmToImage, 'convert')
+    @patch.object(TxrmToImage, 'save')
+    def test_convert_and_save_with_dir_str_output(self, mocked_save, mocked_convert):
+        input_filepath = Path("test_file.txrm")
+        output_str = "./output"
+        _convert_and_save(input_filepath, output_str, None, False, None, False)
+
+        mocked_convert.assert_called_with(input_filepath, None, False, False)
+        mocked_save.assert_called_with((Path(output_str) / input_filepath.name).with_suffix(".ome.tiff"), None)
+
+
+    @patch('pathlib.Path.mkdir', MagicMock())
+    @patch('txrm2tiff.run.file_can_be_opened', MagicMock(return_value=True))
+    @patch('txrm2tiff.run.ole_file_works', MagicMock(return_value=True))
+    @patch.object(TxrmToImage, 'convert')
+    @patch.object(TxrmToImage, 'save')
+    def test_convert_and_save_with_ome_output(self, mocked_save, mocked_convert):
+        input_filepath = Path("test_file.txrm")
+        output_str = "./output/file.ome.tiff"
+        _convert_and_save(input_filepath, output_str, None, False, None, False)
+
+        mocked_convert.assert_called_with(input_filepath, None, False, False)
+        mocked_save.assert_called_with(Path(output_str), None)
 
     @patch('pathlib.Path.mkdir', MagicMock())
     @patch('txrm2tiff.run.file_can_be_opened', MagicMock(return_value=True))
