@@ -68,10 +68,15 @@ def _decide_output(input_filepath, output):
         # PurePath is the parent class for all pathlib paths
         output_path = Path(output)
         if output_path.suffix == "" or output_path.is_dir():
-            output_path.mkdir(parents=True,exist_ok=True)
+            output_path.mkdir(parents=True, exist_ok=True)
             output_path = output_path / input_filepath.name
+        else:
+            # If a valid filepath was given, just return that (avoids double .ome)
+            return output_path
     else:
-        logging.error("Invalid output specified: %s. The input path will be used to create the output.", output)
+        logging.error(
+            "Invalid output specified: %s. The input path will be used to create the output.",
+            output)
         output_path = input_filepath
     return _define_output_suffix(output_path, suffix=input_filepath.suffix)
 

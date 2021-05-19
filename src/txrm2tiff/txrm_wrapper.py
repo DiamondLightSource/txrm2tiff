@@ -133,12 +133,16 @@ def extract_all_images(ole):
         images_taken = read_imageinfo_as_int(ole, "ImagesTaken")
     elif ole.exists("ImageInfo/ExpTime"):
         images_taken = 1
-    if (num_rows * num_columns > 0):
+    else:
+        logging.error("Unknown number of images")
+        images_taken = 0
+    
+    if (num_rows * num_columns * images_taken > 0):
         # Iterates through images until the number of images taken
         # lambda check has been left in in case stream is wrong
         images = (extract_single_image(ole, i, num_rows, num_columns) for i in range(1, images_taken + 1))
         return np.asarray(tuple(takewhile(lambda image: image.size > 1, images)))
-    raise AttributeError("No image dimensions found")
+    raise AttributeError("No images found")
 
 
 def extract_first_image(ole):
