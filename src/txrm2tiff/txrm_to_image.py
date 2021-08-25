@@ -8,7 +8,7 @@ from pathlib import Path
 from olefile import OleFileIO, isOleFile
 import numpy as np
 import tifffile as tf
-from oxdls import OMEXML
+from oxdls import OMEXML, DO_XYZCT, PT_UINT16, PT_UINT16, PT_FLOAT, PT_DOUBLE
 
 from . import txrm_wrapper
 from .annotator import Annotator
@@ -16,9 +16,9 @@ from .annotator import Annotator
 from .__init__ import __version__
 
 dtype_dict = {
-    'uint16': np.uint16,
-    'float32': np.float32,
-    'float64': np.float64
+    "uint16": PT_UINT16,
+    "float32": PT_FLOAT,
+    "float64": PT_DOUBLE
 }
 
 def _dynamic_despeckle_and_average_series(images, average=True):
@@ -136,7 +136,7 @@ def manual_save(tiff_file, image, data_type=None, metadata=None):
     image = _cast_to_dtype(image, data_type)
     if metadata is not None:
         meta_img = metadata.image()
-        meta_img.Pixels.set_PixelType(str(image.dtype))
+        meta_img.Pixels.set_PixelType(dtype_dict[str(image.dtype)])
         meta_img.set_Name(tiff_path.stem)
         metadata = metadata.to_xml().encode()
 
@@ -237,7 +237,6 @@ def create_ome_metadata(ole, image_list, filename=None):
     # Get image dimensions
     # X, Y, number of frames (T in tilt series):
     dimensions = (*image_list[0].shape, len(image_list))
-    str_dtype = str(image_list[0].dtype)
 
     # Get metadata variables from ole file:
     exposures = txrm_wrapper.extract_multiple_exposure_times(ole)
@@ -255,27 +254,32 @@ def create_ome_metadata(ole, image_list, filename=None):
     ox = OMEXML()
 
     image = ox.image()
-    image.set_ID("0")
+    image.set_ID("Image:0")
     image.set_AcquisitionDate(date_time)
     if filename:
         image.set_Name(filename)
 
     pixels = image.Pixels
-    pixels.set_DimensionOrder("XYZCT")
-    pixels.set_ID("0")
-    pixels.set_PixelType(str_dtype)
+    pixels.DimensionOrder = DO_XYZCT
+    pixels.set_ID("Pixels:0")
+    
     pixels.set_SizeX(dimensions[0])
     pixels.set_SizeY(dimensions[1])
-    pixels.set_SizeT(dimensions[2])
-    pixels.set_SizeZ(1)
     pixels.set_SizeC(1)
+    pixels.set_SizeZ(dimensions[2])
+    
+    pixels.set_SizeT(1)
+
     pixels.set_PhysicalSizeX(physical_img_sizes[0])
     pixels.set_PhysicalSizeXUnit("nm")
     pixels.set_PhysicalSizeY(physical_img_sizes[1])
     pixels.set_PhysicalSizeYUnit("nm")
+    pixels.set_PhysicalSizeZ(1)
+    pixels.set_PhysicalSizeZUnit("reference frame")
 
+    pixels.set_tiffdata_count(dimensions[2])  # tiffdata must be created before planes
     pixels.set_plane_count(dimensions[2])
-    pixels.set_tiffdata_count(dimensions[2])
+    
 
     channel = pixels.Channel(0)
     channel.set_ID("Channel:0:0")
@@ -333,6 +337,13 @@ def create_ome_metadata(ole, image_list, filename=None):
 
     # Add plane/tiffdata for each plane in the stack
     for count in range(dimensions[2]):
+        tiffdata = pixels.tiffdata(count)
+        tiffdata.set_FirstC(0)
+        tiffdata.set_FirstZ(count)
+        tiffdata.set_FirstT(0)
+        tiffdata.set_IFD(count)
+        tiffdata.set_plane_count(1)
+
         plane = pixels.Plane(count)
         plane.set_ExposureTime(exposures[count])
         plane.set_TheZ(count)
@@ -345,13 +356,6 @@ def create_ome_metadata(ole, image_list, filename=None):
         plane.set_PositionX(x_positions[count])
         plane.set_PositionY(y_positions[count])
         plane.set_PositionZ(count)
-
-        tiffdata = pixels.tiffdata(count)
-        tiffdata.set_FirstC(0)
-        tiffdata.set_FirstZ(count)
-        tiffdata.set_FirstT(0)
-        tiffdata.set_IFD(count)
-        tiffdata.set_plane_count(1)
 
     return ox
 
@@ -386,7 +390,11 @@ class TxrmToImage:
                 else:
                     self.annotator = False
             # Create metadata
-            self.ome_metadata = create_ome_metadata(ole, self.image_output)
+            try:
+                self.ome_metadata = create_ome_metadata(ole, self.image_output)
+            except Exception:
+                logging.error("Error occurred creating metadata", exc_info=True)
+                self.ome_metadata = None
 
     def get_image_and_metadata(self):
         if self.image_output is None:
