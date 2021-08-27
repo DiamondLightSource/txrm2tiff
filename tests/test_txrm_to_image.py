@@ -74,7 +74,6 @@ class TestTxrmToImageSimple(unittest.TestCase):
         self.assertEqual(ome_metadata.image().Pixels.get_SizeX(), dims[0])
         self.assertEqual(ome_metadata.image().Pixels.get_SizeY(), dims[1])
         self.assertEqual(ome_metadata.image().Pixels.get_SizeT(), dims[2])
-        self.assertEqual(ome_metadata.image().Pixels.get_PixelType(), dtype)
 
     @patch('txrm2tiff.txrm_to_image.txrm_wrapper')
     def test_mosaic_exposure_averaged(self, mocked_extractor):
