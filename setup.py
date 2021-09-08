@@ -11,7 +11,7 @@ with open("README.md", "r") as fh:
 requirements=[
     "tifffile>=2020.9.30",
     "numpy>=1.17.4",
-    "omexml-dls>=1.0.3",
+    "omexml-dls>=1.1.0",
     "olefile>=0.46",
     "scipy>=1.3.3",
     "pillow>=5.3",
