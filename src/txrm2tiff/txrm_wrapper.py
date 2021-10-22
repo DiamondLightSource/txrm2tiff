@@ -5,21 +5,20 @@ from itertools import takewhile
 from scipy.constants import h, c, e
 import logging
 
-
 data_type_dict = {
     1: ("XRM_BIT", None),
-    2: ("XRM_CHAR", np.byte),
-    3: ("XRM_UNSIGNED_CHAR", np.ubyte),
-    4: ("XRM_SHORT", np.short),
-    5: ("XRM_UNSIGNED_SHORT", np.ushort),
-    6: ("XRM_INT", np.intc),
-    7: ("XRM_UNSIGNED_INT", np.uintc),
-    8: ("XRM_LONG", np.int_),
-    9: ("XRM_UNSIGNED_LONG", np.uint),
+    2:  ("XRM_CHAR", np.byte),
+    3:  ("XRM_UNSIGNED_CHAR", np.ubyte),
+    4:  ("XRM_SHORT", np.short),
+    5:  ("XRM_UNSIGNED_SHORT", np.ushort),
+    6:  ("XRM_INT", np.intc),
+    7:  ("XRM_UNSIGNED_INT", np.uintc),
+    8:  ("XRM_LONG", np.int_),
+    9:  ("XRM_UNSIGNED_LONG", np.uint),
     10: ("XRM_FLOAT", np.single),
     11: ("XRM_DOUBLE", np.double),
     12: ("XRM_STRING", np.str_),
-    13: ("XRM_DATATYPE_SIZE", None),
+    13: ("XRM_DATATYPE_SIZE", None)
 }
 
 
@@ -72,31 +71,22 @@ def extract_single_image(ole, numimage, numrows, numcols):
         if image_dtype_np is not None:
             imgdata = np.frombuffer(img_stream_bytes, dtype=image_dtype_np)
         else:
-            logging.error(
-                "Image could not be extracted using expected dtype '%s'",
-                image_dtype_str,
-            )
-            imgdata = fallback_image_extractor(
-                img_stream_bytes, img_stream_length, img_size
-            )
+            logging.error("Image could not be extracted using expected dtype '%s'", image_dtype_str)
+            imgdata = fallback_image_extractor(img_stream_bytes, img_stream_length, img_size)
         imgdata.shape = (numrows, numcols)
         return imgdata
     return np.zeros([])
 
 
 def extract_image_dims(ole):
-    return [
-        read_imageinfo_as_int(ole, "ImageHeight"),
-        read_imageinfo_as_int(ole, "ImageWidth"),
-    ]
+    return [read_imageinfo_as_int(ole, "ImageHeight"),
+            read_imageinfo_as_int(ole, "ImageWidth")]
 
 
 def extract_ref_dims(ole):
     if ole.exists("ReferenceData/ImageInfo/ImageHeight"):
-        return [
-            read_imageinfo_as_int(ole, "ImageHeight", ref_data=True),
-            read_imageinfo_as_int(ole, "ImageWidth", ref_data=True),
-        ]
+        return [read_imageinfo_as_int(ole, "ImageHeight", ref_data=True),
+                read_imageinfo_as_int(ole, "ImageWidth", ref_data=True)]
     return extract_image_dims(ole)
 
 
@@ -132,7 +122,7 @@ def extract_exposure_time(ole):
 
 
 def extract_multiple_exposure_times(ole):
-    if ole.exists("ImageInfo/ExpTimes"):
+    if ole.exists('ImageInfo/ExpTimes'):
         # Returns the exposure of the image at the closest angle to 0 degrees:
         exposures = read_stream(ole, "ImageInfo/ExpTimes", "f")
         return exposures
@@ -142,7 +132,7 @@ def extract_multiple_exposure_times(ole):
 
 
 def extract_pixel_size(ole):
-    pixel_size = read_stream(ole, "ImageInfo/PixelSize", "f")
+    pixel_size = read_stream(ole, 'ImageInfo/PixelSize', "f")
     if pixel_size:
         return pixel_size[0]
 
@@ -157,13 +147,10 @@ def extract_all_images(ole):
         logging.error("Unknown number of images")
         images_taken = 0
 
-    if num_rows * num_columns * images_taken > 0:
+    if (num_rows * num_columns * images_taken > 0):
         # Iterates through images until the number of images taken
         # lambda check has been left in in case stream is wrong
-        images = (
-            extract_single_image(ole, i, num_rows, num_columns)
-            for i in range(1, images_taken + 1)
-        )
+        images = (extract_single_image(ole, i, num_rows, num_columns) for i in range(1, images_taken + 1))
         return np.asarray(tuple(takewhile(lambda image: image.size > 1, images)))
     raise AttributeError("No images found")
 
@@ -194,9 +181,7 @@ def extract_wavelength(ole):
         return h * c / (energy * e)
 
 
-def create_reference_mosaic(
-    ole, refdata, image_rows, image_columns, mosaic_rows, mosaic_columns
-):
+def create_reference_mosaic(ole, refdata, image_rows, image_columns, mosaic_rows, mosaic_columns):
     ref_num_rows = convert_to_int(image_rows / mosaic_rows)
     ref_num_columns = convert_to_int(image_columns / mosaic_columns)
     refdata.shape = (ref_num_rows, ref_num_columns)
@@ -231,10 +216,7 @@ def extract_reference_image(ole):
     #  introduced in XMController 13).
 
     # Version 10 style mosaic:
-    is_mosaic = (
-        ole.exists("ImageInfo/MosiacMode")
-        and read_imageinfo_as_int(ole, "MosiacMode") == 1
-    )
+    is_mosaic = ole.exists("ImageInfo/MosiacMode") and read_imageinfo_as_int(ole, "MosiacMode") == 1
     # This MosiacMode has been removed in v13 but is kept in for backward compatibility:
     # ImageInfo/MosiacMode (genuinely how it's spelled in the file) == 1 if it is a mosaic, 0 if not.
     if is_mosaic:
@@ -247,18 +229,12 @@ def extract_reference_image(ole):
     if ref_dtype_np is not None:
         refdata = np.frombuffer(ref_stream_bytes, dtype=ref_dtype_np)
     else:
-        logging.error(
-            "Image could not be extracted using expected dtype '%s'", ref_dtype_str
-        )
+        logging.error("Image could not be extracted using expected dtype '%s'", ref_dtype_str)
         ref_stream_length = len(ref_stream_bytes)
         mosaic_stream_length = ref_stream_length * mosaic_size_multiplier
-        refdata = fallback_image_extractor(
-            ref_stream_bytes, mosaic_stream_length, img_size
-        )
+        refdata = fallback_image_extractor(ref_stream_bytes, mosaic_stream_length, img_size)
     if is_mosaic:
-        refdata = create_reference_mosaic(
-            ole, refdata, num_rows, num_columns, mosaic_rows, mosaic_cols
-        )
+        refdata = create_reference_mosaic(ole, refdata, num_rows, num_columns, mosaic_rows, mosaic_cols)
     refdata.shape = (num_rows, num_columns)
 
     return rescale_ref_exposure(ole, refdata)
@@ -271,18 +247,14 @@ def convert_to_int(value):
 
 
 def fallback_image_extractor(stream_bytes, stream_length, image_size):
-    if stream_length == image_size * 2:
-        dtype = np.uint16
-    elif stream_length == image_size * 4:
-        dtype = np.float32
-    else:
-        logging.error(
-            "Unexpected data type with %g bytes per pixel", stream_length / image_size
-        )
-        raise TypeError(
-            "Reference is stored as unexpected type. Expecting uint16 or float32."
-        )
-    return np.frombuffer(stream_bytes, dtype=dtype)
+        if stream_length == image_size * 2:
+            dtype = np.uint16
+        elif stream_length == image_size * 4:
+            dtype = np.float32
+        else:
+            logging.error("Unexpected data type with %g bytes per pixel", stream_length / image_size)
+            raise TypeError("Reference is stored as unexpected type. Expecting uint16 or float32.")
+        return np.frombuffer(stream_bytes, dtype=dtype)
 
 
 def get_axis_dict(ole):
@@ -300,13 +272,15 @@ def get_axis_dict(ole):
     names = get_axis_names(ole)
     units = get_all_units(ole)
 
-    if len(ids_) > 0 and len(ids_) == len(names) and len(names) == len(units):
-        return dict(
-            zip(get_axis_ids(ole), zip(get_axis_names(ole), get_all_units(ole)))
-        )
+    if (len(ids_) > 0 and len(ids_) == len(names) and len(names) == len(units)):
+        return dict(zip(
+            get_axis_ids(ole), zip(get_axis_names(ole), get_all_units(ole))
+                ))
     else:
         num_axes = 30
-        return dict(zip(range(1, num_axes + 1), [(None, None)] * num_axes))
+        return dict(zip(
+            range(1, num_axes + 1), [(None, None)] * num_axes
+            ))
 
 
 def get_all_units(ole):
@@ -323,23 +297,15 @@ def axis_string_helper(ole, key_part):
     if ole.exists(key1):
         stream_bytes = ole.openstream(key1).getvalue()
         try:
-            return [item.decode("utf8") for item in stream_bytes.split(b"\x00") if item]
+            return [item.decode('utf8') for item in stream_bytes.split(b'\x00') if item]
         except UnicodeDecodeError:
-            return [
-                item.decode("iso-8859-1")
-                for item in stream_bytes.split(b"\x00")
-                if item
-            ]
+            return [item.decode('iso-8859-1') for item in stream_bytes.split(b'\x00') if item]
     elif ole.exists(key2):
         stream_bytes = ole.openstream(key2).getvalue()
         try:
-            return [item.decode("utf8") for item in stream_bytes.split(b"\x00") if item]
+            return [item.decode('utf8') for item in stream_bytes.split(b'\x00') if item]
         except UnicodeDecodeError:
-            return [
-                item.decode("iso-8859-1")
-                for item in stream_bytes.split(b"\x00")
-                if item
-            ]
+            return [item.decode('iso-8859-1') for item in stream_bytes.split(b'\x00') if item]
     logging.error("Keys %s and %s do not exist", key1, key2)
     return []
 
