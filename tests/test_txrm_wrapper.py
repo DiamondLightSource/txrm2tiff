@@ -33,6 +33,25 @@ def pack_int(number):
     return struct.pack('<I', np.int(number))
 
 class TestTxrmWrapper(unittest.TestCase):
+    def test_extracting_camera_name(self):
+        ole = MagicMock()
+        stream = MagicMock()
+        ole.openstream.return_value = stream
+        ole.exists.return_value = True
+        stream.read.return_value = (
+            b"Pixis\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+            b"\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+            b"\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+            b"\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+            b"\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+        )
+
+        data = txrm_wrapper.get_camera_name(ole)
+
+        ole.openstream.assert_called_with("DetAssemblyInfo/CameraName")
+
+        assert_array_equal(data, "Pixis", err_msg="output is not as expected")
+
     def test_extracting_single_image_short(self):
         ole = MagicMock()
         stream = MagicMock()

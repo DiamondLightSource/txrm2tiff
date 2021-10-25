@@ -22,6 +22,10 @@ data_type_dict = {
 }
 
 
+def get_camera_name(ole):
+    return read_text_stream(ole, "DetAssemblyInfo/CameraName")
+
+
 def extract_image_dtype(ole, key_part):
     key = f"{key_part}/DataType"
     integer_list = read_stream(ole, key, "i")
@@ -29,6 +33,12 @@ def extract_image_dtype(ole, key_part):
         return data_type_dict.get(integer_list[0], (None, None))
     logging.error("Stream %s does not exist in ole file", key)
     return (None, None)
+
+
+def read_text_stream(ole, key):
+    if ole.exists(key):
+        byte_str = ole.openstream(key).read()
+        return byte_str.decode("ascii").replace("\x00", " ").strip()
 
 
 # Returns a list of type "dtype".
@@ -136,7 +146,7 @@ def extract_all_images(ole):
     else:
         logging.error("Unknown number of images")
         images_taken = 0
-    
+
     if (num_rows * num_columns * images_taken > 0):
         # Iterates through images until the number of images taken
         # lambda check has been left in in case stream is wrong
@@ -204,7 +214,7 @@ def extract_reference_image(ole):
     #  are multiple methods to apply a reference now, so this has been kept general, rather than
     #  being dependent on the file version or software version (software version is new metadata
     #  introduced in XMController 13).
-    
+
     # Version 10 style mosaic:
     is_mosaic = ole.exists("ImageInfo/MosiacMode") and read_imageinfo_as_int(ole, "MosiacMode") == 1
     # This MosiacMode has been removed in v13 but is kept in for backward compatibility:
@@ -236,7 +246,7 @@ def convert_to_int(value):
     raise ValueError(f"Value '{value}' cannot be converted to an integer")
 
 
-def fallback_image_extractor(stream_bytes, stream_length, image_size):        
+def fallback_image_extractor(stream_bytes, stream_length, image_size):
         if stream_length == image_size * 2:
             dtype = np.uint16
         elif stream_length == image_size * 4:
@@ -261,7 +271,7 @@ def get_axis_dict(ole):
     ids_ = get_axis_ids(ole)
     names = get_axis_names(ole)
     units = get_all_units(ole)
-    
+
     if (len(ids_) > 0 and len(ids_) == len(names) and len(names) == len(units)):
         return dict(zip(
             get_axis_ids(ole), zip(get_axis_names(ole), get_all_units(ole))
