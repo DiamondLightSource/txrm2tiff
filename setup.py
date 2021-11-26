@@ -1,7 +1,7 @@
 import os
 import setuptools
 
-from src.txrm2tiff import __version__, __author__, __email__
+from src.txrm2tiff.info import __version__, __author__, __email__
 
 with open("README.md", "r") as fh:
     long_description = fh.read()
