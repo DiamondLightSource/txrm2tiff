@@ -1,93 +1,156 @@
-from pathlib import Path, PurePath
+from os import PathLike
+from pathlib import Path
 import logging
+from typing import Optional, Union
+from numpy.typing import DTypeLike
 
-from .file_sorting import file_can_be_opened, ole_file_works
-from .logger import create_logger
-from .txrm_to_image import TxrmToImage
+from .txrm import open_txrm
+from .txrm.abstract import AbstractTxrm
+from .utils.logging import create_logger
 
 
-def run(input_path, custom_reference=None, output_path=None, annotate=False, data_type=None, ignore_reference=False, logging_level="info"):
+def run(
+    input_path: PathLike,
+    output_path: Optional[PathLike] = None,
+    custom_reference: Optional[PathLike] = None,
+    annotate: bool = False,
+    data_type: Optional[str] = None,
+    ignore_reference: bool = False,
+    logging_level: Union[str, int] = "info",
+) -> None:
     create_logger(str(logging_level).lower())
     logging.debug(
         "Running with arguments: "
         "input_path=%s, custom_reference=%s, output_path=%s, annotate=%s, data_type=%s, ignore_reference=%s, logging_level=%s",
-        input_path, custom_reference, output_path, annotate, data_type, ignore_reference, logging_level)
-    input_filepath = Path(input_path)
-    if input_filepath.exists():
-        if input_filepath.is_dir():
+        input_path,
+        custom_reference,
+        output_path,
+        annotate,
+        data_type,
+        ignore_reference,
+        logging_level,
+    )
+    input_path = Path(input_path)
+    if input_path.exists():
+        if output_path is not None:
+            output_path = Path(output_path)
+        if custom_reference is not None:
+            logging.warning("Custom references are invalid for batch conversions")
+        if input_path.is_dir():
             logging.info("Converting files in directory '%s'", input_path)
-            _batch_convert_files(input_filepath, output_path, annotate, data_type, ignore_reference)
+            _batch_convert_files(
+                input_path, output_path, annotate, data_type, ignore_reference
+            )
         else:
+            if custom_reference is not None:
+                custom_reference = Path(custom_reference)
+                if not custom_reference.is_file():
+                    logging.warning(
+                        "The specified custom reference file '%s' does not exist.",
+                        custom_reference,
+                    )
+                    custom_reference = None
             logging.info("Converting file '%s'", input_path)
-            _convert_and_save(input_filepath, output_path, custom_reference, annotate, data_type, ignore_reference)
+            _convert_and_save(
+                input_path,
+                output_path,
+                custom_reference,
+                annotate,
+                data_type,
+                ignore_reference,
+            )
     else:
         logging.error("No such file or directory: %s", input_path)
         raise IOError(f"No such file or directory: {input_path}")
 
 
-def _batch_convert_files(input_filepath, output, annotate, data_type, ignore_reference):
-    filepath_list = list(input_filepath.rglob("*xrm"))
-    logging.info(f"Batch converting files {[filepath.name for filepath in filepath_list]}")
-    if output is not None and Path(output).is_dir():
+def _batch_convert_files(
+    input_directory: Path,
+    output: Optional[Path] = None,
+    annotate: bool = True,
+    data_type: Optional[DTypeLike] = None,
+    ignore_reference: bool = False,
+) -> None:
+    filepath_list = _find_files(input_directory)
+    logging.info(
+        f"Batch converting files: {', '.join([filepath.name for filepath in filepath_list])}"
+    )
+    if output is not None:
         logging.info(f"Output directory set to: {output}")
         output_path_base = Path(output)
         # Replace input_filepath with output, maintaining sub directory structure, and find output file suffix
-        output_path_list = [_define_output_suffix(output_path_base / filepath.relative_to(input_filepath)) for filepath in filepath_list]
+        output_path_list = [
+            _set_output_suffix(output_path_base / filepath.relative_to(input_directory))
+            for filepath in filepath_list
+        ]
         for output_path in output_path_list:
             # Make any directories that do not exist:
-            output_path.parent.mkdir(parents=True, exist_ok=True)    
+            output_path.parent.mkdir(parents=True, exist_ok=True)
     else:
         # Defines output now rather than in _convert_and_save so that there's a list to iterate
-        output_path_list = [_define_output_suffix(filepath) for filepath in filepath_list]
-        
+        output_path_list = [_set_output_suffix(filepath) for filepath in filepath_list]
+
     for filepath, output_path in zip(filepath_list, output_path_list):
-        _convert_and_save(filepath, output_path, None, annotate, data_type, ignore_reference)
+        _convert_and_save(
+            filepath, output_path, None, annotate, data_type, ignore_reference
+        )
 
 
-def _convert_and_save(input_filepath, output, custom_reference, annotate, data_type, ignore_reference):
-    converter = _convert_file(input_filepath, custom_reference, ignore_reference, annotate)
-    if converter is not None:
-        output_path = _decide_output(input_filepath, output)
-        converter.save(output_path, data_type)
+def _find_files(directory: Path):
+    return list(directory.rglob("*xrm"))
 
 
-def _convert_file(input_filepath, custom_reference, ignore_reference, annotate):
-    if file_can_be_opened(input_filepath) and ole_file_works(input_filepath):
-        logging.info(f"Converting {input_filepath.name}")
-        converter = TxrmToImage()
-        converter.convert(input_filepath, custom_reference, ignore_reference, annotate)
-        return converter
-    logging.error("Invalid input: '%s'", input_filepath)
-        
+def _convert_and_save(
+    input_path: Path,
+    output_path: Optional[Path] = None,
+    custom_reference: Optional[PathLike] = None,
+    annotate: bool = True,
+    data_type: Optional[DTypeLike] = None,
+    ignore_reference: bool = False,
+) -> None:
+    with open_txrm(input_path) as txrm:
+        _convert_file(txrm, custom_reference, ignore_reference, annotate)
+        output_path = _decide_output_path(txrm.path, output_path)
+        output_path.parent.mkdir(parents=True, exist_ok=True)  # Make output directory
+        txrm.save_image(output_path, data_type, mkdir=True)
 
-def _decide_output(input_filepath, output):
+
+def _convert_file(
+    txrm: AbstractTxrm,
+    custom_reference: Optional[PathLike] = None,
+    ignore_reference: bool = False,
+    annotate: bool = True,
+) -> None:
+    logging.info(f"Converting {txrm.name}")
+    # custom_reference overrules ignore_reference
+    if custom_reference is not None or not ignore_reference:
+        txrm.apply_reference(
+            custom_reference
+        )  # Called with None applies internal reference
+    if annotate:
+        txrm.annotate()
+
+
+def _decide_output_path(input_path: Path, output_path: Optional[Path]) -> Path:
     # If no output is supplied
-    if output is None:
-        output_path = input_filepath
-    elif isinstance(output, (str, PurePath)):
-        # PurePath is the parent class for all pathlib paths
-        output_path = Path(output)
+    if output_path is None:
+        output_path = input_path
+    else:
         if output_path.suffix == "" or output_path.is_dir():
-            output_path.mkdir(parents=True, exist_ok=True)
-            output_path = output_path / input_filepath.name
+            output_path = output_path / input_path.name
         else:
             # If a valid filepath was given, just return that (avoids double .ome)
             return output_path
-    else:
-        logging.error(
-            "Invalid output specified: %s. The input path will be used to create the output.",
-            output)
-        output_path = input_filepath
-    return _define_output_suffix(output_path, suffix=input_filepath.suffix)
+    return _set_output_suffix(output_path, curent_suffix=input_path.suffix)
 
-      
-def _define_output_suffix(filepath, suffix=None):
-    if suffix is None:
-        suffix = filepath.suffix
-    if suffix == ".txrm":
+
+def _set_output_suffix(filepath: Path, curent_suffix: Optional[str] = None) -> Path:
+    if curent_suffix is None:
+        curent_suffix = filepath.suffix
+    if curent_suffix == ".txrm":
         return filepath.with_suffix(".ome.tiff")
-    elif suffix == ".xrm":
+    elif curent_suffix == ".xrm":
         return filepath.with_suffix(".ome.tif")
     else:
-        logging.error("Invalid file extension: %s", suffix)
-        raise NameError(f"Invalid file extension: {suffix}")
+        logging.error("Invalid file extension: %s", curent_suffix)
+        raise NameError(f"Invalid file extension: {curent_suffix}")

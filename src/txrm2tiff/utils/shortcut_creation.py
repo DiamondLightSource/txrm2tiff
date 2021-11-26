@@ -1,9 +1,7 @@
 import os
 import logging
 from pathlib import Path
-
-
-dragndrop_bat_file = Path(__file__).resolve().parent / "scripts" / "dragndrop.bat"
+from sys import executable
 
 def _get_Windows_home_path():
     home = os.getenv("USERPROFILE")
@@ -36,9 +34,10 @@ def _create_lnk_file(shortcut_path):
         raise
     shell = win32com.client.Dispatch("WScript.Shell")
     shortcut = shell.CreateShortCut(str(shortcut_path))
-    shortcut.Targetpath = str(dragndrop_bat_file)
+    shortcut.Targetpath = f'"{executable}"'
+    shortcut.Arguments = "-m stitch_m"
     shortcut.save()
-    msg = f"Desktop shortcut created! It can be found here: {shortcut_path}"
+    msg = f"Shortcut created! It can be found here: {shortcut_path}"
     print(msg)
     logging.info(msg)
 
@@ -46,7 +45,7 @@ def _create_lnk_file(shortcut_path):
 def create_Windows_shortcut():
     if os.name != "nt":
         logging.error("This command is only valid on Windows installations.")
-        return 
+        return
     # Place link on users desktop
     shortcut_path = _get_Windows_home_path() / "Desktop" / "txrm2tiff.lnk"
     msg = f"Creating shortcut on user desktop: {shortcut_path}"

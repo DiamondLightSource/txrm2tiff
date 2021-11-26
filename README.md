@@ -1,8 +1,8 @@
 # txrm2tiff
 
-Converts txrm/xrm files to OME tif/tiff files.
+Converts TXRM/XRM files to OME-TIFF files.
 
-txrm2tiff was created for users of beamline B24 of Diamond Light Source by Thomas Fish. This has been adapted from B24's the automatic processing pipeline. Parts of this code were originally written by Kevin Savage, with further additions and amendments by Peter Chang, Victoria Beilsten-Edmands, and Thomas Fish.
+Txrm2tiff was created for users of beamline B24 of Diamond Light Source by Thomas Fish. This has been adapted from, and is used by, B24's the automatic processing pipeline. Parts of this code were originally written by Kevin Savage, with further additions and amendments by Peter Chang, Victoria Beilsten-Edmands.
 
 ## Installation
 
@@ -18,7 +18,7 @@ Available on PyPI and conda-forge as `txrm2tiff`. To install:
 &nbsp;
 
 ##### Setup options:
-**txrm2tiff setup** {**--windows-shortcut** (WINDOWS ONLY: optional, creates shortcut to .bat file on the desktop for drag'n'drop processing )}
+**txrm2tiff setup** {**--windows-shortcut** (WINDOWS ONLY: optional, creates shortcut on the desktop for drag'n'drop processing)}
 
 **txrm2tiff setup -h** or **txrm2tiff setup --help** will give more info.
 &nbsp;
@@ -34,7 +34,7 @@ Available on PyPI and conda-forge as `txrm2tiff`. To install:
 **txrm2tiff inspect -h** or **txrm2tiff inspect --help** will give more info.
 
 
-\*xrm and txrm files are '[OLE](https://en.wikipedia.org/wiki/Object_Linking_and_Embedding)' type files. These files to separate and store information in streams.
+\*XRM and TXRM files are '[OLE](https://en.wikipedia.org/wiki/Object_Linking_and_Embedding)' type files. These files to separate and store information in streams.
 
 \*\* with the exception of images, which do get the image data type saved separately.
 
@@ -80,29 +80,29 @@ Saves "custom-output.ome.tiff", shows error and above level log messages.
 
 **To batch convert:**
 `txrm2tiff --input path/to/inputDirectory/`
-Converts all xrm/txrm files within input_directory with reference applied, if available.
+Converts all XRM/TXRM files within input_directory with reference applied, if available.
 
 `txrm2tiff --input path/to/inputDirectory/ --ignore-ref`
-Converts all xrm/txrm files within input_directory, ignoring all references.
+Converts all XRM/TXRM files within input_directory, ignoring all references.
 
 `txrm2tiff --input path/to/inputDirectory/ --output path/to/outputDirectory/ --ignore-ref`
-Converts all xrm/txrm files within "inputDirectory", saving to the automatic name within the specified output directory, ignoring all references.
+Converts all XRM/TXRM files within "inputDirectory", saving to the automatic name within the specified output directory, ignoring all references.
 
 Batch conversion notes:
-* `--output` _must_ be a directory or it will be ignored and files placed in the same directory as the xrm/txrms
-* Sub directories containing any xrm/txrm files found within "inputDirectory" will be copied to "outputDirectory" (directories will be created if they don't already exist)
+* `--output` _must_ be a directory or it will be ignored and files placed in the same directory as the XRM/TXRMs
+* Sub directories containing any XRM/TXRM files found within "inputDirectory" will be copied to "outputDirectory" (directories will be created if they don't already exist)
 * `--reference` inputs will be ignored for batch conversion
 
 
 ## Features
-* xrm/txrm files will be converted to tif/tiff
-* If a reference has been applied within XMController, it will automatically apply the reference (_image * 100.0 / reference_, as done by XMController)
-* Any annotations from the latest version xrm/txrm files can be exported and saved (along with a scale bar)
-* The data type of the saved image can be specified (warnings will be given if the data type limits off the dynamic range of the image, also values are rounded before casting float -> integer)
-* Internally stored reference images can be ignored
-* A separate file containing reference images can be specified (can be a txrm stack, single xrm image, tiff stack, or tif image) - this overrides any internally stored reference and the ignore reference option
-* If it is a mosaic, this is recognised and the reference will be applied to each individual image within the mosaic
-* Additional metadata will be added in OME XML format to the header
-* Batch convert options
-* Within Python, xrm/txrm files can be inspected using `from txrm2tiff import txrm_wrapper` and using the contained functions
-* Within Python, xrm/txrm files can be converted and saved using the following functions: `convert_and_save`, `convert`, `convert_with_annotations`, `save` (`from txrm2tiff import convert_and_save, convert, convert_with_annotations, save`). For more control, use the `TxrmToImage` class functions (`from txrm2tiff.txrm_to_image import TxrmToImage`)
+* Converts XRM/TXRM v3.0 (from XMController) & v5.0 (from XRMDataExporer) files to TIFF.
+* If a reference has been applied within XMController/XRMDataExplorer, it will automatically apply the reference (_image * 100.0 / reference_, as done by XMController). Internal references can also be ignored.
+* Custom reference images can be specified (can be a TXRM or XRM file, or a TIFF image or stack) - this option overrides any internally stored reference and the ignore reference option.
+* If the reference exposure is available (e.g. from XRM/TXRM or OME-TIFF), the reference image will be rescaled to the image exposure at 0° (if applicable).
+* Any annotations from XRM/TXRM v5.0 files can be exported and saved (along with a scale bar).
+* Data type of the output image can be specified (warnings will be given if the data type limits off the dynamic range of the image, also values are rounded before casting float -> integer).
+* Metadata will be added in OME XML format to the header.
+* Batch convert options.
+* Inspector (can extract any information from XRM/TXRM files).
+* Within Python, XRM/TXRM files can be opened and interacted with using the function `open_txrm` (`from txrm2tiff import open_txrm`), which returns a `Txrm` object of the correct version. Recomended usage: `with open_txrm(...) as txrm:`.
+* Within Python, XRM/TXRM files can quickly be converted and saved using `convert_and_save` (`from txrm2tiff import convert_and_save`).

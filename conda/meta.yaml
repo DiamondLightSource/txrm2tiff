@@ -21,7 +21,7 @@ requirements:
     - pip
   run:
     - python
-    - numpy >=1.17.4
+    - numpy >=1.20.0
     - scipy
     - tifffile >=2020.9.30
     - omexml-dls >=1.0.3
@@ -49,10 +49,10 @@ about:
 
   description: |
     Converts txrm/xrm files to OME tif/tiff files.
-    txrm2tiff was created for users of beamline B24 of Diamond Light 
-    Source by Thomas Fish. This has been adapted from B24's the automatic 
-    processing pipeline. Parts of this code were originally written by 
-    Kevin Savage, with further additions and amendments by Peter Chang, 
+    txrm2tiff was created for users of beamline B24 of Diamond Light
+    Source by Thomas Fish. This has been adapted from B24's the automatic
+    processing pipeline. Parts of this code were originally written by
+    Kevin Savage, with further additions and amendments by Peter Chang,
     Victoria Beilsten-Edmands, and Thomas Fish.
   doc_url: https://github.com/DiamondLightSource/{{ name }}/blob/master/README.md
   dev_url: https://github.com/DiamondLightSource/{{ name }}
