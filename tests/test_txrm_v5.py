@@ -52,7 +52,7 @@ class TestTxrm5(unittest.TestCase):
         self, mocked_fallback_interpreter, mocked_extract_ref_data
     ):
         strict = False
-        txrm = Txrm5("test/path/file.txrm", strict=strict)
+        txrm = Txrm5("test/path/file.txrm", load_image=False, load_reference=False, strict=strict)
         ole = MagicMock()
         txrm.ole = ole
         im_size = np.prod(txrm.reference_dims)
@@ -78,7 +78,7 @@ class TestTxrm5(unittest.TestCase):
         self, mocked_fallback_interpreter, mocked_extract_ref_data
     ):
         strict = False
-        txrm = Txrm5("test/path/file.txrm", strict=strict)
+        txrm = Txrm5("test/path/file.txrm", load_image=False, load_reference=False, strict=strict)
         ole = MagicMock()
         txrm.ole = ole
         im_size = np.prod(txrm.reference_dims)

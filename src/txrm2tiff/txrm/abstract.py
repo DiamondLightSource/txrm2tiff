@@ -18,15 +18,15 @@ class AbstractTxrm(ABC):
     def __init__(
         self,
         filename: PathLike,
-        load_image: bool = False,
-        load_reference: bool = False,
+        load_images: bool = True,
+        load_reference: bool = True,
         strict: bool = False,
     ):
         """Abstract class for wrapping TXRM/XRM files
 
         Args:
             filename (PathLike): Path to valid txrm file
-            load_image (bool, optional): Load images to memory on init. Defaults to False.
+            load_images (bool, optional): Load images to memory on init. Defaults to False.
             load_reference (bool, optional): Load reference images to memory on init. Defaults to False.
             strict (bool, optional): If True, all calls will be treated as strict (raising, not logging, errors). Defaults to False.
         """
@@ -42,10 +42,10 @@ class AbstractTxrm(ABC):
 
         self.open()
 
-        if load_image:
+        if load_images:
             self.load_images()
         if load_reference:
-            self.get_reference(load=True)
+            self.load_reference()
 
     def __enter__(self):
         return self
@@ -95,7 +95,10 @@ class AbstractTxrm(ABC):
         if not self.file_is_open:
             logging.error("Cannot list streams when file is closed")
             return []
-        return ["/".join(stream) for stream in self.ole.listdir(streams=True, storages=False)]
+        return [
+            "/".join(stream)
+            for stream in self.ole.listdir(streams=True, storages=False)
+        ]
 
     def read_stream(
         self,
@@ -176,7 +179,7 @@ class AbstractTxrm(ABC):
             self.load_reference()
         return self._reference
 
-    def _extract_single_image(self, image_num: int, strict:bool=False) -> np.ndarray:
+    def _extract_single_image(self, image_num: int, strict: bool = False) -> np.ndarray:
         try:
             # Read the images - They are stored in the txrm as ImageData1 ...
             # Each folder contains 100 images 1-100, 101-200
@@ -252,7 +255,10 @@ class AbstractTxrm(ABC):
                 raise AttributeError("No images found")
             # Iterates through images until the number of images taken
             # lambda check has been left in in case stream is wrong
-            images = (self._extract_single_image(i, strict=False) for i in range(start, end + 1))
+            images = (
+                self._extract_single_image(i, strict=False)
+                for i in range(start, end + 1)
+            )
             return np.asarray(
                 tuple(itertools.takewhile(lambda image: image.size > 1, images))
             )
@@ -433,5 +439,5 @@ class AbstractTxrm(ABC):
     @abstractmethod
     def get_output(
         self, load: bool = False, flip: bool = True, clear_images: bool = True
-    ) -> np.ndarray:
+    ) -> typing.Optional[np.ndarray]:
         raise NotImplementedError

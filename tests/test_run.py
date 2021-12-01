@@ -57,7 +57,7 @@ class TestRun(unittest.TestCase):
         mocked_open_txrm.return_value.__enter__.return_value = txrm
         _convert_and_save(input_filepath, None, None, False, None, False)
         mocked_open_txrm.assert_called_with(input_filepath)
-        txrm.save_image.assert_called_with(
+        txrm.save_images.assert_called_with(
             input_filepath.with_suffix(".ome.tiff"), None, mkdir=True
         )
 

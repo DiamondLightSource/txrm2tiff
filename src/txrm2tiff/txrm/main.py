@@ -26,8 +26,8 @@ txrm_classes = defaultdict(
 
 def open_txrm(
     filepath: PathLike,
-    load_images: bool = False,
-    load_reference: bool = False,
+    load_images: bool = True,
+    load_reference: bool = True,
     strict: bool = False,
 ) -> typing.Optional[AbstractTxrm]:
     TxrmClass = get_txrm_class(filepath)

@@ -7,6 +7,7 @@ image_info_dict = {
     "ImageInfo/CameraName": XrmDataTypes.XRM_STRING,
     "ImageInfo/CameraNumberOfFramesPerImage": XrmDataTypes.XRM_INT,
     "ImageInfo/CameraTemperature": XrmDataTypes.XRM_FLOAT,
+    "ImageInfo/CamPixelSize": XrmDataTypes.XRM_FLOAT,
     "ImageInfo/Current": XrmDataTypes.XRM_FLOAT,
     "ImageInfo/Date": XrmDataTypes.XRM_STRING,
     "ImageInfo/Energy": XrmDataTypes.XRM_FLOAT,
