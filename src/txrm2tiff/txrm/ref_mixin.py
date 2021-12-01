@@ -27,41 +27,49 @@ class ReferenceMixin:
                 with main.open_txrm(custom_reference) as ref_txrm:
                     self.apply_reference_from_txrm(ref_txrm)
             else:
-                try:
-                    with tf.TiffFile(str(custom_reference)) as tif:
-                        kwargs = {}
-                        if compensate_exposure:
-                            try:
-                                pixels = (
-                                    OMEXML(xml=tif.pages[0].description).image().Pixels
-                                )
-                                plane_count = pixels.get_plane_count()
-                                kwargs["custom_exposure"] = np.mean(
-                                    [
-                                        pixels.Plane(i).get_ExposureTime()
-                                        for i in range(plane_count)
-                                    ]
-                                )
-                            except Exception:
-                                logging.warning(
-                                    "Unable to extract exposure(s) from TIFF metadata - reference will not be scaled.",
-                                    exc_info=True,
-                                )
-                        arr = tif.asarray()
-                        return self.apply_custom_reference_from_array(
-                            arr, overwrite=overwrite, **kwargs
-                        )
-                except TiffFileError:
-                    logging.error(
-                        "Invalid custom reference supplied: file is not a TXRM or TIFF file."
-                    )
-                    return
+                return self._apply_reference_from_tiff(
+                    custom_reference, compensate_exposure, overwrite
+                )
         elif self.has_reference:
             return self.apply_internal_reference(
                 overwrite=overwrite, compensate_exposure=compensate_exposure
             )
         else:
             logging.info("No reference to apply")
+
+    def _apply_reference_from_tiff(
+        self,
+        custom_reference: PathLike,
+        compensate_exposure: bool = True,
+        overwrite: bool = True,
+    ):
+        try:
+            with tf.TiffFile(str(custom_reference)) as tif:
+                kwargs = {}
+                if compensate_exposure:
+                    try:
+                        pixels = OMEXML(xml=tif.pages[0].description).image().Pixels
+                        plane_count = pixels.get_plane_count()
+                        kwargs["custom_exposure"] = np.mean(
+                            [
+                                pixels.Plane(i).get_ExposureTime()
+                                for i in range(plane_count)
+                            ]
+                        )
+                    except Exception:
+                        logging.warning(
+                            "Unable to extract exposure(s) from TIFF metadata - reference will not be scaled.",
+                            exc_info=True,
+                        )
+                arr = tif.asarray()
+                return self.apply_custom_reference_from_array(
+                    arr, overwrite=overwrite, **kwargs
+                )
+        except TiffFileError:
+            logging.error(
+                "Invalid custom reference supplied: file is not a TXRM or TIFF file."
+            )
+            return
 
     def apply_custom_reference_from_array(
         self,
@@ -76,7 +84,7 @@ class ReferenceMixin:
             )
         try:
             ref_img = ReferenceMixin._flatten_reference(custom_reference)
-            ref_img = self.tile_reference_if_needed(custom_reference)
+            ref_img = self._tile_reference_if_needed(custom_reference)
         except Exception:
             if self.strict:
                 raise
@@ -86,7 +94,7 @@ class ReferenceMixin:
                 exc_info=True,
             )
         if custom_exposure is not None:
-            self.compensate_ref_exposure(ref_img, custom_exposure)
+            self._compensate_ref_exposure(ref_img, custom_exposure)
         ref = ReferenceMixin._apply_reference_to_images(self.get_images(), ref_img)
         if overwrite:
             self._images = ref
@@ -129,7 +137,7 @@ class ReferenceMixin:
             logging.warning("No internal reference to apply")
             return
         if compensate_exposure:
-            ref_img = self.compensate_ref_exposure(ref_img, self.reference_exposure)
+            ref_img = self._compensate_ref_exposure(ref_img, self.reference_exposure)
         ref = ReferenceMixin._apply_reference_to_images(
             self.get_images(load=True), ref_img
         )
@@ -138,7 +146,7 @@ class ReferenceMixin:
             self.referenced = True
         return ref
 
-    def tile_reference_if_needed(self, custom_reference: np.ndarray) -> np.ndarray:
+    def _tile_reference_if_needed(self, custom_reference: np.ndarray) -> np.ndarray:
         """Tile the image if it is needed to match a mosaic Assumes axes [y, x]."""
         needs_stitching = self.is_mosaic and custom_reference.shape == [
             round(img_dim / mos_dim, 2)
@@ -154,7 +162,7 @@ class ReferenceMixin:
             )  # Tiles reference if needed
         return custom_reference
 
-    def compensate_ref_exposure(self, ref_image, ref_exposure):
+    def _compensate_ref_exposure(self, ref_image, ref_exposure):
         # TODO: Improve this in line with ALBA's methodolgy
         # Normalises the reference exposure
         # Assumes roughly linear response, which is a reasonable estimation

@@ -51,7 +51,7 @@ class Txrm5(SaveMixin, ReferenceMixin, AnnotatorMixin, AbstractTxrm):
 
     def get_output(
         self, load: bool = False, flip: bool = True, clear_images: bool = True
-    ) -> np.ndarray:
+    ) -> typing.Optional[np.ndarray]:
         """
         Returns output image as ndarray with axes [idx, y, x]. If a reference has been applied, the referenced image will be returned.
 
@@ -59,11 +59,13 @@ class Txrm5(SaveMixin, ReferenceMixin, AnnotatorMixin, AbstractTxrm):
         flip: flip the Y-axis of the output image(s) (how they are displayed in DX)
         clear_images: clear images and reference from the Txrm instance after returning.
         """
-        images = self.get_images(load).copy()
+        images = self.get_images(load)
+        if images is None:
+            logging.warning("No image has been loaded, so no output can be returned.")
+            return None
+        images = images.copy()
         if self.is_mosaic:
-            images = stitch_images(
-                images, self.mosaic_dims
-            )
+            images = stitch_images(images, self.mosaic_dims)
         if clear_images:
             self.clear_images()
             self.clear_reference()

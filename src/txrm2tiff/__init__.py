@@ -1,12 +1,8 @@
-from __future__ import annotations
 from os import PathLike
-from typing import Optional, Union, TYPE_CHECKING
+from typing import Optional, Union
 from .info import __version__, __author__, __email__
 
-if TYPE_CHECKING:
-    from .txrm.abstract import AbstractTxrm
-
-
+from .txrm.main import open_txrm
 
 
 def convert_and_save(
@@ -40,15 +36,3 @@ def convert_and_save(
         ignore_reference=ignore_reference,
         logging_level=logging_level,
     )
-
-from .txrm.main import open_txrm
-
-# def open_txrm(
-#     filepath: PathLike,
-#     load_images: bool = False,
-#     load_reference: bool = False,
-#     strict: bool = False,
-# ) -> Optional[AbstractTxrm]:
-#     from .txrm.main import open_txrm
-
-#     return open_txrm(filepath, load_images, load_reference, strict)

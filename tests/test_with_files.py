@@ -95,7 +95,8 @@ class TestTxrm2TiffWithFiles(unittest.TestCase):
 
         for dtype in dtypes:
             output_path = self.processed_path / (
-                test_file.parent / f"{test_file.stem}_{dtype}.ome.tiff").relative_to(self.raw_path)
+                test_file.parent / f"{test_file.stem}_{dtype}.ome.tiff"
+            ).relative_to(self.raw_path)
             # Make processed/ subfolders:
             output_path.parent.mkdir(parents=True, exist_ok=True)
 
@@ -110,7 +111,6 @@ class TestTxrm2TiffWithFiles(unittest.TestCase):
                 a.dtype, np.dtype(dtype), msg=f"dtype is {a.dtype} not {dtype}"
             )
 
-
     @parameterized.expand(test_files)
     def test_convert_with_txrm_class(self, test_file):
         logging.debug("Running with file %s", test_file)
@@ -122,7 +122,7 @@ class TestTxrm2TiffWithFiles(unittest.TestCase):
         output_path.parent.mkdir(parents=True, exist_ok=True)
         with txrm2tiff.open_txrm(test_file) as txrm:
             txrm.apply_reference()
-            txrm.save_image(output_path)
+            self.assertTrue(txrm.save_images(output_path))
 
         self.assertTrue(output_path.is_file())
 
@@ -135,11 +135,12 @@ class TestTxrm2TiffWithFiles(unittest.TestCase):
             txrm.apply_reference()
             for dtype in dtypes:
                 output_path = self.processed_path / (
-                    test_file.parent / f"{test_file.stem}_{dtype}.ome.tiff").relative_to(self.raw_path)
+                    test_file.parent / f"{test_file.stem}_{dtype}.ome.tiff"
+                ).relative_to(self.raw_path)
                 # Make processed/ subfolders:
                 output_path.parent.mkdir(parents=True, exist_ok=True)
 
-                txrm.save_image(output_path, dtype)
+                self.assertTrue(txrm.save_images(output_path, dtype))
 
                 self.assertTrue(output_path.exists())
                 with tf.TiffFile(str(output_path)) as tif:
