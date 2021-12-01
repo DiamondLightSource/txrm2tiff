@@ -34,17 +34,12 @@ class TestImageProcessing(unittest.TestCase):
         )
         images.flat = list(range_array) * mosaic_xy_shape[0]
 
-        output_image = stitch_images(
-            images, mosaic_xy_shape
-        )
+        output_image = stitch_images(images, mosaic_xy_shape)
 
         expected_array = np.concatenate(
             [
                 np.concatenate(
-                    [
-                        np.full(image_size, i)
-                        for i in range(0, mosaic_xy_shape[1])
-                    ],
+                    [np.full(image_size, i) for i in range(0, mosaic_xy_shape[1])],
                     axis=1,
                 )
                 for _ in range(0, mosaic_xy_shape[0])

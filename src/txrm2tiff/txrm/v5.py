@@ -6,12 +6,13 @@ from .abstract import AbstractTxrm
 from .ref_mixin import ReferenceMixin
 from .annot_mixin import AnnotatorMixin
 from .save_mixin import SaveMixin
+from .shifts_mixin import ShiftsMixin
 from .txrm_property import txrm_property
 from ..txrm_functions.images import fallback_image_interpreter
 from ..utils.image_processing import stitch_images
 
 
-class Txrm5(SaveMixin, ReferenceMixin, AnnotatorMixin, AbstractTxrm):
+class Txrm5(ShiftsMixin, SaveMixin, ReferenceMixin, AnnotatorMixin, AbstractTxrm):
     @txrm_property(fallback=None)
     def is_mosaic(self) -> bool:
         return bool(np.sum(self.mosaic_dims))
@@ -50,7 +51,11 @@ class Txrm5(SaveMixin, ReferenceMixin, AnnotatorMixin, AbstractTxrm):
             logging.error("Error occurred extracting reference image", exc_info=True)
 
     def get_output(
-        self, load: bool = False, flip: bool = True, clear_images: bool = True
+        self,
+        load: bool = False,
+        shifts: bool = True,
+        flip: bool = True,
+        clear_images: bool = True,
     ) -> typing.Optional[np.ndarray]:
         """
         Returns output image as ndarray with axes [idx, y, x]. If a reference has been applied, the referenced image will be returned.
@@ -64,6 +69,8 @@ class Txrm5(SaveMixin, ReferenceMixin, AnnotatorMixin, AbstractTxrm):
             logging.warning("No image has been loaded, so no output can be returned.")
             return None
         images = images.copy()
+        if shifts and self.has_shifts:
+            images = self.apply_shifts_to_images(images)
         if self.is_mosaic:
             images = stitch_images(images, self.mosaic_dims)
         if clear_images:

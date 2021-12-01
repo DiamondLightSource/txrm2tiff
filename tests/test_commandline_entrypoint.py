@@ -66,6 +66,7 @@ class TestCommandlineEntryPoint(unittest.TestCase):
                 custom_reference=ref_arg,
                 output_path=None,
                 data_type=data_type_arg,
+                ignore_shifts=False,
                 ignore_reference=False,
                 logging_level="info",
             )
@@ -86,6 +87,8 @@ class TestCommandlineEntryPoint(unittest.TestCase):
                 "--datatype",
                 data_type_arg,
                 "--annotate",
+                "--ignore-shifts",
+                "--ignore-ref",
             ]
             __main__.main()
 
@@ -95,7 +98,8 @@ class TestCommandlineEntryPoint(unittest.TestCase):
                 custom_reference=ref_arg,
                 output_path=None,
                 data_type=data_type_arg,
-                ignore_reference=False,
+                ignore_shifts=True,
+                ignore_reference=True,
                 logging_level="info",
             )
 
@@ -160,6 +164,7 @@ class TestCommandlineEntryPoint(unittest.TestCase):
         output_path = None
         annotate = False
         data_type = None
+        ignore_shifts = False
         ignore_reference = False
         logging_level = 1
 
@@ -178,7 +183,7 @@ class TestCommandlineEntryPoint(unittest.TestCase):
             stdout, _ = p.communicate()
         stdout = stdout.replace("\r\n", " ").replace("\n", " ")
         self.assertIn(
-            f"Running with arguments: input_path={input_path}, custom_reference={custom_reference}, output_path={output_path}, annotate={annotate}, data_type={data_type}, ignore_reference={ignore_reference}, logging_level={logging_level}",
+            f"Running with arguments: input_path={input_path}, custom_reference={custom_reference}, output_path={output_path}, annotate={annotate}, data_type={data_type}, ignore_shifts={ignore_shifts}, ignore_reference={ignore_reference}, logging_level={logging_level}",
             stdout,
             msg=f"Actual stdout: {stdout}",
         )
@@ -194,6 +199,7 @@ class TestCommandlineEntryPoint(unittest.TestCase):
         output_path = None
         annotate = False
         data_type = None
+        ignore_shifts = False
         ignore_reference = False
         logging_level = 1
         args = [input_path]
@@ -210,7 +216,7 @@ class TestCommandlineEntryPoint(unittest.TestCase):
             stdout, _ = p.communicate()
         stdout = stdout.replace("\r\n", " ").replace("\n", " ")
         self.assertIn(
-            f"Running with arguments: input_path={input_path}, custom_reference={custom_reference}, output_path={output_path}, annotate={annotate}, data_type={data_type}, ignore_reference={ignore_reference}, logging_level={logging_level}",
+            f"Running with arguments: input_path={input_path}, custom_reference={custom_reference}, output_path={output_path}, annotate={annotate}, data_type={data_type}, ignore_shifts={ignore_shifts}, ignore_reference={ignore_reference}, logging_level={logging_level}",
             stdout,
             msg=f"Actual stdout: {stdout}",
         )

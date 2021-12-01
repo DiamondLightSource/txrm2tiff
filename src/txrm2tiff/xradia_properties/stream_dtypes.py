@@ -55,6 +55,16 @@ position_info_dict = {
     "PositionInfo/TotalAxis": XrmDataTypes.XRM_INT,
 }
 
+alignment_dict = {
+    "Alignment/EncoderShiftsApplied": XrmDataTypes.XRM_INT,
+    "Alignment/MetrologyShiftsApplied": XrmDataTypes.XRM_INT,
+    "Alignment/ReferenceShiftsApplied": XrmDataTypes.XRM_INT,
+    "Alignment/StageShiftsApplied": XrmDataTypes.XRM_INT,
+    "Alignment/StaticRunoutApplied": XrmDataTypes.XRM_INT,
+    "Alignment/X-Shifts": XrmDataTypes.XRM_FLOAT, # Pixels
+    "Alignment/Y-Shifts": XrmDataTypes.XRM_FLOAT, # Pixels
+}
+
 misc = {"exeVersion": XrmDataTypes.XRM_STRING}
 
 streams_dict = {}
@@ -63,4 +73,5 @@ streams_dict.update(ref_image_info_dict)
 streams_dict.update(dtypes_dict)
 streams_dict.update(annotations_dict)
 streams_dict.update(position_info_dict)
+streams_dict.update(alignment_dict)
 streams_dict.update(misc)
