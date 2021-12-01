@@ -54,6 +54,13 @@ convert_group.add_argument(
     help="specify output data type (default: decides data type from input)",
 )
 convert_group.add_argument(
+    "--ignore-shifts",
+    dest="ignore_shifts",
+    default=False,
+    action="store_true",
+    help="if specified ignore any shifts applied to the image",
+)
+convert_group.add_argument(
     "--ignore-ref",
     dest="ignore_reference",
     default=False,

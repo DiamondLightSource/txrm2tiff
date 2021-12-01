@@ -438,6 +438,10 @@ class AbstractTxrm(ABC):
 
     @abstractmethod
     def get_output(
-        self, load: bool = False, flip: bool = True, clear_images: bool = True
-    ) -> typing.Optional[np.ndarray]:
+        self,
+        load: bool = False,
+        shifts: bool = True,
+        flip: bool = True,
+        clear_images: bool = True,
+    ) -> np.ndarray:
         raise NotImplementedError

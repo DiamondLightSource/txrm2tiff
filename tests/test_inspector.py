@@ -56,9 +56,7 @@ class TestInspectorFunctions(unittest.TestCase):
             inspector = Inspector(txrm)
             inspector.list_streams()
             # get all bits of text that aren't empty or the filename
-        text_list = [
-            i for i in inspector.get_text().split("\n") if i and i != filename
-        ]
+        text_list = [i for i in inspector.get_text().split("\n") if i and i != filename]
         # There should be well over 10 lines
         self.assertTrue(len(text_list) > 10)
 

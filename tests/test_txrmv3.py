@@ -78,7 +78,10 @@ class TestTxrm3(unittest.TestCase):
     ):
         strict = False
         txrm = Txrm3(
-            "test/path/file.txrm", load_image=False, load_reference=False, strict=strict
+            "test/path/file.txrm",
+            load_images=False,
+            load_reference=False,
+            strict=strict,
         )
         ole = MagicMock()
         txrm.ole = ole
@@ -108,7 +111,10 @@ class TestTxrm3(unittest.TestCase):
     ):
         strict = False
         txrm = Txrm3(
-            "test/path/file.txrm", load_image=False, load_reference=False, strict=strict
+            "test/path/file.txrm",
+            load_images=False,
+            load_reference=False,
+            strict=strict,
         )
         ole = MagicMock()
         txrm.ole = ole
@@ -129,7 +135,12 @@ class TestTxrm3(unittest.TestCase):
     @patch("txrm2tiff.txrm.v3.AbstractTxrm.clear_images")
     @patch("txrm2tiff.txrm.v3.AbstractTxrm.clear_reference")
     @patch("txrm2tiff.txrm.v3.AbstractTxrm.get_images")
-    def test_get_output(self, mocked_get_images, mocked_clear_ref, mocked_clear_imgs):
+    def test_get_output(
+        self,
+        mocked_get_images,
+        mocked_clear_ref,
+        mocked_clear_imgs,
+    ):
         shape = (3, 4)
         arr = np.arange(np.prod(shape))
         arr.shape = shape
@@ -137,10 +148,15 @@ class TestTxrm3(unittest.TestCase):
 
         strict = False
         txrm = Txrm3(
-            "test/path/file.txrm", load_image=False, load_reference=False, strict=strict
+            "test/path/file.txrm",
+            load_images=False,
+            load_reference=False,
+            strict=strict,
         )
 
-        output = txrm.get_output(load=False, flip=False, clear_images=True)
+        output = txrm.get_output(
+            load=False, shifts=False, flip=False, clear_images=True
+        )
 
         mocked_get_images.assert_called_once_with(False)
         mocked_clear_ref.assert_called_once_with()

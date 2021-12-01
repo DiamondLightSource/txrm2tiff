@@ -11,6 +11,7 @@ def convert_and_save(
     output_path: Optional[PathLike] = None,
     annotate: bool = False,
     data_type: Optional[Union[str, int]] = None,
+    ignore_shifts: bool = False,
     ignore_reference: bool = False,
     logging_level: Union[str, int] = "info",
 ):
@@ -33,6 +34,7 @@ def convert_and_save(
         custom_reference=custom_reference,
         output_path=output_path,
         data_type=data_type,
+        ignore_shifts=ignore_shifts,
         ignore_reference=ignore_reference,
         logging_level=logging_level,
     )

@@ -5,12 +5,13 @@ import numpy as np
 from .abstract import AbstractTxrm
 from .ref_mixin import ReferenceMixin
 from .save_mixin import SaveMixin
+from .shifts_mixin import ShiftsMixin
 from .txrm_property import txrm_property
 from ..txrm_functions.images import fallback_image_interpreter
 from ..utils.functions import convert_to_int
 
 
-class Txrm3(SaveMixin, ReferenceMixin, AbstractTxrm):
+class Txrm3(ShiftsMixin, SaveMixin, ReferenceMixin, AbstractTxrm):
     @txrm_property(fallback=None)
     def is_mosaic(self) -> bool:
         return self.image_info.get("MosiacMode", [0])[0] == 1
@@ -63,7 +64,11 @@ class Txrm3(SaveMixin, ReferenceMixin, AbstractTxrm):
             logging.error("Error occurred extracting reference image", exc_info=True)
 
     def get_output(
-        self, load: bool = False, flip: bool = True, clear_images: bool = True
+        self,
+        load: bool = False,
+        shifts: bool = True,
+        flip: bool = True,
+        clear_images: bool = True,
     ) -> typing.Optional[np.ndarray]:
         """
         Returns output image as ndarray with axes [idx, y, x]. If a reference has been applied, the referenced image will be returned.
@@ -72,11 +77,14 @@ class Txrm3(SaveMixin, ReferenceMixin, AbstractTxrm):
         flip: flip the Y-axis of the output image(s) (how they are displayed in DX)
         clear_images: clear images and reference from the Txrm instance after returning.
         """
+
         images = self.get_images(load)
         if images is None:
             logging.warning("No image has been loaded, so no output can be returned.")
             return None
         images = images.copy()
+        if shifts and self.has_shifts:
+            images = self.apply_shifts_to_images(images)
         if clear_images:
             self.clear_images()
             self.clear_reference()

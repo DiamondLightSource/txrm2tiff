@@ -14,6 +14,7 @@ class SaveMixin:
         self,
         filepath: Optional[Path] = None,
         datatype: Optional[DTypeLike] = None,
+        shifts: bool = True,
         flip: bool = True,
         clear_images: bool = False,
         mkdir: bool = False,
@@ -25,7 +26,9 @@ class SaveMixin:
             if not self.referenced:
                 logging.info("Saving without reference")
 
-            im = self.get_output(flip=flip, clear_images=clear_images)
+            im = self.get_output(
+                load=True, shifts=shifts, flip=flip, clear_images=clear_images
+            )
             if im is None:
                 raise AttributeError("Cannot save image as no image has been loaded.")
             if datatype is not None:
