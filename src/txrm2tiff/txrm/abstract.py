@@ -441,7 +441,7 @@ class AbstractTxrm(ABC):
         self,
         load: bool = False,
         shifts: bool = True,
-        flip: bool = True,
+        flip: bool = False,
         clear_images: bool = True,
-    ) -> np.ndarray:
+    ) -> typing.Optional[np.ndarray]:
         raise NotImplementedError

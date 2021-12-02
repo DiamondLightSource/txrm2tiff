@@ -53,7 +53,10 @@ class TestTxrm5(unittest.TestCase):
     ):
         strict = False
         txrm = Txrm5(
-            "test/path/file.txrm", load_images=False, load_reference=False, strict=strict
+            "test/path/file.txrm",
+            load_images=False,
+            load_reference=False,
+            strict=strict,
         )
         ole = MagicMock()
         txrm.ole = ole
@@ -81,7 +84,10 @@ class TestTxrm5(unittest.TestCase):
     ):
         strict = False
         txrm = Txrm5(
-            "test/path/file.txrm", load_images=False, load_reference=False, strict=strict
+            "test/path/file.txrm",
+            load_images=False,
+            load_reference=False,
+            strict=strict,
         )
         ole = MagicMock()
         txrm.ole = ole

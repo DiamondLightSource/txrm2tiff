@@ -55,10 +55,14 @@ class TestRun(unittest.TestCase):
         txrm.path = input_filepath
         txrm.name = input_filepath.name
         mocked_open_txrm.return_value.__enter__.return_value = txrm
-        _convert_and_save(input_filepath, None, None, False, None, False)
+        _convert_and_save(input_filepath, None, None, False, False, None, False)
         mocked_open_txrm.assert_called_with(input_filepath)
         txrm.save_images.assert_called_with(
-            input_filepath.with_suffix(".ome.tiff"), None, False, mkdir=True
+            input_filepath.with_suffix(".ome.tiff"),
+            None,
+            flip=False,
+            shifts=False,
+            mkdir=True,
         )
 
     @parameterized.expand([(Txrm3,), (Txrm5,)])
@@ -180,7 +184,7 @@ class TestRun(unittest.TestCase):
         _batch_convert_files(input_dir)
         mocked_convert_save.assert_has_calls(
             [
-                call(f_in, f_out, None, True, None, False, False)
+                call(f_in, f_out, None, True, False, None, True, False)
                 for f_in, f_out in zip(input_files, output_files)
             ]
         )
@@ -213,7 +217,7 @@ class TestRun(unittest.TestCase):
         _batch_convert_files(input_dir, output_dir)
         mocked_convert_save.assert_has_calls(
             [
-                call(f_in, f_out, None, True, None, False, False)
+                call(f_in, f_out, None, True, False, None, True, False)
                 for f_in, f_out in zip(input_paths, output_paths)
             ]
         )
@@ -231,6 +235,7 @@ class TestRun(unittest.TestCase):
                 custom_reference,
                 output_path,
                 True,
+                False,
                 dtype,
                 True,
                 logging_level,
@@ -253,6 +258,7 @@ class TestRun(unittest.TestCase):
             output_path,
             custom_reference,
             True,
+            False,
             dtype,
             True,
             True,
@@ -261,7 +267,7 @@ class TestRun(unittest.TestCase):
 
         mocked_create_logger.assert_called_once_with(logging_level)
         mocked_convert_and_save.assert_called_once_with(
-            Path(input_path), Path(output_path), None, True, dtype, True, True
+            Path(input_path), Path(output_path), None, True, False, dtype, False, True
         )  # Casts paths to Path
 
     @patch("pathlib.Path.exists", MagicMock(return_value=True))
@@ -281,6 +287,7 @@ class TestRun(unittest.TestCase):
             output_path,
             custom_reference,
             True,
+            False,
             dtype,
             True,
             True,
@@ -289,7 +296,7 @@ class TestRun(unittest.TestCase):
 
         mocked_create_logger.assert_called_once_with(logging_level)
         mocked_convert_and_save.assert_called_once_with(
-            input_path, output_path, None, True, dtype, True, True
+            input_path, output_path, None, True, False, dtype, False, True
         )
 
     @patch("pathlib.Path.is_file", MagicMock(return_value=True))
@@ -310,6 +317,7 @@ class TestRun(unittest.TestCase):
             output_path,
             custom_reference,
             True,
+            False,
             dtype,
             True,
             True,
@@ -318,7 +326,7 @@ class TestRun(unittest.TestCase):
 
         mocked_create_logger.assert_called_once_with(logging_level)
         mocked_convert_and_save.assert_called_once_with(
-            input_path, output_path, custom_reference, True, dtype, True, True
+            input_path, output_path, custom_reference, True, False, dtype, False, True
         )
 
     @patch("pathlib.Path.is_dir", MagicMock(return_value=True))
@@ -333,11 +341,13 @@ class TestRun(unittest.TestCase):
         dtype = "uint8"
         logging_level = "debug"
 
-        run(input_path, output_path, None, True, dtype, True, True, logging_level)
+        run(
+            input_path, output_path, None, True, False, dtype, True, True, logging_level
+        )
 
         mocked_create_logger.assert_called_once_with(logging_level)
         mocked_batch_convert_files.assert_called_once_with(
-            Path(input_path), Path(output_path), True, dtype, True, True
+            Path(input_path), Path(output_path), True, False, dtype, False, True
         )
 
     @patch("pathlib.Path.is_dir", MagicMock(return_value=True))
@@ -352,11 +362,13 @@ class TestRun(unittest.TestCase):
         dtype = "uint8"
         logging_level = "debug"
 
-        run(input_path, output_path, None, True, dtype, True, True, logging_level)
+        run(
+            input_path, output_path, None, True, False, dtype, True, True, logging_level
+        )
 
         mocked_create_logger.assert_called_once_with(logging_level)
         mocked_batch_convert_files.assert_called_once_with(
-            input_path, output_path, True, dtype, True, True
+            input_path, output_path, True, False, dtype, False, True
         )
 
     @patch("txrm2tiff.run._convert_and_save")
@@ -366,7 +378,7 @@ class TestRun(unittest.TestCase):
             tmp_in_filepath.touch()
             run(tmp_in_filepath)
         mocked_convert.assert_called_with(
-            tmp_in_filepath, None, None, False, None, False, False
+            tmp_in_filepath, None, None, False, False, None, True, False
         )
 
     @patch("txrm2tiff.run._batch_convert_files")
@@ -375,5 +387,5 @@ class TestRun(unittest.TestCase):
             tmp_in_path = Path(tmp_in)
             run(tmp_in_path)
         mocked_batch_convert.assert_called_with(
-            tmp_in_path, None, False, None, False, False
+            tmp_in_path, None, False, False, None, True, False
         )

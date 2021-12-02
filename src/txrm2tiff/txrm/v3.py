@@ -67,7 +67,7 @@ class Txrm3(ShiftsMixin, SaveMixin, ReferenceMixin, AbstractTxrm):
         self,
         load: bool = False,
         shifts: bool = True,
-        flip: bool = True,
+        flip: bool = False,
         clear_images: bool = True,
     ) -> typing.Optional[np.ndarray]:
         """
@@ -77,7 +77,6 @@ class Txrm3(ShiftsMixin, SaveMixin, ReferenceMixin, AbstractTxrm):
         flip: flip the Y-axis of the output image(s) (how they are displayed in DX)
         clear_images: clear images and reference from the Txrm instance after returning.
         """
-
         images = self.get_images(load)
         if images is None:
             logging.warning("No image has been loaded, so no output can be returned.")
@@ -88,6 +87,7 @@ class Txrm3(ShiftsMixin, SaveMixin, ReferenceMixin, AbstractTxrm):
         if clear_images:
             self.clear_images()
             self.clear_reference()
-        if flip:
+        if not flip:
+            # The default state is flipped with respect to how it's displayed in XRM Data Explorer
             return np.flip(images, axis=1)
         return images

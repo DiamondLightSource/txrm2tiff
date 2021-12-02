@@ -14,6 +14,7 @@ def run(
     output_path: Optional[PathLike] = None,
     custom_reference: Optional[PathLike] = None,
     annotate: bool = False,
+    flip: bool = False,
     data_type: Optional[str] = None,
     ignore_shifts: bool = False,
     ignore_reference: bool = False,
@@ -22,11 +23,12 @@ def run(
     create_logger(str(logging_level).lower())
     logging.debug(
         "Running with arguments: "
-        "input_path=%s, custom_reference=%s, output_path=%s, annotate=%s, data_type=%s, ignore_shifts=%s, ignore_reference=%s, logging_level=%s",
+        "input_path=%s, custom_reference=%s, output_path=%s, annotate=%s, flip=%s, data_type=%s, ignore_shifts=%s, ignore_reference=%s, logging_level=%s",
         input_path,
         custom_reference,
         output_path,
         annotate,
+        flip,
         data_type,
         ignore_shifts,
         ignore_reference,
@@ -44,8 +46,9 @@ def run(
                 input_path,
                 output_path,
                 annotate,
+                flip,
                 data_type,
-                ignore_shifts,
+                not ignore_shifts,
                 ignore_reference,
             )
         else:
@@ -63,8 +66,9 @@ def run(
                 output_path,
                 custom_reference,
                 annotate,
+                flip,
                 data_type,
-                ignore_shifts,
+                not ignore_shifts,
                 ignore_reference,
             )
     else:
@@ -76,8 +80,9 @@ def _batch_convert_files(
     input_directory: Path,
     output: Optional[Path] = None,
     annotate: bool = True,
+    flip: bool = False,
     data_type: Optional[DTypeLike] = None,
-    ignore_shifts: bool = False,
+    shifts: bool = True,
     ignore_reference: bool = False,
 ) -> None:
     filepath_list = _find_files(input_directory)
@@ -105,8 +110,9 @@ def _batch_convert_files(
             output_path,
             None,
             annotate,
+            flip,
             data_type,
-            ignore_shifts,
+            shifts,
             ignore_reference,
         )
 
@@ -120,15 +126,16 @@ def _convert_and_save(
     output_path: Optional[Path] = None,
     custom_reference: Optional[PathLike] = None,
     annotate: bool = True,
+    flip: bool = False,
     data_type: Optional[DTypeLike] = None,
-    ignore_shifts: bool = False,
+    shifts: bool = True,
     ignore_reference: bool = False,
 ) -> None:
     with open_txrm(input_path) as txrm:
         _convert_file(txrm, custom_reference, ignore_reference, annotate)
         output_path = _decide_output_path(txrm.path, output_path)
         output_path.parent.mkdir(parents=True, exist_ok=True)  # Make output directory
-        txrm.save_images(output_path, data_type, ignore_shifts, mkdir=True)
+        txrm.save_images(output_path, data_type, flip=flip, shifts=shifts, mkdir=True)
 
 
 def _convert_file(

@@ -42,7 +42,8 @@ class AnnotatorMixin:
             logging.warning("No annotations to apply")
             self.annotated_image = None
         else:
-            images = self.get_output(flip=True, clear_images=False)
+            # Annotations will be in the wrong place if flipped
+            images = self.get_output(flip=False, clear_images=False)
             self.annotated_image = self.apply_annotations(images, annotations)
         return self.annotated_image
 

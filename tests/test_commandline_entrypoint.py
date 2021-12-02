@@ -55,6 +55,7 @@ class TestCommandlineEntryPoint(unittest.TestCase):
             mock_run.return_value = None
             input_arg = "input_path"
             annotate_arg = False
+            flip = False
             ref_arg = None
             data_type_arg = None
             sys.argv = ["txrm2tiff", "--input", input_arg]
@@ -62,9 +63,10 @@ class TestCommandlineEntryPoint(unittest.TestCase):
 
             mock_run.assert_called_once_with(
                 input_path=input_arg,
-                annotate=annotate_arg,
                 custom_reference=ref_arg,
                 output_path=None,
+                annotate=annotate_arg,
+                flip=flip,
                 data_type=data_type_arg,
                 ignore_shifts=False,
                 ignore_reference=False,
@@ -76,6 +78,7 @@ class TestCommandlineEntryPoint(unittest.TestCase):
             mock_run.return_value = None
             input_arg = "input_path"
             annotate_arg = True
+            flip_arg = True
             ref_arg = "ref_path"
             data_type_arg = "uint16"
             sys.argv = [
@@ -87,6 +90,7 @@ class TestCommandlineEntryPoint(unittest.TestCase):
                 "--datatype",
                 data_type_arg,
                 "--annotate",
+                "--flip",
                 "--ignore-shifts",
                 "--ignore-ref",
             ]
@@ -94,9 +98,10 @@ class TestCommandlineEntryPoint(unittest.TestCase):
 
             mock_run.assert_called_once_with(
                 input_path=input_arg,
-                annotate=annotate_arg,
                 custom_reference=ref_arg,
                 output_path=None,
+                annotate=annotate_arg,
+                flip=flip_arg,
                 data_type=data_type_arg,
                 ignore_shifts=True,
                 ignore_reference=True,
@@ -162,7 +167,8 @@ class TestCommandlineEntryPoint(unittest.TestCase):
         input_path = "input_file_path"
         custom_reference = "ref_path"
         output_path = None
-        annotate = False
+        annotate = True
+        flip = True
         data_type = None
         ignore_shifts = False
         ignore_reference = False
@@ -178,12 +184,14 @@ class TestCommandlineEntryPoint(unittest.TestCase):
             custom_reference,
             "--set-logging",
             str(logging_level),
+            "--annotate",
+            "--flip",
         ]
         with Popen(run_args, stdout=PIPE, stderr=STDOUT, universal_newlines=True) as p:
             stdout, _ = p.communicate()
         stdout = stdout.replace("\r\n", " ").replace("\n", " ")
         self.assertIn(
-            f"Running with arguments: input_path={input_path}, custom_reference={custom_reference}, output_path={output_path}, annotate={annotate}, data_type={data_type}, ignore_shifts={ignore_shifts}, ignore_reference={ignore_reference}, logging_level={logging_level}",
+            f"Running with arguments: input_path={input_path}, custom_reference={custom_reference}, output_path={output_path}, annotate={annotate}, flip={flip}, data_type={data_type}, ignore_shifts={ignore_shifts}, ignore_reference={ignore_reference}, logging_level={logging_level}",
             stdout,
             msg=f"Actual stdout: {stdout}",
         )
@@ -198,6 +206,7 @@ class TestCommandlineEntryPoint(unittest.TestCase):
         custom_reference = None
         output_path = None
         annotate = False
+        flip = False
         data_type = None
         ignore_shifts = False
         ignore_reference = False
@@ -216,7 +225,7 @@ class TestCommandlineEntryPoint(unittest.TestCase):
             stdout, _ = p.communicate()
         stdout = stdout.replace("\r\n", " ").replace("\n", " ")
         self.assertIn(
-            f"Running with arguments: input_path={input_path}, custom_reference={custom_reference}, output_path={output_path}, annotate={annotate}, data_type={data_type}, ignore_shifts={ignore_shifts}, ignore_reference={ignore_reference}, logging_level={logging_level}",
+            f"Running with arguments: input_path={input_path}, custom_reference={custom_reference}, output_path={output_path}, annotate={annotate}, flip={flip}, data_type={data_type}, ignore_shifts={ignore_shifts}, ignore_reference={ignore_reference}, logging_level={logging_level}",
             stdout,
             msg=f"Actual stdout: {stdout}",
         )
