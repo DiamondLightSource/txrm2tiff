@@ -54,7 +54,7 @@ class Txrm5(ShiftsMixin, SaveMixin, ReferenceMixin, AnnotatorMixin, AbstractTxrm
         self,
         load: bool = False,
         shifts: bool = True,
-        flip: bool = True,
+        flip: bool = False,
         clear_images: bool = True,
     ) -> typing.Optional[np.ndarray]:
         """
@@ -76,7 +76,7 @@ class Txrm5(ShiftsMixin, SaveMixin, ReferenceMixin, AnnotatorMixin, AbstractTxrm
         if clear_images:
             self.clear_images()
             self.clear_reference()
-
-        if flip:
+        if not flip:
+            # The default state is flipped with respect to how it's displayed in XRM Data Explorer
             return np.flip(images, axis=1)
         return images

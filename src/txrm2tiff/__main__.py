@@ -45,6 +45,13 @@ convert_group.add_argument(
     help="save a second annotated copy, if annotations are available",
 )
 convert_group.add_argument(
+    "-f",
+    "--flip",
+    dest="flip",
+    action="store_true",
+    help="If specified, the output image will be flipped in the Y-axis with respect to how it displays in XRM Data Explorer",
+)
+convert_group.add_argument(
     "-d",
     "--datatype",
     dest="data_type",

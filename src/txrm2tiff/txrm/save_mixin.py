@@ -15,7 +15,7 @@ class SaveMixin:
         filepath: Optional[Path] = None,
         datatype: Optional[DTypeLike] = None,
         shifts: bool = True,
-        flip: bool = True,
+        flip: bool = False,
         clear_images: bool = False,
         mkdir: bool = False,
     ) -> bool:

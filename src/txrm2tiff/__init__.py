@@ -10,6 +10,7 @@ def convert_and_save(
     custom_reference: Optional[PathLike] = None,
     output_path: Optional[PathLike] = None,
     annotate: bool = False,
+    flip: bool = False,
     data_type: Optional[Union[str, int]] = None,
     ignore_shifts: bool = False,
     ignore_reference: bool = False,
@@ -30,9 +31,10 @@ def convert_and_save(
 
     run(
         input_path=input_path,
-        annotate=annotate,
-        custom_reference=custom_reference,
         output_path=output_path,
+        custom_reference=custom_reference,
+        annotate=annotate,
+        flip=flip,
         data_type=data_type,
         ignore_shifts=ignore_shifts,
         ignore_reference=ignore_reference,

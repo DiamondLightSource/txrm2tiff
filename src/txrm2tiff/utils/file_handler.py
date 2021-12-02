@@ -67,7 +67,7 @@ def manual_save(
         logging.info("No data type specified. Saving with default data type.")
     if metadata is not None:
         meta_img = metadata.image()
-        meta_img.Pixels.set_PixelType(dtype_dict[str(image.dtype)])
+        meta_img.Pixels.set_PixelType(dtype_dict[image.dtype.name])
         meta_img.set_Name(filepath.name)
         metadata = metadata.to_xml().encode()
 

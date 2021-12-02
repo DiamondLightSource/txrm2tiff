@@ -154,9 +154,7 @@ class TestTxrm3(unittest.TestCase):
             strict=strict,
         )
 
-        output = txrm.get_output(
-            load=False, shifts=False, flip=False, clear_images=True
-        )
+        output = txrm.get_output(load=False, shifts=False, flip=True, clear_images=True)
 
         mocked_get_images.assert_called_once_with(False)
         mocked_clear_ref.assert_called_once_with()
