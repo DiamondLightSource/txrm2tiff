@@ -110,7 +110,7 @@ class TestCommandlineEntryPoint(unittest.TestCase):
 
     def test_script_method(self):
         args = [Path("path_to/input.txrm")]
-        run_args = ["txrm2tiff", "-i", args[0]]
+        run_args = ["txrm2tiff", "-i", str(args[0])]
         with Popen(run_args, stdout=PIPE, stderr=STDOUT, universal_newlines=True) as p:
             stdout, _ = p.communicate()
         stdout = stdout.strip("\r\n").strip("\n")
@@ -217,7 +217,7 @@ class TestCommandlineEntryPoint(unittest.TestCase):
             "-m",
             "txrm2tiff",
             "-i",
-            args[0],
+            str(args[0]),
             "--set-logging",
             str(logging_level),
         ]

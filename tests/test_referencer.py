@@ -48,8 +48,8 @@ class TestReferencer(unittest.TestCase):
 
                 referencer.apply_reference(tif_path, False)
 
-        args = mocked_apply_array.call_args.args
-        kwargs = mocked_apply_array.call_args.kwargs
+        args = mocked_apply_array.call_args[0]
+        kwargs = mocked_apply_array.call_args[1]
         assert_array_equal(args[0], array)
         self.assertEqual(kwargs, {"overwrite": True})
 
@@ -70,12 +70,12 @@ class TestReferencer(unittest.TestCase):
                 manual_save(tif_path, array, metadata=metadata)
 
                 referencer.apply_reference(tif_path, True)
-            args = mocked_apply_array.call_args.args
-            kwargs = mocked_apply_array.call_args.kwargs
-            assert_array_equal(args[0], array)
-            self.assertEqual(
-                kwargs, {"overwrite": True, "custom_exposure": np.mean(exposures)}
-            )
+        args = mocked_apply_array.call_args[0]
+        kwargs = mocked_apply_array.call_args[1]
+        assert_array_equal(args[0], array)
+        self.assertEqual(
+            kwargs, {"overwrite": True, "custom_exposure": np.mean(exposures)}
+        )
 
     @parameterized.expand([(Txrm3,), (Txrm5,)])
     @patch("txrm2tiff.txrm.ref_mixin.file_can_be_opened", MagicMock(return_value=True))
