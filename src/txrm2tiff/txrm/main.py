@@ -1,8 +1,8 @@
-import logging
 import typing
 from collections import defaultdict
 from os import PathLike
 import olefile
+from io import IOBase
 
 from .abstract import AbstractTxrm
 from .v3 import Txrm3
@@ -11,8 +11,8 @@ from .. import txrm_functions
 from ..utils import file_handler
 
 
-def __invalid_txrm_file(filepath: PathLike, *args) -> None:
-    raise IOError(f"Invalid txrm file '{filepath}'")
+def __invalid_txrm_file(file: PathLike, *args) -> None:
+    raise IOError(f"Invalid txrm file '{file}'")
 
 
 txrm_classes = defaultdict(
@@ -25,22 +25,28 @@ txrm_classes = defaultdict(
 
 
 def open_txrm(
-    filepath: PathLike,
+    file: typing.Union[PathLike, IOBase, bytes],
     load_images: bool = True,
     load_reference: bool = True,
     strict: bool = False,
 ) -> typing.Optional[AbstractTxrm]:
-    TxrmClass = get_txrm_class(filepath)
-    return TxrmClass(filepath, load_images, load_reference, strict)
+    TxrmClass = get_txrm_class(file)
+    return TxrmClass(file, load_images, load_reference, strict)
 
 
 def get_txrm_class(
-    filepath: PathLike,
+    file: typing.Union[PathLike, IOBase, bytes],
 ) -> typing.Optional[AbstractTxrm]:
-    if not file_handler.file_can_be_opened(filepath) or not file_handler.ole_file_works(
-        filepath
+    if isinstance(file, PathLike) and (
+        not file_handler.file_can_be_opened(file)
+        or not file_handler.ole_file_works(file)
     ):
-        return __invalid_txrm_file(filepath)
-    with olefile.OleFileIO(filepath) as ole:
+        return __invalid_txrm_file(file)
+    try:
+        ole = olefile.OleFileIO(file)
         m_version = int(txrm_functions.get_file_version(ole))
+    finally:
+        if not isinstance(file, IOBase):
+            # Don't close the IO as it can't be reopened
+            ole.close()
     return txrm_classes[m_version]

@@ -22,6 +22,10 @@ class SaveMixin:
         """Saves images (if available) returning True if successful."""
         try:
             if filepath is None:
+                if self.path is None:
+                    raise ValueError(
+                        "An output filepath must be given if an input path was not given."
+                    )
                 filepath = self.path.with_suffix(".ome.tiff")
             if not self.referenced:
                 logging.info("Saving without reference")
