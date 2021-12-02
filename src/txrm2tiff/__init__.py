@@ -3,4 +3,4 @@ from typing import Optional, Union
 from .info import __version__, __author__, __email__
 
 from .txrm.main import open_txrm
-from .run import run
+from .main import convert_and_save

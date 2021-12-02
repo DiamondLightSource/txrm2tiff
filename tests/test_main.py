@@ -7,8 +7,8 @@ from tempfile import TemporaryDirectory
 from random import choice, randint
 from string import ascii_letters
 
-from txrm2tiff.run import (
-    run,
+from txrm2tiff.main import (
+    convert_and_save,
     _batch_convert_files,
     _convert_and_save,
     _set_output_suffix,
@@ -47,7 +47,7 @@ class TestRun(unittest.TestCase):
         self.assertEqual("file.ome.tif", str(xrm_output))
 
     @parameterized.expand([(Txrm3,), (Txrm5,)])
-    @patch("txrm2tiff.run.open_txrm")
+    @patch("txrm2tiff.main.open_txrm")
     def test_convert_and_save(self, TxrmClass, mocked_open_txrm):
         input_filepath = Path("test_file.txrm")
 
@@ -158,9 +158,9 @@ class TestRun(unittest.TestCase):
 
             self.assertEquals(txrm_files.union(xrm_files), set(_find_files(test_dir)))
 
-    @patch("txrm2tiff.run._set_output_suffix")
-    @patch("txrm2tiff.run._find_files")
-    @patch("txrm2tiff.run._convert_and_save")
+    @patch("txrm2tiff.main._set_output_suffix")
+    @patch("txrm2tiff.main._find_files")
+    @patch("txrm2tiff.main._convert_and_save")
     def test_batch_convert_files(
         self, mocked_convert_save, mocked_find_files, mocked_suffix_definer
     ):
@@ -190,8 +190,8 @@ class TestRun(unittest.TestCase):
         )
 
     @patch("pathlib.Path.mkdir", MagicMock())
-    @patch("txrm2tiff.run._find_files")
-    @patch("txrm2tiff.run._convert_and_save")
+    @patch("txrm2tiff.main._find_files")
+    @patch("txrm2tiff.main._convert_and_save")
     def test_batch_convert_files_to_output(
         self,
         mocked_convert_save,
@@ -223,14 +223,14 @@ class TestRun(unittest.TestCase):
         )
 
     @patch("pathlib.Path.exists", MagicMock(return_value=False))
-    def test_run_non_existant_file(self):
+    def test_convert_and_save_non_existant_file(self):
         input_path = "input/path/file.txrm"
         custom_reference = "input/path/custom.xrm"
         output_path = "output/path"
         dtype = "uint8"
         logging_level = "debug"
         with self.assertRaises(IOError):
-            run(
+            convert_and_save(
                 input_path,
                 output_path,
                 custom_reference,
@@ -242,9 +242,9 @@ class TestRun(unittest.TestCase):
             )
 
     @patch("pathlib.Path.exists", MagicMock(return_value=True))
-    @patch("txrm2tiff.run.create_logger")
-    @patch("txrm2tiff.run._convert_and_save")
-    def test_run_str_input_invalid_custom_reference(
+    @patch("txrm2tiff.main.create_logger")
+    @patch("txrm2tiff.main._convert_and_save")
+    def test_convert_and_save_str_input_invalid_custom_reference(
         self, mocked_convert_and_save, mocked_create_logger
     ):
         input_path = "input/path/file.txrm"
@@ -253,7 +253,7 @@ class TestRun(unittest.TestCase):
         dtype = "uint8"
         logging_level = "debug"
 
-        run(
+        convert_and_save(
             input_path,
             output_path,
             custom_reference,
@@ -271,9 +271,9 @@ class TestRun(unittest.TestCase):
         )  # Casts paths to Path
 
     @patch("pathlib.Path.exists", MagicMock(return_value=True))
-    @patch("txrm2tiff.run.create_logger")
-    @patch("txrm2tiff.run._convert_and_save")
-    def test_run_Path_input_invalid_custom_reference(
+    @patch("txrm2tiff.main.create_logger")
+    @patch("txrm2tiff.main._convert_and_save")
+    def test_convert_and_save_Path_input_invalid_custom_reference(
         self, mocked_convert_and_save, mocked_create_logger
     ):
         input_path = Path("input/path/file.txrm")
@@ -282,7 +282,7 @@ class TestRun(unittest.TestCase):
         dtype = "uint8"
         logging_level = "debug"
 
-        run(
+        convert_and_save(
             input_path,
             output_path,
             custom_reference,
@@ -301,9 +301,9 @@ class TestRun(unittest.TestCase):
 
     @patch("pathlib.Path.is_file", MagicMock(return_value=True))
     @patch("pathlib.Path.exists", MagicMock(return_value=True))
-    @patch("txrm2tiff.run.create_logger")
-    @patch("txrm2tiff.run._convert_and_save")
-    def test_run_Path_input_custom_reference(
+    @patch("txrm2tiff.main.create_logger")
+    @patch("txrm2tiff.main._convert_and_save")
+    def test_convert_and_save_Path_input_custom_reference(
         self, mocked_convert_and_save, mocked_create_logger
     ):
         input_path = Path("input/path/file.txrm")
@@ -312,7 +312,7 @@ class TestRun(unittest.TestCase):
         dtype = "uint8"
         logging_level = "debug"
 
-        run(
+        convert_and_save(
             input_path,
             output_path,
             custom_reference,
@@ -331,9 +331,9 @@ class TestRun(unittest.TestCase):
 
     @patch("pathlib.Path.is_dir", MagicMock(return_value=True))
     @patch("pathlib.Path.exists", MagicMock(return_value=True))
-    @patch("txrm2tiff.run.create_logger")
-    @patch("txrm2tiff.run._batch_convert_files")
-    def test_run_str_input_batch(
+    @patch("txrm2tiff.main.create_logger")
+    @patch("txrm2tiff.main._batch_convert_files")
+    def test_convert_and_save_str_input_batch(
         self, mocked_batch_convert_files, mocked_create_logger
     ):
         input_path = "input/path"
@@ -341,7 +341,7 @@ class TestRun(unittest.TestCase):
         dtype = "uint8"
         logging_level = "debug"
 
-        run(
+        convert_and_save(
             input_path, output_path, None, True, False, dtype, True, True, logging_level
         )
 
@@ -352,9 +352,9 @@ class TestRun(unittest.TestCase):
 
     @patch("pathlib.Path.is_dir", MagicMock(return_value=True))
     @patch("pathlib.Path.exists", MagicMock(return_value=True))
-    @patch("txrm2tiff.run.create_logger")
-    @patch("txrm2tiff.run._batch_convert_files")
-    def test_run_Path_input_batch(
+    @patch("txrm2tiff.main.create_logger")
+    @patch("txrm2tiff.main._batch_convert_files")
+    def test_convert_and_save_Path_input_batch(
         self, mocked_batch_convert_files, mocked_create_logger
     ):
         input_path = Path("input/path")
@@ -362,7 +362,7 @@ class TestRun(unittest.TestCase):
         dtype = "uint8"
         logging_level = "debug"
 
-        run(
+        convert_and_save(
             input_path, output_path, None, True, False, dtype, True, True, logging_level
         )
 
@@ -371,21 +371,21 @@ class TestRun(unittest.TestCase):
             input_path, output_path, True, False, dtype, False, True
         )
 
-    @patch("txrm2tiff.run._convert_and_save")
-    def test_run_with_file(self, mocked_convert):
+    @patch("txrm2tiff.main._convert_and_save")
+    def test_convert_and_save_with_file(self, mocked_convert):
         with TemporaryDirectory(dir=".") as tmp_in:
             tmp_in_filepath = Path(tmp_in) / f"{randint(0,9999)}.xrm"
             tmp_in_filepath.touch()
-            run(tmp_in_filepath)
+            convert_and_save(tmp_in_filepath)
         mocked_convert.assert_called_with(
             tmp_in_filepath, None, None, False, False, None, True, False
         )
 
-    @patch("txrm2tiff.run._batch_convert_files")
-    def test_run_with_dir(self, mocked_batch_convert):
+    @patch("txrm2tiff.main._batch_convert_files")
+    def test_convert_and_save_with_dir(self, mocked_batch_convert):
         with TemporaryDirectory(dir=".") as tmp_in:
             tmp_in_path = Path(tmp_in)
-            run(tmp_in_path)
+            convert_and_save(tmp_in_path)
         mocked_batch_convert.assert_called_with(
             tmp_in_path, None, False, False, None, True, False
         )

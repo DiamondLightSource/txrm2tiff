@@ -9,7 +9,7 @@ from .txrm.abstract import AbstractTxrm
 from .utils.logging import create_logger
 
 
-def run(
+def convert_and_save(
     input_path: PathLike,
     output_path: Optional[PathLike] = None,
     custom_reference: Optional[PathLike] = None,

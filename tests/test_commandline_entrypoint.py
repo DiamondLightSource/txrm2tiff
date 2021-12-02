@@ -51,8 +51,8 @@ class TestCommandlineEntryPoint(unittest.TestCase):
             mocked_shortcut_creation.assert_called_once_with()
 
     def test_argparse_function_with_args(self):
-        with patch("txrm2tiff.run.run", MagicMock()) as mock_run:
-            mock_run.return_value = None
+        with patch("txrm2tiff.convert_and_save", MagicMock()) as mock_convert_and_save:
+            mock_convert_and_save.return_value = None
             input_arg = "input_path"
             annotate_arg = False
             flip = False
@@ -61,7 +61,7 @@ class TestCommandlineEntryPoint(unittest.TestCase):
             sys.argv = ["txrm2tiff", "--input", input_arg]
             __main__.main()
 
-            mock_run.assert_called_once_with(
+            mock_convert_and_save.assert_called_once_with(
                 input_path=input_arg,
                 custom_reference=ref_arg,
                 output_path=None,
@@ -74,8 +74,8 @@ class TestCommandlineEntryPoint(unittest.TestCase):
             )
 
     def test_argparse_function_with_all_args(self):
-        with patch("txrm2tiff.run.run", MagicMock()) as mock_run:
-            mock_run.return_value = None
+        with patch("txrm2tiff.convert_and_save", MagicMock()) as mock_convert_and_save:
+            mock_convert_and_save.return_value = None
             input_arg = "input_path"
             annotate_arg = True
             flip_arg = True
@@ -96,7 +96,7 @@ class TestCommandlineEntryPoint(unittest.TestCase):
             ]
             __main__.main()
 
-            mock_run.assert_called_once_with(
+            mock_convert_and_save.assert_called_once_with(
                 input_path=input_arg,
                 custom_reference=ref_arg,
                 output_path=None,

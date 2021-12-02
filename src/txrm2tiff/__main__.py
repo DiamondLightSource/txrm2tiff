@@ -1,5 +1,4 @@
 #!/usr/bin/python
-from pathlib import Path
 import argparse
 import sys
 
