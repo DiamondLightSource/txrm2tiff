@@ -6,6 +6,7 @@ import os
 from pathlib import Path
 from time import time, sleep
 from shutil import rmtree
+from io import IOBase
 import numpy as np
 import tifffile as tf
 
@@ -148,3 +149,44 @@ class TestTxrm2TiffWithFiles(unittest.TestCase):
                 self.assertEqual(
                     a.dtype, np.dtype(dtype), msg=f"dtype is {a.dtype} not {dtype}"
                 )
+
+    def test_convert_with_txrm_class_using_open_file_buffer(self):
+        test_file = test_files[0][0]
+        logging.debug("Running with file %s", test_file)
+
+        with test_file.open("rb") as f:
+            self.assertTrue(isinstance(f, IOBase))
+
+            with txrm2tiff.open_txrm(f) as txrm:
+
+                txrm.apply_reference()
+                output_path = self.processed_path / (
+                    test_file.parent / f"{test_file.stem}.ome.tiff"
+                ).relative_to(self.raw_path)
+                # Make processed/ subfolders:
+                output_path.parent.mkdir(parents=True, exist_ok=True)
+
+                self.assertTrue(txrm.save_images(output_path))
+
+        self.assertTrue(output_path.is_file())
+
+    def test_convert_with_txrm_class_using_bytes(self):
+        test_file = test_files[0][0]
+        logging.debug("Running with file %s", test_file)
+
+        with test_file.open("rb") as f:
+            self.assertTrue(isinstance(f, IOBase))
+            bytestring = f.read()
+
+        with txrm2tiff.open_txrm(bytestring) as txrm:
+
+            txrm.apply_reference()
+            output_path = self.processed_path / (
+                test_file.parent / f"{test_file.stem}.ome.tiff"
+            ).relative_to(self.raw_path)
+            # Make processed/ subfolders:
+            output_path.parent.mkdir(parents=True, exist_ok=True)
+
+            self.assertTrue(txrm.save_images(output_path))
+
+        self.assertTrue(output_path.is_file())

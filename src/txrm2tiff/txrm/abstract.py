@@ -3,6 +3,7 @@ import logging
 import typing
 import itertools
 import numpy as np
+from io import IOBase
 from os import PathLike
 from numpy.typing import DTypeLike
 from olefile import OleFileIO, isOleFile
@@ -17,7 +18,7 @@ from .txrm_property import txrm_property
 class AbstractTxrm(ABC):
     def __init__(
         self,
-        filename: PathLike,
+        file: typing.Union[PathLike, IOBase, bytes],
         load_images: bool = True,
         load_reference: bool = True,
         strict: bool = False,
@@ -25,22 +26,21 @@ class AbstractTxrm(ABC):
         """Abstract class for wrapping TXRM/XRM files
 
         Args:
-            filename (PathLike): Path to valid txrm file
+            file (PathLike | IOBase | bytes): Path to valid txrm file, a file-like object, or the bytes from an opened file
             load_images (bool, optional): Load images to memory on init. Defaults to False.
             load_reference (bool, optional): Load reference images to memory on init. Defaults to False.
             strict (bool, optional): If True, all calls will be treated as strict (raising, not logging, errors). Defaults to False.
         """
-        # Assign fp to avoid errors if invalid OLE file (i.e. not opened)
         self.ole = None
-        self.path = Path(filename)
-        self.name = self.path.name
         self.strict = strict
         self._images = None
         self._reference = None
         self.referenced = False
         self.annotated_image = None
+        self.path = None
+        self.name = None
 
-        self.open()
+        self.open(file)
 
         if load_images:
             self.load_images()
@@ -53,15 +53,37 @@ class AbstractTxrm(ABC):
     def __exit__(self, *args):
         self.close()
 
-    def open(self) -> None:
-        """Opens txrm file using OleFileIO. Runs on init but can be used to reopen if closed."""
+    def open(
+        self, file: typing.Optional[typing.Union[PathLike, IOBase, bytes]] = None
+    ) -> None:
+        """Opens txrm file using OleFileIO. Runs on init but can be used to reopen if closed (only PathLike inputs can be reopened without specifying 'file')."""
         if self.file_is_open:
             logging.debug("File %s is already open", self.name)
         else:
-            logging.debug("Opening file %s", self.name)
-            if self.path.exists() and isOleFile(self.path):
-                self.ole = OleFileIO(self.path)
-                self._output_text = f"\n{self.name}\n\n"
+            f = None
+            if file is None and self.path is not None:
+                f = self.path
+            else:
+                if isinstance(file, (IOBase, bytes)):
+                    f = file
+                    self.path = None
+                    if hasattr(file, "name"):
+                        self.name = file.name
+                    else:
+                        self.name = f"{file.__class__}"
+                elif isinstance(file, PathLike):
+                    path = Path(file)
+                    if path.exists() and isOleFile(path):
+                        self.path = Path(file)
+                        self.name = self.path.name
+                        f = self.path
+                    else:
+                        raise IOError("Path is to invalid file")
+                else:
+                    raise TypeError("Invalid type for argument file")
+            if f is not None:
+                logging.debug("Opening file %s", self.name)
+                self.ole = OleFileIO(f)
             else:
                 raise IOError("'%s' is not a valid xrm/txrm file" % self.name)
             if self.ole.fp is None:
