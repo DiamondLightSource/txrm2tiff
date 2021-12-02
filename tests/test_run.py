@@ -232,8 +232,8 @@ class TestRun(unittest.TestCase):
         with self.assertRaises(IOError):
             run(
                 input_path,
-                custom_reference,
                 output_path,
+                custom_reference,
                 True,
                 False,
                 dtype,

@@ -1,7 +1,10 @@
 import os
 import setuptools
+from pathlib import Path
 
-from src.txrm2tiff.info import __version__, __author__, __email__
+
+with Path("src/txrm2tiff/info.py").open() as info_file:
+    exec(info_file.read())
 
 with open("README.md", "r") as fh:
     long_description = fh.read()
