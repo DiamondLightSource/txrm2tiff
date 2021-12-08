@@ -37,7 +37,6 @@ test_files = [
     (xm10_path / "Xray_mosaic_F5A.xrm",),
 ]
 
-
 @unittest.skipUnless(visit_path.exists(), "dls paths cannot be accessed")
 class TestTxrm2TiffWithFiles(unittest.TestCase):
     @classmethod
@@ -121,7 +120,7 @@ class TestTxrm2TiffWithFiles(unittest.TestCase):
 
         # Make processed/ subfolders:
         output_path.parent.mkdir(parents=True, exist_ok=True)
-        with txrm2tiff.open_txrm(test_file) as txrm:
+        with txrm2tiff.open_txrm(test_file, strict=True) as txrm:
             txrm.apply_reference()
             self.assertTrue(txrm.save_images(output_path))
 
@@ -132,8 +131,9 @@ class TestTxrm2TiffWithFiles(unittest.TestCase):
         dtypes = ["uint16", "float32", "float64", np.float32, np.float64, np.uint16]
         logging.debug("Running with file %s", test_file)
 
-        with txrm2tiff.open_txrm(test_file) as txrm:
-            txrm.apply_reference()
+        with txrm2tiff.open_txrm(test_file, strict=True) as txrm:
+            if txrm.has_reference:
+                txrm.apply_reference()
             for dtype in dtypes:
                 output_path = self.processed_path / (
                     test_file.parent / f"{test_file.stem}_{dtype}.ome.tiff"
@@ -157,9 +157,9 @@ class TestTxrm2TiffWithFiles(unittest.TestCase):
         with test_file.open("rb") as f:
             self.assertTrue(isinstance(f, IOBase))
 
-            with txrm2tiff.open_txrm(f) as txrm:
-
-                txrm.apply_reference()
+            with txrm2tiff.open_txrm(f, strict=True) as txrm:
+                if txrm.has_reference:
+                    txrm.apply_reference()
                 output_path = self.processed_path / (
                     test_file.parent / f"{test_file.stem}.ome.tiff"
                 ).relative_to(self.raw_path)
@@ -178,9 +178,9 @@ class TestTxrm2TiffWithFiles(unittest.TestCase):
             self.assertTrue(isinstance(f, IOBase))
             bytestring = f.read()
 
-        with txrm2tiff.open_txrm(bytestring) as txrm:
-
-            txrm.apply_reference()
+        with txrm2tiff.open_txrm(bytestring, strict=True) as txrm:
+            if txrm.has_reference:
+                txrm.apply_reference()
             output_path = self.processed_path / (
                 test_file.parent / f"{test_file.stem}.ome.tiff"
             ).relative_to(self.raw_path)

@@ -15,14 +15,14 @@ from ..xradia_properties import XrmDataTypes as XDT
 from ..info import __version__
 
 
-def file_can_be_opened(path: PathLike) -> bool:
+def file_can_be_opened(path: Union[str, PathLike]) -> bool:
     if access(str(path), R_OK):
         return True
     logging.error("File %s cannot be opened", path)
     return False
 
 
-def ole_file_works(path: PathLike) -> bool:
+def ole_file_works(path: Union[str, PathLike]) -> bool:
     path = Path(path)
     if path.is_file() and ((path.suffix == ".txrm") or (path.suffix == ".xrm")):
         if isOleFile(str(path)):
@@ -54,7 +54,7 @@ def ole_file_works(path: PathLike) -> bool:
 
 
 def manual_save(
-    filepath: PathLike,
+    filepath: Union[str, PathLike],
     image: Union[np.ndarray, List[np.ndarray]],
     data_type: Optional[DTypeLike] = None,
     metadata: Optional[OMEXML] = None,
@@ -92,7 +92,7 @@ def manual_save(
 
 
 def manual_annotation_save(
-    filepath: PathLike, image: Union[np.ndarray, List[np.ndarray]]
+    filepath: Union[str, PathLike], image: Union[np.ndarray, List[np.ndarray]]
 ):
     filepath = Path(filepath)
     num_frames = len(image)

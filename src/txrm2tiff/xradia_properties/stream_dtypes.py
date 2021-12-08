@@ -37,6 +37,10 @@ image_info_dict = {
     "ImageInfo/ZonePlateName": XrmDataTypes.XRM_STRING,
 }
 
+reference_data_dict = {
+    "ReferenceData/ExpTime": XrmDataTypes.XRM_FLOAT
+    }
+
 ref_image_info_dict = {f"ReferenceData/{k}": v for k, v in image_info_dict.items()}
 
 dtypes_dict = {
@@ -69,6 +73,7 @@ misc = {"exeVersion": XrmDataTypes.XRM_STRING}
 
 streams_dict = {}
 streams_dict.update(image_info_dict)
+streams_dict.update(reference_data_dict)
 streams_dict.update(ref_image_info_dict)
 streams_dict.update(dtypes_dict)
 streams_dict.update(annotations_dict)

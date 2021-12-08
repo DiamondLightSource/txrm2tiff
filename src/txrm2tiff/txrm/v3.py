@@ -32,7 +32,7 @@ class Txrm3(ShiftsMixin, SaveMixin, ReferenceMixin, AbstractTxrm):
             self.image_dims
         )  # Same for both (reference width/height isn't stored separately for v3)
 
-    def _mosaic_to_single_image_dims(self, dims):
+    def _mosaic_to_single_image_dims(self, dims) -> typing.List[int]:
         return [
             convert_to_int(dim / mos_dim)
             for dim, mos_dim in zip(dims, self.mosaic_dims)
@@ -43,25 +43,20 @@ class Txrm3(ShiftsMixin, SaveMixin, ReferenceMixin, AbstractTxrm):
         return self.read_single_value_from_stream("ReferenceData/ExpTime")
 
     def extract_reference_image(self) -> np.ndarray:
-        try:
-            ref_data = self.extract_reference_data()
+        ref_data = self.extract_reference_data()
 
-            if isinstance(ref_data, bytes):  # If unable to extract dtype
-                img_size = np.prod(self.reference_dims)
-                ref_data = fallback_image_interpreter(
-                    ref_data, int(img_size), self.strict
-                )
+        if isinstance(ref_data, bytes):  # If unable to extract dtype
+            img_size = np.prod(self.reference_dims)
+            ref_data = fallback_image_interpreter(
+                ref_data, int(img_size), self.strict
+            )
 
-            ref_data.shape = self.reference_dims[::-1]
+        ref_data.shape = self.reference_dims[::-1]
 
-            if self.is_mosaic:
-                ref_data = np.tile(ref_data, self.mosaic_dims[::-1])
+        if self.is_mosaic:
+            ref_data = np.tile(ref_data, self.mosaic_dims[::-1])
+        return ref_data
 
-            return ref_data
-        except Exception:
-            if self.strict:
-                raise
-            logging.error("Error occurred extracting reference image", exc_info=True)
 
     def get_output(
         self,

@@ -18,7 +18,7 @@ from ..utils.functions import conditional_replace
 class ReferenceMixin:
     def apply_reference(
         self,
-        custom_reference: typing.Optional[PathLike] = None,
+        custom_reference: typing.Optional[typing.Union[str, PathLike]] = None,
         compensate_exposure: bool = True,
         overwrite: bool = True,
     ) -> None:
@@ -123,28 +123,22 @@ class ReferenceMixin:
             logging.warning(
                 "Applying reference to already referenced txrm image(s). If you did not mean to reference more than once, reload the images before applying the correct reference."
             )
-        try:
-            ref_img = self.get_reference(load=True)
-            logging.info("Internal reference will be applied to %s", self.name)
-        except IOError:
-            if self.strict:
-                raise
-            logging.error("Unable to apply reference as reference cannot be accessed.")
-            raise
-        if not ref_img:
+        ref_img = self.get_reference(load=True)
+        logging.info("Internal reference will be applied to %s", self.name)
+        if ref_img is None:
             if self.strict:
                 raise AttributeError("No internal reference to apply")
             logging.warning("No internal reference to apply")
             return
         if compensate_exposure:
             ref_img = self._compensate_ref_exposure(ref_img, self.reference_exposure)
-        ref = ReferenceMixin._apply_reference_to_images(
+        referenced = ReferenceMixin._apply_reference_to_images(
             self.get_images(load=True), ref_img
         )
         if overwrite:
-            self._images = ref
+            self._images = referenced
             self.referenced = True
-        return ref
+        return referenced
 
     def _tile_reference_if_needed(self, custom_reference: np.ndarray) -> np.ndarray:
         """Tile the image if it is needed to match a mosaic Assumes axes [y, x]."""
