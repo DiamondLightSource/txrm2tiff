@@ -18,7 +18,7 @@ from .txrm_property import txrm_property
 class AbstractTxrm(ABC):
     def __init__(
         self,
-        file: typing.Union[PathLike, IOBase, bytes],
+        file: typing.Union[str, PathLike, IOBase, bytes],
         load_images: bool = True,
         load_reference: bool = True,
         strict: bool = False,
@@ -26,9 +26,9 @@ class AbstractTxrm(ABC):
         """Abstract class for wrapping TXRM/XRM files
 
         Args:
-            file (PathLike | IOBase | bytes): Path to valid txrm file, a file-like object, or the bytes from an opened file
-            load_images (bool, optional): Load images to memory on init. Defaults to False.
-            load_reference (bool, optional): Load reference images to memory on init. Defaults to False.
+            file (str | PathLike | IOBase | bytes): Path to valid txrm file, a file-like object, or the bytes from an opened file.
+            load_images (bool, optional): Load images to memory on init. Defaults to True.
+            load_reference (bool, optional): Load reference images (if available) to memory on init. Defaults to True.
             strict (bool, optional): If True, all calls will be treated as strict (raising, not logging, errors). Defaults to False.
         """
         self.ole = None
@@ -44,7 +44,7 @@ class AbstractTxrm(ABC):
 
         if load_images:
             self.load_images()
-        if load_reference:
+        if load_reference and self.has_reference:
             self.load_reference()
 
     def __enter__(self):
@@ -54,7 +54,7 @@ class AbstractTxrm(ABC):
         self.close()
 
     def open(
-        self, file: typing.Optional[typing.Union[PathLike, IOBase, bytes]] = None
+        self, file: typing.Optional[typing.Union[str, PathLike, IOBase, bytes]] = None
     ) -> None:
         """Opens txrm file using OleFileIO. Runs on init but can be used to reopen if closed (only PathLike inputs can be reopened without specifying 'file')."""
         if self.file_is_open:
@@ -71,7 +71,7 @@ class AbstractTxrm(ABC):
                         self.name = file.name
                     else:
                         self.name = f"{file.__class__}"
-                elif isinstance(file, PathLike):
+                elif isinstance(file, (str, PathLike)):
                     path = Path(file)
                     if path.exists() and isOleFile(path):
                         self.path = Path(file)
@@ -184,8 +184,18 @@ class AbstractTxrm(ABC):
     def clear_reference(self) -> None:
         self._reference = None
 
-    def load_reference(self):
-        self._reference = self.extract_reference_image()
+    def load_reference(self) -> None:
+        try:
+            self._reference = self.extract_reference_image()
+        except KeyError:
+            if self.strict:
+                raise
+            logging.warning("No reference is available to load")
+        except Exception:
+            if self.strict:
+                raise
+            logging.error("Error occurred extracting reference image", exc_info=True)
+
 
     def get_reference(self, load: bool = True) -> typing.Optional[np.ndarray]:
         """Get images from file (numpy ndarray with shape [idx, y, x]).
@@ -312,7 +322,7 @@ class AbstractTxrm(ABC):
             )
             return ref_stream_bytes
         return txrm_functions.get_stream_from_bytes(
-            ref_stream_bytes, dtype=self.reference_dtype
+            ref_stream_bytes, dtype=self.reference_dtype.value
         )
 
     @txrm_property(fallback=[])
@@ -385,7 +395,7 @@ class AbstractTxrm(ABC):
 
     @txrm_property(fallback=None)
     def has_reference(self) -> bool:
-        return self.has_stream(key="ReferenceData/Image")
+        return self.has_stream("ReferenceData/Image")
 
     def get_single_image(self, idx: int) -> np.ndarray:
         """Get a single image (from memory if images are loaded). idx starts from 1."""

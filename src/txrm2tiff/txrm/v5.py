@@ -33,22 +33,20 @@ class Txrm5(ShiftsMixin, SaveMixin, ReferenceMixin, AnnotatorMixin, AbstractTxrm
 
     @txrm_property(fallback=None)
     def reference_exposure(self) -> typing.Optional[float]:
-        return self.reference_info["ExpTime"][0]
+        if "ExpTimes" in self.reference_info:
+            return self.reference_info["ExpTimes"][0]
+        elif "ExpTime" in self.reference_info:
+            return self.reference_info["ExpTime"][0]
 
     def extract_reference_image(self) -> np.ndarray:
-        try:
-            ref_data = self.extract_reference_data()
+        ref_data = self.extract_reference_data()
 
-            if isinstance(ref_data, bytes):  # If unable to extract dtype
-                ref_data = fallback_image_interpreter(
-                    ref_data, np.prod(self.reference_dims), self.strict
-                )
+        if isinstance(ref_data, bytes):  # If unable to extract dtype
+            ref_data = fallback_image_interpreter(
+                ref_data, np.prod(self.reference_dims), self.strict
+            )
 
-            return ref_data.reshape(self.reference_dims[::-1])
-        except Exception:
-            if self.strict:
-                raise
-            logging.error("Error occurred extracting reference image", exc_info=True)
+        return ref_data.reshape(self.reference_dims[::-1])
 
     def get_output(
         self,

@@ -53,8 +53,14 @@ class SaveMixin:
 
             manual_save(filepath, im, datatype, metadata)
             if self.annotated_image is not None:
+                stem = filepath.stem
+                suffix = filepath.suffix
+                if stem.lower().endswith(".ome") and suffix.lower() == ".tiff":
+                    # Special case for ome.tiff
+                    suffix = f"{stem[-4:]}{suffix}"
+                    stem = stem[:-4]
                 manual_annotation_save(
-                    filepath.parent / f"{filepath.stem}_Annotated{filepath.suffix}",
+                    filepath.parent / f"{stem}_Annotated{suffix}",
                     self.annotated_image,
                 )
             return True

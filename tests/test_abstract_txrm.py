@@ -191,7 +191,7 @@ class AbstractTxrmTest(unittest.TestCase):
 
         mocked_frombytes.return_value = "output"
         output = txrm.extract_reference_data()
-        mocked_frombytes.assert_called_once_with("ref_data", dtype=txrm.reference_dtype)
+        mocked_frombytes.assert_called_once_with("ref_data", dtype=txrm.reference_dtype.value)
         self.assertEqual(output, "output")
 
     @patch("txrm2tiff.txrm.abstract.AbstractTxrm.has_reference", new=True)

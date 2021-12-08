@@ -10,9 +10,9 @@ from .utils.logging import create_logger
 
 
 def convert_and_save(
-    input_path: PathLike,
-    output_path: Optional[PathLike] = None,
-    custom_reference: Optional[PathLike] = None,
+    input_path: Union[str, PathLike],
+    output_path: Optional[Union[str, PathLike]] = None,
+    custom_reference: Optional[Union[str, PathLike]] = None,
     annotate: bool = False,
     flip: bool = False,
     data_type: Optional[str] = None,
@@ -135,7 +135,7 @@ def _find_files(directory: Path):
 def _convert_and_save(
     input_path: Path,
     output_path: Optional[Path] = None,
-    custom_reference: Optional[PathLike] = None,
+    custom_reference: Optional[Union[str, PathLike]] = None,
     annotate: bool = True,
     flip: bool = False,
     data_type: Optional[DTypeLike] = None,
@@ -151,7 +151,7 @@ def _convert_and_save(
 
 def _convert_file(
     txrm: AbstractTxrm,
-    custom_reference: Optional[PathLike] = None,
+    custom_reference: Optional[Union[str, PathLike]] = None,
     ignore_reference: bool = False,
     annotate: bool = True,
 ) -> None:

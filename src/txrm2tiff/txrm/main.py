@@ -25,7 +25,7 @@ txrm_classes = defaultdict(
 
 
 def open_txrm(
-    file: typing.Union[PathLike, IOBase, bytes],
+    file: typing.Union[str, PathLike, IOBase, bytes],
     load_images: bool = True,
     load_reference: bool = True,
     strict: bool = False,
@@ -35,9 +35,9 @@ def open_txrm(
 
 
 def get_txrm_class(
-    file: typing.Union[PathLike, IOBase, bytes],
+    file: typing.Union[str, PathLike, IOBase, bytes],
 ) -> typing.Optional[AbstractTxrm]:
-    if isinstance(file, PathLike) and (
+    if isinstance(file, (str, PathLike)) and (
         not file_handler.file_can_be_opened(file)
         or not file_handler.ole_file_works(file)
     ):
