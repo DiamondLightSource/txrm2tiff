@@ -1,3 +1,4 @@
+from datetime import datetime
 import unittest
 from unittest.mock import MagicMock, patch
 from numpy.testing import assert_array_equal
@@ -232,3 +233,18 @@ class AbstractTxrmTest(unittest.TestCase):
     def test_output_shape_mosaic(self):
         txrm = AbstractTxrm("test/path", load_images=False, load_reference=False)
         self.assertEqual(txrm.output_shape, [1, 7 * 3, 6 * 2])
+
+    @patch("txrm2tiff.txrm.abstract.AbstractTxrm.image_info", new={"Date": ["ksfs$oio12/30/2021 23:55:59!j#f"]})
+    def test_datetimes(self):
+        txrm = AbstractTxrm("test/path", load_images=False, load_reference=False)
+        self.assertEqual(txrm.datetimes[0], datetime(2021, 12, 30, 23, 55, 59))
+
+    @patch("txrm2tiff.txrm.abstract.AbstractTxrm.image_info", new={"Date": ["ksfs$oio12/30/21 23:55:59!j#f"]})
+    def test_datetimes_without_century(self):
+        txrm = AbstractTxrm("test/path", load_images=False, load_reference=False)
+        self.assertEqual(txrm.datetimes[0], datetime(2021, 12, 30, 23, 55, 59))
+
+    @patch("txrm2tiff.txrm.abstract.AbstractTxrm.image_info", new={"Date": ["ksfs$oio12/30/2021 23:55:59.83!j#f"]})
+    def test_datetimes_with_milliseconds(self):
+        txrm = AbstractTxrm("test/path", load_images=False, load_reference=False)
+        self.assertEqual(txrm.datetimes[0], datetime(2021, 12, 30, 23, 55, 59, 830000))
