@@ -1,4 +1,6 @@
 from abc import ABC, abstractmethod
+from datetime import datetime
+import re
 import logging
 import typing
 import itertools
@@ -13,6 +15,14 @@ from ..xradia_properties.enums import XrmDataTypes
 from ..xradia_properties.stream_dtypes import streams_dict
 from .. import txrm_functions
 from .txrm_property import txrm_property
+
+
+datetime_regex = re.compile(
+    r"(\d{2})\/(\d{2})\/(\d{2})?(\d{2}) (\d{2}):(\d{2}):(\d{2})(\.(\d{2}))?"
+)
+# Groups "1, 2, 4, 5, 6, 7, 9" are "mm, dd, yy, hh, mm, ss, ff"
+# (months, days, year, hours, minutes, seconds, decimal of seconds)
+# Note that v3 files do not include the century digits.
 
 
 class AbstractTxrm(ABC):
@@ -396,6 +406,22 @@ class AbstractTxrm(ABC):
     @txrm_property(fallback=None)
     def has_reference(self) -> bool:
         return self.has_stream("ReferenceData/Image")
+
+    @txrm_property(fallback=[])
+    def datetimes(self) -> typing.List[datetime]:
+        dates = []
+        for date_str in self.image_info["Date"]:
+            m = datetime_regex.search(date_str)
+            if m:  # Ignore out any random characters that aren't dates
+                if m.group(3):  # Century digits
+                    pattern = r"%m%d%Y%H%M%S"
+                else:
+                    pattern = r"%m%d%y%H%M%S"
+                if m.group(9):  # Fraction of a second
+                    pattern += r"%f"
+                date_str = "".join([d for d in m.group(1, 2, 3, 4, 5, 6, 7, 9) if d])
+                dates.append(datetime.strptime(date_str, pattern))
+        return dates
 
     def get_single_image(self, idx: int) -> np.ndarray:
         """Get a single image (from memory if images are loaded). idx starts from 1."""

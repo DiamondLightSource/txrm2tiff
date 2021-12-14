@@ -1,6 +1,4 @@
 import logging
-import re
-import datetime
 import numpy as np
 from oxdls import OMEXML, DO_XYZCT, PT_UINT16, PT_UINT16, PT_FLOAT, PT_DOUBLE
 
@@ -8,10 +6,7 @@ from ..txrm import abstract
 
 dtype_dict = {"uint16": PT_UINT16, "float32": PT_FLOAT, "float64": PT_DOUBLE}
 
-datetime_regex = re.compile(
-    r"(\d{2})\/(\d{2})\/(\d{2})?(\d{2}) (\d{2}):(\d{2}):(\d{2})(\.\d{2})?"
-)
-# To get format "mmddyyhhmmss" use groups 124567
+
 
 
 def create_ome_metadata(txrm: abstract.AbstractTxrm, filename: str = None) -> OMEXML:
@@ -34,15 +29,11 @@ def create_ome_metadata(txrm: abstract.AbstractTxrm, filename: str = None) -> OM
         coord * 1.0e3 for coord in txrm.image_info["ZPosition"]
     ]  # micron to nm
 
-    m = datetime_regex.search(txrm.image_info["Date"][0])
-    date_time = datetime.datetime.strptime(
-        "".join(m.group(1, 2, 4, 5, 6, 7)), r"%m%d%y%H%M%S"
-    ).isoformat()  # formatted as: "yyyy-mm-ddThh:mm:ss"
     ox = OMEXML()
 
     image = ox.image()
     image.set_ID("Image:0")
-    image.set_AcquisitionDate(date_time)
+    image.set_AcquisitionDate(txrm.datetimes[0].isoformat())  # formatted as: "yyyy-mm-ddThh:mm:ss"
     if filename is not None:
         image.set_Name(filename)
 

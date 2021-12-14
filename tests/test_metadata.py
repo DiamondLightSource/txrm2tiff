@@ -1,3 +1,4 @@
+from datetime import datetime
 import unittest
 from unittest.mock import patch, MagicMock
 
@@ -23,8 +24,8 @@ class TestMetadata(unittest.TestCase):
             "XPosition": [7.5, 22.5, 37.5] * 2,
             "YPosition": [10, 10, 10, 20, 20, 20],
             "ZPosition": [1, 1, 1, 1, 1, 1],
-            "Date": ["ksfs$oio12/30/2021 23:55:59.00008!j#f"],
         }
+        txrm.datetimes = [datetime(2021, 12, 30, 23, 55, 59)]
         txrm.mosaic_dims = [mosaic_cols, mosaic_rows]
         txrm.is_mosaic = False
 
@@ -59,8 +60,8 @@ class TestMetadata(unittest.TestCase):
             "XPosition": [7.5, 22.5, 37.5] * 2,
             "YPosition": [10, 10, 10, 20, 20, 20],
             "ZPosition": [1, 1, 1, 1, 1, 1],
-            "Date": ["ksfs$oio12/30/2021 23:55:59.00008!j#f"],
         }
+        txrm.datetimes = [datetime(2021, 12, 30, 23, 55, 59)]
         txrm.mosaic_dims = [mosaic_cols, mosaic_rows]
         txrm.is_mosaic = True
 
@@ -109,8 +110,8 @@ class TestMetadata(unittest.TestCase):
                 0,
             ],
             "ZPosition": [1, 1, 1, 1, 1, 1],
-            "Date": ["ksfs$oio12/30/2021 23:55:59.00008!j#f"],
         }
+        txrm.datetimes = [datetime(2021, 12, 30, 23, 55, 59)]
         txrm.mosaic_dims = [mosaic_cols, mosaic_rows]
         txrm.is_mosaic = True
 
