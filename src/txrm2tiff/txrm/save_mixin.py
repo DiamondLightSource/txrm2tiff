@@ -26,7 +26,7 @@ class SaveMixin:
                     raise ValueError(
                         "An output filepath must be given if an input path was not given."
                     )
-                filepath = self.path.with_suffix(".ome.tiff")
+                filepath = self.path.resolve().with_suffix(".ome.tiff")
             if not self.referenced:
                 logging.info("Saving without reference")
 
@@ -48,8 +48,7 @@ class SaveMixin:
             metadata = self.create_metadata(filepath)
 
             if mkdir:
-                tiff_dir = filepath.resolve().parent
-                tiff_dir.mkdir(parents=True, exist_ok=True)
+                filepath.parent.mkdir(parents=True, exist_ok=True)
 
             manual_save(filepath, im, datatype, metadata)
             if self.annotated_image is not None:
