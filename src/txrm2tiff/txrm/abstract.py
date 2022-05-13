@@ -386,7 +386,8 @@ class AbstractTxrm(ABC):
     def energies(self) -> typing.List[float]:
         energies = self.image_info["Energy"]
         if not np.sum(energies):
-            energies = self.position_info["Energy"]
+            # position_info includes units
+            energies = self.position_info["Energy"][0]
         if np.sum(energies):
             return energies
         raise ValueError("Could not get energies")
