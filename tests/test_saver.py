@@ -39,7 +39,7 @@ class TestSaver(unittest.TestCase):
         saver.annotated_image = None
 
         self.assertTrue(
-            saver.save_images(filepath, dtype, shifts, flip, clear_images, mkdir)
+            saver.save_images(filepath, dtype, shifts, flip, clear_images, mkdir, strict=True)
         )
 
         saver.get_output.assert_called_once_with(
@@ -74,7 +74,7 @@ class TestSaver(unittest.TestCase):
         saver.annotated_image = None
 
         self.assertTrue(
-            saver.save_images(filepath, dtype, shifts, flip, clear_images, mkdir)
+            saver.save_images(filepath, dtype, shifts, flip, clear_images, mkdir, strict=True)
         )
 
         saver.get_output.assert_called_once_with(
@@ -111,7 +111,9 @@ class TestSaver(unittest.TestCase):
         saver.annotated_image = None
 
         self.assertTrue(
-            saver.save_images(None, dtype, shifts, flip, clear_images, mkdir)
+            saver.save_images(
+                None, dtype, shifts, flip, clear_images, mkdir, strict=True
+            )
         )
 
         saver.get_output.assert_called_once_with(
@@ -147,7 +149,9 @@ class TestSaver(unittest.TestCase):
         saver.annotated_image = annotated_image
 
         self.assertTrue(
-            saver.save_images(filepath, dtype, shifts, flip, clear_images, mkdir)
+            saver.save_images(
+                filepath, dtype, shifts, flip, clear_images, mkdir, strict=True
+            )
         )
 
         saver.get_output.assert_called_once_with(
@@ -185,7 +189,9 @@ class TestSaver(unittest.TestCase):
         saver.annotated_image = annotated_image
 
         self.assertTrue(
-            saver.save_images(filepath, dtype, shifts, flip, clear_images, mkdir)
+            saver.save_images(
+                filepath, dtype, shifts, flip, clear_images, mkdir, strict=True
+            )
         )
 
         saver.get_output.assert_called_once_with(
@@ -223,7 +229,9 @@ class TestSaver(unittest.TestCase):
         saver.annotated_image = annotated_image
 
         self.assertFalse(
-            saver.save_images(filepath, dtype, shifts, flip, clear_images, mkdir)
+            saver.save_images(
+                filepath, dtype, shifts, flip, clear_images, mkdir, strict=False
+            )
         )
 
         saver.get_output.assert_called_once_with(

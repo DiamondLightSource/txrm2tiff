@@ -1,6 +1,5 @@
 import logging
 
-import numpy as np
 from pathlib import Path
 from typing import Optional
 from numpy.typing import DTypeLike
@@ -18,8 +17,11 @@ class SaveMixin:
         flip: bool = False,
         clear_images: bool = False,
         mkdir: bool = False,
+        strict: Optional[bool] = None,
     ) -> bool:
         """Saves images (if available) returning True if successful."""
+        if strict is None:
+            strict = self.strict
         try:
             if filepath is None:
                 if self.path is None:
@@ -64,7 +66,9 @@ class SaveMixin:
                 )
             return True
         except Exception:
-            logging.error("Saving failed", exc_info=True)
+            logging.error("Saving failed", exc_info= not strict)
+            if strict:
+                raise
             return False
 
     def create_metadata(self, filepath: Path):
