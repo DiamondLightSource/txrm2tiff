@@ -175,16 +175,16 @@ def _decide_output_path(input_path: Path, output_path: Optional[Path]) -> Path:
         else:
             # If a valid filepath was given, just return that (avoids double .ome)
             return output_path
-    return _set_output_suffix(output_path, curent_suffix=input_path.suffix)
+    return _set_output_suffix(output_path, current_suffix=input_path.suffix)
 
 
-def _set_output_suffix(filepath: Path, curent_suffix: Optional[str] = None) -> Path:
-    if curent_suffix is None:
-        curent_suffix = filepath.suffix
-    if curent_suffix == ".txrm":
+def _set_output_suffix(filepath: Path, current_suffix: Optional[str] = None) -> Path:
+    if current_suffix is None:
+        current_suffix = filepath.suffix
+    if current_suffix == ".txrm":
         return filepath.with_suffix(".ome.tiff")
-    elif curent_suffix == ".xrm":
+    elif current_suffix == ".xrm":
         return filepath.with_suffix(".ome.tif")
     else:
-        logging.error("Invalid file extension: %s", curent_suffix)
-        raise NameError(f"Invalid file extension: {curent_suffix}")
+        logging.error("Invalid file extension: %s", current_suffix)
+        raise NameError(f"Invalid file extension: {current_suffix}")

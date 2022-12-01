@@ -42,7 +42,7 @@ def read_stream(
 
 
 def get_stream_from_bytes(stream_bytes: bytes, dtype: npt.DTypeLike) -> np.ndarray:
-    """Converts olefile bytes to np.ndarray of valuess of type dtype."""
+    """Converts olefile bytes to np.ndarray of values of type dtype."""
     return np.frombuffer(stream_bytes, dtype)
 
 

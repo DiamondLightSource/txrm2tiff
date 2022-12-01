@@ -123,7 +123,7 @@ class Inspector:
                             self._output_text += f"\t{values_str} (stored as {dtype})"
                         except (ValueError, TypeError) as e:
                             self._output_text += (
-                                f"\tWARNING: Expected data type unsucessful:\t{e}\n"
+                                f"\tWARNING: Expected data type unsuccessful:\t{e}\n"
                             )
                             self.inspect_unknown_dtype_stream(key)
                     else:

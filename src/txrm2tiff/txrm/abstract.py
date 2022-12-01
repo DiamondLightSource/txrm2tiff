@@ -100,7 +100,7 @@ class AbstractTxrm(ABC):
                 raise IOError("'%s' failed to open for unknown reasons" % self.name)
 
     def close(self) -> None:
-        """Closes txrm file. Can be reoped using open_file."""
+        """Closes txrm file. Can be reopened using open_file."""
         if not self.file_is_open:
             logging.info("File %s is already closed", self.name)
             return
