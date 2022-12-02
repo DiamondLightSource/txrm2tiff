@@ -105,7 +105,7 @@ def get_position_dict(
     ole: of.OleFileIO,
 ) -> typing.Dict[str, typing.Tuple[typing.Union[typing.List, str]]]:
     """
-    Gets dictionary of motor posisions.
+    Gets dictionary of motor positions.
 
     Args:
         ole (of.OleFileIO)
