@@ -208,7 +208,7 @@ class TestAnnotator(unittest.TestCase):
 
         self.assertTrue((output[:, :, 0] == 0).any(), msg="You have red on you")  # Red
         self.assertTrue(
-            (output[:, :, 1] == 255).any(), msg="You don't have gree on you"
+            (output[:, :, 1] == 255).any(), msg="You don't have green on you"
         )  # Green
         self.assertTrue(
             (output[:, :, 2] == 0).any(), msg="You have blue on you"
