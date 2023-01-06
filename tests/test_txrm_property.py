@@ -31,15 +31,15 @@ class TestTxrmProperty(unittest.TestCase):
 
     def test_txrm_property_works_as_property(self):
         t = Toaster()
-        self.assertEquals(t.toast, "nice toast")
+        self.assertEqual(t.toast, "nice toast")
 
     def test_delete_works(self):
         t = Toaster()
         t.heater = MagicMock(side_effect=["nice toast", "burnt toast"])
         # Check that toast's return value is cached until deleted
-        self.assertEquals(t.toast, "nice toast")
-        self.assertEquals(t.toast, "nice toast")
-        self.assertEquals(t.toast, "nice toast")
+        self.assertEqual(t.toast, "nice toast")
+        self.assertEqual(t.toast, "nice toast")
+        self.assertEqual(t.toast, "nice toast")
         del t.toast
         self.assertIs(t.toast, "burnt toast")
 
@@ -47,13 +47,13 @@ class TestTxrmProperty(unittest.TestCase):
         t = Toaster()
         t.file_is_open = True
         t.heater = MagicMock(side_effect=ToasterError("The toaster is not plugged in."))
-        self.assertEquals(t.toast, "bread")
+        self.assertEqual(t.toast, "bread")
 
     def test_error_and_unopened_file_returns_fallback(self):
         t = Toaster()
         t.file_is_open = False
         t.heater = MagicMock(side_effect=ToasterError("The toaster is not plugged in."))
-        self.assertEquals(t.toast, "bread")
+        self.assertEqual(t.toast, "bread")
 
     def test_strict_error_and_unopened_raises_IOError(self):
         t = Toaster()
@@ -80,7 +80,7 @@ class TestTxrmProperty(unittest.TestCase):
 
     def test_cannot_set_attribute(self):
         t = Toaster()
-        self.assertEquals(t.toast, "nice toast")
+        self.assertEqual(t.toast, "nice toast")
         with self.assertRaises(AttributeError):
             t.toast = "bread"
             # You cannot un-toast
