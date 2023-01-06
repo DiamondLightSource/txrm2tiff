@@ -156,7 +156,7 @@ class TestRun(unittest.TestCase):
             for f in set().union(txrm_files, xrm_files, bad_files):
                 f.touch()
 
-            self.assertEquals(txrm_files.union(xrm_files), set(_find_files(test_dir)))
+            self.assertEqual(txrm_files.union(xrm_files), set(_find_files(test_dir)))
 
     @patch("txrm2tiff.main._set_output_suffix")
     @patch("txrm2tiff.main._find_files")
