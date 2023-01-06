@@ -2,6 +2,7 @@ import logging
 
 from pathlib import Path
 from typing import Optional
+import numpy as np
 from numpy.typing import DTypeLike
 
 from ..utils.metadata import create_ome_metadata, dtype_dict
