@@ -124,7 +124,7 @@ class TestCommandlineEntryPoint(unittest.TestCase):
         run_args = ["txrm2tiff", "--version"]
         with Popen(run_args, stdout=PIPE, stderr=STDOUT, universal_newlines=True) as p:
             stdout, _ = p.communicate()
-        stdout = stdout.strip("\r\n").strip("\n")
+        stdout = stdout.strip()
         self.assertEqual(
             f"txrm2tiff {__version__}", stdout, msg=f"Actual stdout: {stdout}"
         )
@@ -239,7 +239,7 @@ class TestCommandlineEntryPoint(unittest.TestCase):
         run_args = [sys.executable, "-m", "txrm2tiff", "--version"]
         with Popen(run_args, stdout=PIPE, stderr=STDOUT, universal_newlines=True) as p:
             stdout, _ = p.communicate()
-        stdout = stdout.strip("\r\n").strip("\n")
+        stdout = stdout.strip()
         self.assertEqual(
             f"txrm2tiff {__version__}", stdout, msg=f"Actual stdout: {stdout}"
         )
