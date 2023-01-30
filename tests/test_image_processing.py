@@ -74,7 +74,7 @@ class TestImageProcessing(unittest.TestCase):
             decimal=0,
         )
 
-    def test_cast_to_dtype_no_change(self):
+    def test_cast_to_dtype_with_no_change(self):
         dtype = np.float64
         info = np.finfo(dtype)
         min, max = info.min, info.max
@@ -82,7 +82,7 @@ class TestImageProcessing(unittest.TestCase):
         output = cast_to_dtype(image, dtype)
         assert_array_equal(image, output)
 
-    def test_cast_to_dtype_float64_to_uint16(self):
+    def test_cast_to_dtype_with_float64_to_uint16(self):
         dtype = np.float64
         info = np.finfo(dtype)
         min, max = info.min, info.max
@@ -96,7 +96,7 @@ class TestImageProcessing(unittest.TestCase):
         self.assertEqual(output.min(), target_min)
         self.assertEqual(output.max(), target_max)
 
-    def test_cast_to_dtype_float64_to_float32(self):
+    def test_cast_to_dtype_with_float64_to_float32(self):
         dtype = np.float64
         info = np.finfo(dtype)
         min, max = info.min, info.max
@@ -109,7 +109,7 @@ class TestImageProcessing(unittest.TestCase):
         self.assertEqual(output.min(), target_min)
         self.assertEqual(output.max(), target_max)
 
-    def test_cast_to_dtype_int32_to_int16(self):
+    def test_cast_to_dtype_with_int32_to_int16(self):
         dtype = np.int32
         info = np.iinfo(dtype)
         min, max = info.min, info.max
@@ -124,7 +124,7 @@ class TestImageProcessing(unittest.TestCase):
         self.assertEqual(output.min(), target_min)
         self.assertEqual(output.max(), target_max)
 
-    def test_cast_to_dtype_int32_to_float32(self):
+    def test_cast_to_dtype_with_int32_to_float32(self):
         dtype = np.int32
         info = np.iinfo(dtype)
         min, max = info.min, info.max
@@ -152,7 +152,7 @@ class TestImageProcessing(unittest.TestCase):
             err_msg=f"Max is not equal to {sig_figs} sig figs",
         )
 
-    def test_cast_to_dtype_int32_to_float64(self):
+    def test_cast_to_dtype_with_int32_to_float64(self):
         dtype = np.int32
         info = np.iinfo(dtype)
         min, max = info.min, info.max

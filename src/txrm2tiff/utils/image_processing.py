@@ -87,34 +87,48 @@ def cast_to_dtype(image: np.ndarray, data_type: DTypeLike) -> np.ndarray:
                 raise TypeError(f"Cannot cast to invalid data type {data_type}")
             # Round min/max to avoid this warning when the issue is just going to be rounded away.
             img_min, img_max = image.min(), image.max()
-            if dtype_info.min > img_min:
+            dtype_min, dtype_max = dtype_info.min, dtype_info.max
+            if dtype_min > img_min:
                 logging.warning(
                     "Image min %f below %s minimum of %i, values below this will be cut off",
                     img_min,
                     dtype,
-                    dtype_info.min,
+                    dtype_min,
                 )
-            if dtype_info.max < img_max:
+            else:
+                dtype_min = None
+            if dtype_max < img_max:
                 logging.warning(
                     "Image max %f above %s maximum of %i, values above this will be cut off",
                     img_max,
                     dtype,
-                    dtype_info.max,
+                    dtype_max,
                 )
-            np.clip(image, dtype_info.min, dtype_info.max, out=image)
+            else:
+                dtype_max = None
+            
+            if dtype_min is not None or dtype_max is not None:
+                np.clip(image, dtype_min, dtype_max, out=image)
+
             if np.issubdtype(dtype, np.integer) and np.issubdtype(
                 image.dtype, np.floating
             ):
                 image = np.around(image, decimals=0)
-            image = image.astype(dtype)
+
+            image = image.astype(dtype, copy=False)
             logging.info("Image has been cast to %s", data_type)
-    except Exception as e:
+    except TypeError:
         logging.warning(
             "Invalid data type given: %s aka %s. Image will remain as %s.",
             data_type,
             dtype,
             image.dtype,
         )
+    except Exception:
+        logging.error(
+            "An error occurred casting image from %s to %s", image.dtype, data_type
+        )
+        raise
     return image
 
 
