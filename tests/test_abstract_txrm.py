@@ -43,7 +43,7 @@ class AbstractTxrmTest(unittest.TestCase):
             mocked_extract_single_image.side_effect = TypeError("Test")
             output = txrm.extract_images()
 
-        self.assertFalse(output)
+        self.assertTrue(output.size == 0)
 
     @patch(
         "txrm2tiff.txrm.abstract.AbstractTxrm.image_info", new={"ImagesTaken": [500]}

@@ -245,7 +245,7 @@ class AbstractTxrm(ABC):
                 imgdata = txrm_functions.fallback_image_interpreter(
                     img_stream_bytes, img_size, self.strict
                 )
-            if imgdata.size:
+            if imgdata.size > 0:
                 imgdata.shape = self.shape  # Resize if not empty
             return imgdata
         except Exception:
