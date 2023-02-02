@@ -56,11 +56,8 @@ testpaths = [
 python_files = ["test_*.py"]
 python_classes = ["Test"]
 python_functions = ["test_"]
-addopts = "--cov"
-
-[tool.coverage.run]
-report = ["html", "term-missing"]
-source = ["src/txrm2tiff"]
+addopts = "--cov=src/txrm2tiff --cov-report=term --cov-report=xml"
 
 [tool.coverage.report]
+show_missing = true
 fail_under = 90
