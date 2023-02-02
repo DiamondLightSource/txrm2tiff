@@ -36,9 +36,10 @@ test:
   source_files:
     - tests
   requires:
+    - pytest
     - parameterized
   commands:
-    - python -m unittest discover tests -p "test_*.py" -vv
+    - python -m pytest .
 
 about:
   home: https://github.com/DiamondLightSource/{{ name }}
