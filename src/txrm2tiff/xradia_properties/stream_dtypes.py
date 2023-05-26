@@ -14,6 +14,7 @@ image_info_dict = {
     "ImageInfo/ExpTime": XrmDataTypes.XRM_FLOAT,
     "ImageInfo/ExpTimes": XrmDataTypes.XRM_FLOAT,
     "ImageInfo/HorizontalBin": XrmDataTypes.XRM_INT,
+    "ImageInfo/VerticalalBin": XrmDataTypes.XRM_INT,
     "ImageInfo/ImageHeight": XrmDataTypes.XRM_INT,
     "ImageInfo/ImageWidth": XrmDataTypes.XRM_INT,
     "ImageInfo/ImagesPerProjection": XrmDataTypes.XRM_INT,
