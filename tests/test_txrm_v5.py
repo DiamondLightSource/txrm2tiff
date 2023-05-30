@@ -35,7 +35,7 @@ class TestTxrm5(unittest.TestCase):
         "txrm2tiff.txrm.v5.AbstractTxrm.reference_info",
         new={"ImageWidth": [20], "ImageHeight": [5]},
     )
-    def test_image_dims(self):
+    def test_ref_image_dims(self):
         txrm = Txrm5("test/path/file.txrm")
         self.assertEqual(txrm.reference_dims, [20, 5])
 
