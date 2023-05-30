@@ -18,6 +18,8 @@ class SaveMixin:
         flip: bool = False,
         clear_images: bool = False,
         mkdir: bool = False,
+        save_annotations: bool = True,
+        annotated_path: Optional[Path] = None,
         strict: Optional[bool] = None,
     ) -> bool:
         """Saves images (if available) returning True if successful."""
@@ -54,16 +56,18 @@ class SaveMixin:
                 filepath.parent.mkdir(parents=True, exist_ok=True)
 
             manual_save(filepath, im, datatype, metadata)
-            if self.annotated_image is not None:
-                stem = filepath.stem
-                suffix = filepath.suffix
-                if stem.lower().endswith(".ome") and suffix.lower() == ".tiff":
-                    # Special case for ome.tiff
-                    suffix = f"{stem[-4:]}{suffix}"
-                    stem = stem[:-4]
-                manual_annotation_save(
-                    filepath.parent / f"{stem}_Annotated{suffix}",
-                    self.annotated_image,
+            if save_annotations and hasattr(self, "annotate") and self.annotated_image is not None:
+                if annotated_path is None:
+                    # Generate default path
+                    filename = filepath.name
+                    if filename.lower().endswith(".ome.tiff"):
+                        # Special case for ome.tiff
+                        stem, suffix = filename.rsplit(".ome.")
+                    else:
+                        stem, suffix = filename.rsplit(".")
+                    annotated_path = filepath.parent / f"{stem}_Annotated.{suffix}"
+                self.save_annotations(
+                    annotated_path, mkdir=mkdir, strict=strict
                 )
             return True
         except Exception:
