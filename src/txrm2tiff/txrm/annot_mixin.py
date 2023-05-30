@@ -137,7 +137,7 @@ class AnnotatorMixin:
 
                 # Round to nearest multiple of the order of magnitude
                 exponent = math.floor(math.log10(tmp_bar_size))
-                step_size = 10.0 ** exponent
+                step_size = 10.0**exponent
                 bar_size = round(
                     round(tmp_bar_size / step_size)
                     * step_size,  # Find nearest multiple of step_size
@@ -149,13 +149,11 @@ class AnnotatorMixin:
 
                 # Set text and calculate text positions:
                 text = "%gμm" % bar_size
-                text_width, text_height = draw.textsize(text, font=f)
-                text_x = round(
-                    x0 + bar_length / 2 - (text_width / 2)
-                )  # Centre text above bar
-                text_y = y0 - bar_width - text_height
+                text_xy = (x0 + bar_length / 2, y0 - bar_width)
                 # Draw:
-                draw.text((text_x, text_y), text, font=f, fill=colour)
+                draw.text(
+                    text_xy, text, font=f, fill=colour, anchor="mb"
+                )  # anchor: middle-bottom
                 draw.line((x0, y0, x0 + bar_length, y0), fill=colour, width=bar_width)
                 return True
             except Exception:
@@ -307,7 +305,7 @@ class AnnotatorMixin:
             )
             return True
         except Exception:
-            logging.error("Saving failed", exc_info= not strict)
+            logging.error("Saving failed", exc_info=not strict)
             if strict:
                 raise
             return False
