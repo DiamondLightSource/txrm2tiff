@@ -9,6 +9,7 @@ import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 from PIL.ImageOps import autocontrast
 
+from ..utils.file_handler import manual_annotation_save
 from ..xradia_properties import AnnotationTypes, XrmDataTypes as XDT
 
 font_path = Path(__file__).parent.parent / "font" / "CallingCode-Regular.otf"
@@ -34,9 +35,9 @@ class AnnotatorMixin:
             },
         )
 
-    def annotate(self) -> Optional[np.ndarray]:
+    def annotate(self, scale_bar=True) -> Optional[np.ndarray]:
         """Annotate output image. Please ensure that the image has been referenced first, if applicable."""
-        annotations = self.extract_annotations(scale_bar=True)
+        annotations = self.extract_annotations(scale_bar=scale_bar)
         # Checks if anything has been added
         if annotations is None:
             logging.warning("No annotations to apply")
@@ -276,3 +277,37 @@ class AnnotatorMixin:
         """
         xys = tuple((x, self.output_shape[1] - 1 - y) for (x, y) in xys)
         return xys
+
+    def save_annotations(
+        self,
+        filepath: Optional[Path] = None,
+        mkdir: bool = False,
+        strict: Optional[bool] = None,
+    ) -> bool:
+        """Saves images (if available) returning True if successful."""
+        if strict is None:
+            strict = self.strict
+        try:
+            if self.annotated_image is None:
+                raise AttributeError("No annotated image to save")
+            if filepath is None:
+                if self.path is None:
+                    raise ValueError(
+                        "An output filepath must be given if an input path was not given."
+                    )
+                filepath = self.path.resolve()
+                filepath = filepath.parent / f"{filepath.stem}_Annotated.tiff"
+
+            if mkdir:
+                filepath.parent.mkdir(parents=True, exist_ok=True)
+
+            manual_annotation_save(
+                filepath,
+                self.annotated_image,
+            )
+            return True
+        except Exception:
+            logging.error("Saving failed", exc_info= not strict)
+            if strict:
+                raise
+            return False
