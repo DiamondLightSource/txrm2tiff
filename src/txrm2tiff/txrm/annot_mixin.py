@@ -179,7 +179,7 @@ class AnnotatorMixin:
         """Do nothing"""
         pass
 
-    def _plot_line(self, draw: ImageDraw, stream_stem: str):
+    def _plot_line(self, draw: ImageDraw, stream_stem: str) -> None:
         colour = self._get_colour(stream_stem)
         thickness = self._get_thickness(stream_stem)
         x1 = self.read_stream(f"{stream_stem}/X1", XDT.XRM_DOUBLE, strict=True)[0]
@@ -189,44 +189,48 @@ class AnnotatorMixin:
 
         draw.line(self._flip_y((x1, y1), (x2, y2)), fill=colour, width=thickness)
 
-    def _plot_rect(self, draw: ImageDraw, stream_stem: str):
-        colour = self._get_colour(stream_stem)
-        thickness = self._get_thickness(stream_stem)
-        x0 = self.read_stream(
-            f"{stream_stem}/Rectangle/Left", XDT.XRM_INT, strict=True
-        )[0]
-        y0 = self.read_stream(
-            f"{stream_stem}/Rectangle/Bottom", XDT.XRM_INT, strict=True
-        )[0]
-        x1 = self.read_stream(
-            f"{stream_stem}/Rectangle/Right", XDT.XRM_INT, strict=True
-        )[0]
-        y1 = self.read_stream(f"{stream_stem}/Rectangle/Top", XDT.XRM_INT, strict=True)[
-            0
-        ]
-
-        draw.rectangle(
-            self._flip_y((x0, y0), (x1, y1)), outline=colour, width=thickness
+    def __extract_rectangle_coords(self, stream_stem: str) -> Tuple[Tuple[int]]:
+        x = []
+        y = []
+        x.append(
+            self.read_stream(f"{stream_stem}/Rectangle/Left", XDT.XRM_INT, strict=True)[
+                0
+            ]
         )
-
-    def _plot_ellipse(self, draw: ImageDraw, stream_stem: str):
-        colour = self._get_colour(stream_stem)
-        thickness = self._get_thickness(stream_stem)
-        x0 = self.read_stream(
-            f"{stream_stem}/Rectangle/Left", XDT.XRM_INT, strict=True
-        )[0]
-        y0 = self.read_stream(
-            f"{stream_stem}/Rectangle/Bottom", XDT.XRM_INT, strict=True
-        )[0]
-        x1 = self.read_stream(
-            f"{stream_stem}/Rectangle/Right", XDT.XRM_INT, strict=True
-        )[0]
-        y1 = self.read_stream(f"{stream_stem}/Rectangle/Top", XDT.XRM_INT, strict=True)[
-            0
-        ]
+        y.append(
+            self.read_stream(
+                f"{stream_stem}/Rectangle/Bottom", XDT.XRM_INT, strict=True
+            )[0]
+        )
+        x.append(
+            self.read_stream(
+                f"{stream_stem}/Rectangle/Right", XDT.XRM_INT, strict=True
+            )[0]
+        )
+        y.append(
+            self.read_stream(f"{stream_stem}/Rectangle/Top", XDT.XRM_INT, strict=True)[
+                0
+            ]
+        )
+        x.sort()
+        y.sort(reverse=True)
         # Values in the first tuple must be smaller than their respective second tuple value.
         # Therefore y1 must be first and y0 second because they are flipped.
-        draw.ellipse(self._flip_y((x0, y1), (x1, y0)), outline=colour, width=thickness)
+        return self._flip_y(*zip(x, y))
+
+    def _plot_rect(self, draw: ImageDraw, stream_stem: str) -> None:
+        colour = self._get_colour(stream_stem)
+        thickness = self._get_thickness(stream_stem)
+        xy = self.__extract_rectangle_coords(stream_stem)
+
+        draw.rectangle(xy, outline=colour, width=thickness)
+
+    def _plot_ellipse(self, draw: ImageDraw, stream_stem: str) -> None:
+        colour = self._get_colour(stream_stem)
+        thickness = self._get_thickness(stream_stem)
+        xy = self.__extract_rectangle_coords(stream_stem)
+
+        draw.ellipse(xy, outline=colour, width=thickness)
 
     def _plot_polygon(self, draw: ImageDraw, stream_stem: str) -> None:
         colour = self._get_colour(stream_stem)
@@ -262,7 +266,7 @@ class AnnotatorMixin:
     def _plot_freehand(self, draw: ImageDraw, stream_stem: str) -> None:
         self._plot_polyline(draw, stream_stem, joint="curve")
 
-    def _flip_y(self, *xys: Iterable[Number]) -> Tuple[Tuple[Number, Number]]:
+    def _flip_y(self, *xys: Iterable[Number]) -> Tuple[Tuple[Number]]:
         """
         Stored x-y coordinates are assuming 0 is bottom left, whereas PIL assumes 0 is top left
         This flips any list of coordinates that alternate x, y
@@ -271,10 +275,9 @@ class AnnotatorMixin:
             *xys: n args assuming the form (x0, y0), (x1, y1), ... (xn, yn)
 
         Returns:
-            tuple of tuples: x-y coordinates with a flipped y
+            Tuple of tuples: x-y coordinates with a flipped y
         """
-        xys = tuple((x, self.output_shape[1] - 1 - y) for (x, y) in xys)
-        return xys
+        return tuple((x, self.output_shape[1] - 1 - y) for x, y in xys)
 
     def save_annotations(
         self,
