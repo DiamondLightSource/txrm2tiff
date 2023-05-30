@@ -2,7 +2,7 @@ import logging
 import tifffile as tf
 import numpy as np
 from numpy.typing import DTypeLike
-from os import access, R_OK, remove, PathLike
+from os import access, R_OK, PathLike
 from pathlib import Path
 from typing import Optional, Union, List
 from olefile import OleFileIO, isOleFile
