@@ -6,7 +6,7 @@ import numpy as np
 from numpy.typing import DTypeLike
 
 from ..utils.metadata import create_ome_metadata, dtype_dict
-from ..utils.file_handler import manual_save, manual_annotation_save
+from ..utils.file_handler import manual_save
 
 
 class SaveMixin:
@@ -56,7 +56,11 @@ class SaveMixin:
                 filepath.parent.mkdir(parents=True, exist_ok=True)
 
             manual_save(filepath, im, datatype, metadata)
-            if save_annotations and hasattr(self, "annotate") and self.annotated_image is not None:
+            if (
+                save_annotations
+                and hasattr(self, "annotate")
+                and self.annotated_image is not None
+            ):
                 if annotated_path is None:
                     # Generate default path
                     filename = filepath.name
@@ -66,12 +70,10 @@ class SaveMixin:
                     else:
                         stem, suffix = filename.rsplit(".")
                     annotated_path = filepath.parent / f"{stem}_Annotated.{suffix}"
-                self.save_annotations(
-                    annotated_path, mkdir=mkdir, strict=strict
-                )
+                self.save_annotations(annotated_path, mkdir=mkdir, strict=strict)
             return True
         except Exception:
-            logging.error("Saving failed", exc_info= not strict)
+            logging.error("Saving failed", exc_info=not strict)
             if strict:
                 raise
             return False
