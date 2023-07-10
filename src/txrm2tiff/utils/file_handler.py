@@ -61,14 +61,26 @@ def manual_save(
 ):
     filepath = Path(filepath)
     image = np.asarray(image)
+    tiff_kwargs = {}
     if data_type is not None:
         image = cast_to_dtype(image, data_type)
     else:
         logging.info("No data type specified. Saving with default data type.")
     if metadata is not None:
         meta_img = metadata.image()
-        meta_img.Pixels.set_PixelType(dtype_dict[image.dtype.name])
+        pixels = meta_img.Pixels
+        pixels.set_PixelType(dtype_dict[image.dtype.name])
         meta_img.set_Name(filepath.name)
+        resolution = [pixels.get_PhysicalSizeX(), pixels.get_PhysicalSizeY()]
+        if None not in resolution:  # Check that both have values
+            resolution = [pixel_size * 1000 for pixel_size in resolution]
+            resolution_unit = "MICROMETER"  # NANOMETER isn't included in tifffile
+            if tf.__version__ >= "2022.7.28":
+                # 2022.7.28: Deprecate third resolution argument on write (use resolutionunit)
+                tiff_kwargs["resolutionunit"] = resolution_unit
+            else:
+                resolution.append(resolution_unit)
+            tiff_kwargs["resolution"] = tuple(resolution)
         metadata = metadata.to_xml().encode()
 
     num_frames = len(image)
@@ -88,6 +100,7 @@ def manual_save(
             description=metadata,
             metadata={"axes": "ZYX"},
             software=f"txrm2tiff {__version__}",
+            **tiff_kwargs
         )
 
 

@@ -1,4 +1,5 @@
 import unittest
+from unittest.mock import patch, MagicMock
 
 from pathlib import Path
 from datetime import datetime
@@ -91,6 +92,7 @@ class TestFileHandler(unittest.TestCase):
         ) as tmpdir:
             im_path = Path(tmpdir) / "saved.tiff"
             metadata = OMEXML()
+
             image = np.ones((5, 30, 35), dtype=np.float64)
             self.assertFalse(im_path.exists())
             manual_save(im_path, image, data_type=np.uint16, metadata=metadata)
@@ -106,6 +108,32 @@ class TestFileHandler(unittest.TestCase):
         self.assertEqual(saved_arr.dtype, target_dtype)
         assert_array_equal(saved_arr, image)
         self.assertEqual(saved_meta, metadata.to_xml().strip())  # Remove final newline
+
+    def test_manual_save_sets_pixel_size(self):
+        with TemporaryDirectory(
+            prefix="saving_test_", dir=Path(__name__).parent
+        ) as tmpdir:
+            im_path = Path(tmpdir) / "saved.tiff"
+            metadata = OMEXML()
+            pixel_size_xy = (5, 6)  #nm
+            pixels = metadata.image().Pixels
+            pixels.set_PhysicalSizeX(pixel_size_xy[0])
+            pixels.set_PhysicalSizeY(pixel_size_xy[1])
+            image = np.ones((5, 30, 35), dtype=np.float64)
+            self.assertFalse(im_path.exists())
+            manual_save(im_path, image, data_type=np.uint16, metadata=metadata)
+            self.assertTrue(im_path.exists())
+            with tf.TiffFile(im_path) as tiff:
+                saved_arr = tiff.asarray()
+                tif_tags = {}
+                for tag in tiff.pages[0].tags.values():
+                    name, value = tag.name, tag.value
+                    tif_tags[name] = value
+
+        assert_array_equal(saved_arr, image)
+        self.assertEqual(tif_tags["XResolution"][0], pixel_size_xy[0] * 1000)
+        self.assertEqual(tif_tags["YResolution"][0], pixel_size_xy[1] * 1000)
+
 
     def test_manual_annotation_save(self):
         with TemporaryDirectory(
