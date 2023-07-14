@@ -73,8 +73,8 @@ def manual_save(
         meta_img.set_Name(filepath.name)
         resolution = [pixels.get_PhysicalSizeX(), pixels.get_PhysicalSizeY()]
         if None not in resolution:  # Check that both have values
-            resolution = [pixel_size * 1000 for pixel_size in resolution]
-            resolution_unit = "MICROMETER"  # NANOMETER isn't included in tifffile
+            resolution = [1.e7 / (pixel_size)  for pixel_size in resolution]  # Pixels per resolution unit (converted from nm to cm)
+            resolution_unit = tf.TIFF.RESUNIT.CENTIMETER  # Must use CENTIMETER for maximum compatibility
             if tf.__version__ >= "2022.7.28":
                 # 2022.7.28: Deprecate third resolution argument on write (use resolutionunit)
                 tiff_kwargs["resolutionunit"] = resolution_unit
@@ -93,7 +93,7 @@ def manual_save(
     if filepath.exists():
         logging.warning("Overwriting existing file %s", filepath)
 
-    with tf.TiffWriter(str(filepath), bigtiff=bigtiff, ome=False) as tif:
+    with tf.TiffWriter(str(filepath), bigtiff=bigtiff, ome=False, imagej=False) as tif:
         tif.write(
             image,
             photometric="MINISBLACK",

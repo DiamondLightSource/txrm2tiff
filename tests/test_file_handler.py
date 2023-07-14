@@ -115,7 +115,7 @@ class TestFileHandler(unittest.TestCase):
         ) as tmpdir:
             im_path = Path(tmpdir) / "saved.tiff"
             metadata = OMEXML()
-            pixel_size_xy = (5, 6)  #nm
+            pixel_size_xy = (1, 2)  # nm
             pixels = metadata.image().Pixels
             pixels.set_PhysicalSizeX(pixel_size_xy[0])
             pixels.set_PhysicalSizeY(pixel_size_xy[1])
@@ -125,14 +125,14 @@ class TestFileHandler(unittest.TestCase):
             self.assertTrue(im_path.exists())
             with tf.TiffFile(im_path) as tiff:
                 saved_arr = tiff.asarray()
-                tif_tags = {}
-                for tag in tiff.pages[0].tags.values():
-                    name, value = tag.name, tag.value
-                    tif_tags[name] = value
+                x_resolution = tiff.pages[0].tags['XResolution'].value
+                y_resolution = tiff.pages[0].tags['YResolution'].value
+                resolution_unit = tiff.pages[0].tags['ResolutionUnit'].value
 
         assert_array_equal(saved_arr, image)
-        self.assertEqual(tif_tags["XResolution"][0], pixel_size_xy[0] * 1000)
-        self.assertEqual(tif_tags["YResolution"][0], pixel_size_xy[1] * 1000)
+        self.assertEqual(x_resolution, (int(1.e7), 1))
+        self.assertEqual(y_resolution, (int(5.e6), 1))
+        self.assertEqual(resolution_unit, int(tf.TIFF.RESUNIT.CENTIMETER))
 
 
     def test_manual_annotation_save(self):
