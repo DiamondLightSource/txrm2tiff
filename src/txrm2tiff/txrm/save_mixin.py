@@ -66,9 +66,9 @@ class SaveMixin:
                     filename = filepath.name
                     if filename.lower().endswith(".ome.tiff"):
                         # Special case for ome.tiff
-                        stem, suffix = filename.rsplit(".ome.")
+                        stem, suffix = filename.rsplit(".ome.", 1)
                     else:
-                        stem, suffix = filename.rsplit(".")
+                        stem, suffix = filename.rsplit(".", 1)
                     annotated_path = filepath.parent / f"{stem}_Annotated.{suffix}"
                 self.save_annotations(annotated_path, mkdir=mkdir, strict=strict)
             return True
