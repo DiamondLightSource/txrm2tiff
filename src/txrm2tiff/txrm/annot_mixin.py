@@ -182,10 +182,10 @@ class AnnotatorMixin:
     def _plot_line(self, draw: ImageDraw, stream_stem: str) -> None:
         colour = self._get_colour(stream_stem)
         thickness = self._get_thickness(stream_stem)
-        x1 = self.read_stream(f"{stream_stem}/X1", XDT.XRM_DOUBLE, strict=True)[0]
-        x2 = self.read_stream(f"{stream_stem}/X2", XDT.XRM_DOUBLE, strict=True)[0]
-        y1 = self.read_stream(f"{stream_stem}/Y1", XDT.XRM_DOUBLE, strict=True)[0]
-        y2 = self.read_stream(f"{stream_stem}/Y2", XDT.XRM_DOUBLE, strict=True)[0]
+        x1 = self.read_stream(f"{stream_stem}/X1", XDT.XRM_FLOAT, strict=True)[0]
+        x2 = self.read_stream(f"{stream_stem}/X2", XDT.XRM_FLOAT, strict=True)[0]
+        y1 = self.read_stream(f"{stream_stem}/Y1", XDT.XRM_FLOAT, strict=True)[0]
+        y2 = self.read_stream(f"{stream_stem}/Y2", XDT.XRM_FLOAT, strict=True)[0]
 
         draw.line(self._flip_y((x1, y1), (x2, y2)), fill=colour, width=thickness)
 
@@ -235,11 +235,13 @@ class AnnotatorMixin:
     def _plot_polygon(self, draw: ImageDraw, stream_stem: str) -> None:
         colour = self._get_colour(stream_stem)
         thickness = self._get_thickness(stream_stem)
-        total_points = self.read_stream(f"{stream_stem}/TotalPts", np.uintc)[0]
-        xs = self.read_stream(f"{stream_stem}/PointX", XDT.XRM_DOUBLE, strict=True)[
+        total_points = self.read_stream(
+            f"{stream_stem}/TotalPts", XDT.XRM_UNSIGNED_INT
+        )[0]
+        xs = self.read_stream(f"{stream_stem}/PointX", XDT.XRM_FLOAT, strict=True)[
             :total_points
         ]
-        ys = self.read_stream(f"{stream_stem}/PointY", XDT.XRM_DOUBLE, strict=True)[
+        ys = self.read_stream(f"{stream_stem}/PointY", XDT.XRM_FLOAT, strict=True)[
             :total_points
         ]
         xs.append(xs[0])  # Link beginning and end points
@@ -252,9 +254,11 @@ class AnnotatorMixin:
     ):
         colour = self._get_colour(stream_stem)
         thickness = self._get_thickness(stream_stem)
-        total_points = self.read_stream(f"{stream_stem}/TotalPts", np.uintc)[0]
-        xs = self.read_stream(f"{stream_stem}/PointX", XDT.XRM_DOUBLE, strict=True)
-        ys = self.read_stream(f"{stream_stem}/PointY", XDT.XRM_DOUBLE, strict=True)
+        total_points = self.read_stream(
+            f"{stream_stem}/TotalPts", XDT.XRM_UNSIGNED_INT
+        )[0]
+        xs = self.read_stream(f"{stream_stem}/PointX", XDT.XRM_FLOAT, strict=True)
+        ys = self.read_stream(f"{stream_stem}/PointY", XDT.XRM_FLOAT, strict=True)
 
         draw.line(
             self._flip_y(*zip(xs[:total_points], ys[:total_points])),

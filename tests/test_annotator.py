@@ -273,10 +273,10 @@ class TestAnnotator(unittest.TestCase):
             [
                 call("Annot/TotalAnn", strict=True),
                 call("Annot/Ann0/AnnType", XrmDataTypes.XRM_INT, strict=True),
-                call("Annot/Ann0/X1", XrmDataTypes.XRM_DOUBLE, strict=True),
-                call("Annot/Ann0/X2", XrmDataTypes.XRM_DOUBLE, strict=True),
-                call("Annot/Ann0/Y1", XrmDataTypes.XRM_DOUBLE, strict=True),
-                call("Annot/Ann0/Y2", XrmDataTypes.XRM_DOUBLE, strict=True),
+                call("Annot/Ann0/X1", XrmDataTypes.XRM_FLOAT, strict=True),
+                call("Annot/Ann0/X2", XrmDataTypes.XRM_FLOAT, strict=True),
+                call("Annot/Ann0/Y1", XrmDataTypes.XRM_FLOAT, strict=True),
+                call("Annot/Ann0/Y2", XrmDataTypes.XRM_FLOAT, strict=True),
             ]
         )
 
