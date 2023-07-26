@@ -77,7 +77,7 @@ class TestAnnotator(unittest.TestCase):
 
     def test_thickness_modifier(self):
         ann = annot_mixin.AnnotatorMixin()
-        ann.output_shape = (1, 500, 1500)
+        ann.output_shape = (6, 500, 1500)
         self.assertEqual(ann.thickness_modifier, 2.0)
 
     def test_line(self):
@@ -235,14 +235,17 @@ class TestAnnotator(unittest.TestCase):
         self.assertEqual(np.asarray(im).shape, (y, x, channels))
 
     def test_annotate(self):
+        class TestAnnotator(annot_mixin.AnnotatorMixin):
+            @property
+            def thickness_modifier(self) -> float:
+                return 1
+
         fill = (0, 125, 0)
         x0, x1 = 1, 4
         y = 4
         im = np.zeros((5, 6, 7), dtype=np.uint8)  # Z, Y, X
         num_annotations = 1
-        Ann = annot_mixin.AnnotatorMixin
-        Ann.thickness_modifier = 1
-        ann = Ann()
+        ann = TestAnnotator()
         ann.get_output = MagicMock(return_value=np.flip(im, axis=1))
         ann.output_shape = im.shape
         ann.has_stream = MagicMock(return_value=True)
