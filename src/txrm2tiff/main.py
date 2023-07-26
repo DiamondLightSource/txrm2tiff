@@ -181,10 +181,8 @@ def _decide_output_path(input_path: Path, output_path: Optional[Path]) -> Path:
 def _set_output_suffix(filepath: Path, current_suffix: Optional[str] = None) -> Path:
     if current_suffix is None:
         current_suffix = filepath.suffix
-    if current_suffix == ".txrm":
+    if current_suffix.lower() in (".txrm", ".xrm"):
         return filepath.with_suffix(".ome.tiff")
-    elif current_suffix == ".xrm":
-        return filepath.with_suffix(".ome.tif")
     else:
         logging.error("Invalid file extension: %s", current_suffix)
         raise NameError(f"Invalid file extension: {current_suffix}")

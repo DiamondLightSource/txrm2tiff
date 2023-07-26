@@ -32,11 +32,11 @@ class TestRun(unittest.TestCase):
         txrm_output = _set_output_suffix(Path("file.txrm"))
         self.assertEqual("file.ome.tiff", str(txrm_output))
         xrm_output = _set_output_suffix(Path("file.xrm"))
-        self.assertEqual("file.ome.tif", str(xrm_output))
+        self.assertEqual("file.ome.tiff", str(xrm_output))
         txrm_output2 = _set_output_suffix(Path("file.extension"), ".txrm")
         self.assertEqual("file.ome.tiff", str(txrm_output2))
         xrm_output2 = _set_output_suffix(Path("file.extension"), ".xrm")
-        self.assertEqual("file.ome.tif", str(xrm_output2))
+        self.assertEqual("file.ome.tiff", str(xrm_output2))
         with self.assertRaises(NameError):
             _set_output_suffix(Path("file.bad_extension"), None)
 
@@ -44,7 +44,7 @@ class TestRun(unittest.TestCase):
         txrm_output = _set_output_suffix(Path("file.txrm"))
         xrm_output = _set_output_suffix(Path("file.xrm"))
         self.assertEqual("file.ome.tiff", str(txrm_output))
-        self.assertEqual("file.ome.tif", str(xrm_output))
+        self.assertEqual("file.ome.tiff", str(xrm_output))
 
     @parameterized.expand([(Txrm3,), (Txrm5,)])
     @patch("txrm2tiff.main.open_txrm")
@@ -106,13 +106,13 @@ class TestRun(unittest.TestCase):
         _convert_file(txrm, None, True, True)
         txrm.annotate.assert_called_once_with()
 
-    @parameterized.expand([(".txrm", ".ome.tiff"), (".xrm", ".ome.tif")])
+    @parameterized.expand([(".txrm", ".ome.tiff"), (".xrm", ".ome.tiff")])
     def test_decide_output_path(self, input_suffix, output_suffix):
         filepath = Path("./path/to/thisisafile.ext")
         output = _decide_output_path(filepath.with_suffix(input_suffix), None)
         self.assertEqual(output, filepath.with_suffix(output_suffix))
 
-    @parameterized.expand([(".txrm", ".ome.tiff"), (".xrm", ".ome.tif")])
+    @parameterized.expand([(".txrm", ".ome.tiff"), (".xrm", ".ome.tiff")])
     def test_decide_output_path_with_output_dir(self, input_suffix, output_suffix):
         filepath = Path("./path/to/thisisafile.ext")
         output_dir = Path("./a/different/path")
@@ -177,7 +177,7 @@ class TestRun(unittest.TestCase):
         ]
         input_files = txrm_files + xrm_files
         output_files = [f.with_suffix(".ome.tiff") for f in txrm_files] + [
-            f.with_suffix(".ome.tif") for f in xrm_files
+            f.with_suffix(".ome.tiff") for f in xrm_files
         ]
         mocked_find_files.return_value = input_files
         mocked_suffix_definer.side_effect = output_files
@@ -209,7 +209,7 @@ class TestRun(unittest.TestCase):
         xrm_files = [Path(f"{fname}.xrm") for fname in generate_random_strings(num_xrm)]
         input_files = txrm_files + xrm_files
         output_files = [f.with_suffix(".ome.tiff") for f in txrm_files] + [
-            f.with_suffix(".ome.tif") for f in xrm_files
+            f.with_suffix(".ome.tiff") for f in xrm_files
         ]
         input_paths = [input_dir / s for s in input_files]
         output_paths = [output_dir / s for s in output_files]

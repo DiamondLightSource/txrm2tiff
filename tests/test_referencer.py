@@ -43,7 +43,7 @@ class TestReferencer(unittest.TestCase):
         ) as mocked_apply_array:
             with TemporaryDirectory("tiff_ref_test_", dir=".") as tmp_dir:
                 array = np.ones((3, 5, 5))
-                tif_path = Path(tmp_dir) / "image.ome.tif"
+                tif_path = Path(tmp_dir) / "image.ome.tiff"
                 manual_save(tif_path, array)
 
                 referencer.apply_reference(tif_path, False)
@@ -66,7 +66,7 @@ class TestReferencer(unittest.TestCase):
                 metadata.image().Pixels.set_plane_count(len(exposures))
                 for idx, exposure in enumerate(exposures):
                     metadata.image().Pixels.Plane(idx).set_ExposureTime(exposure)
-                tif_path = Path(tmp_dir) / "image.ome.tif"
+                tif_path = Path(tmp_dir) / "image.ome.tiff"
                 manual_save(tif_path, array, metadata=metadata)
 
                 referencer.apply_reference(tif_path, True)
@@ -82,7 +82,6 @@ class TestReferencer(unittest.TestCase):
     @patch("txrm2tiff.txrm.ref_mixin.isOleFile", MagicMock(return_value=True))
     @patch("txrm2tiff.txrm.ref_mixin.main.open_txrm")
     def test_apply_refererence_txrm(self, TxrmClass, mocked_open_txrm):
-
         referencer = ReferenceMixin()
         txrm = MagicMock(auto_spec=TxrmClass)
         mocked_open_txrm.return_value.__enter__.return_value = txrm
