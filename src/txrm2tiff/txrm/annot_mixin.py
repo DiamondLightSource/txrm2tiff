@@ -53,7 +53,7 @@ class AnnotatorMixin:
         """This set a multiplier so that lines are visible when the image is at a sensible size"""
         if not hasattr(self, "output_shape"):
             return 1.0
-        return np.mean(self.output_shape[0]) / 500.0
+        return np.mean(self.output_shape[1:]) / 500.0
 
     def _create_image_and_draw(self):
         """Create transparent RGBA image with appropriate 2D dimensions for output image(s)"""

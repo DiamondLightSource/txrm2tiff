@@ -75,6 +75,11 @@ class TestAnnotator(unittest.TestCase):
 
         assert_array_equal(np.asarray(image), expected_output)
 
+    def test_thickness_modifier(self):
+        ann = annot_mixin.AnnotatorMixin()
+        ann.output_shape = (1, 500, 1500)
+        self.assertEqual(ann.thickness_modifier, 2.0)
+
     def test_line(self):
         fill = 125
         x0, x1 = 1, 4
@@ -157,7 +162,7 @@ class TestAnnotator(unittest.TestCase):
 
         self.assertTrue((output[:, :, 0] == 0).any())  # Red
         self.assertTrue((output[:, :, 2] == 0).any())  # Blue
-        for (x, y) in ann._flip_y(
+        for x, y in ann._flip_y(
             (x_mid, ys[0]), (xs[0], y_mid), (x_mid, ys[1]), (xs[1], y_mid)
         ):
             self.assertEqual(
