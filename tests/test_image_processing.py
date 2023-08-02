@@ -13,6 +13,7 @@ from txrm2tiff.utils.image_processing import (
     cast_to_dtype,
     dynamic_despeckle_and_average_series,
     stitch_images,
+    rescale_image,
 )
 
 
@@ -73,6 +74,23 @@ class TestImageProcessing(unittest.TestCase):
             expected_approx_output,
             decimal=0,
         )
+
+    def test_rescale_image(self):
+        original_minimum = -6000
+        original_maximum = 6000
+        step_size = 500
+
+        target_minimum = -600
+        target_maximum = 600
+        expected_step_size = 50
+
+        array = np.arange(original_minimum, original_maximum + step_size, step_size)
+        output_array = rescale_image(
+            array, target_minimum, target_maximum, original_minimum, original_maximum
+        )
+        self.assertEqual(output_array[0], target_minimum)
+        self.assertEqual(output_array[-1], target_maximum)
+        self.assertEqual(output_array[1] - output_array[0], expected_step_size)
 
     def test_cast_to_dtype_with_no_change(self):
         dtype = np.float64

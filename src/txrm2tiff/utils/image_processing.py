@@ -1,7 +1,7 @@
 import logging
 from typing import List
 import numpy as np
-from numpy.typing import DTypeLike
+from numpy.typing import DTypeLike, NDArray
 
 from .functions import convert_to_int
 
@@ -66,11 +66,17 @@ def normalise_to_datatype(
         new_max = np.mean(array) + num_std * np.std(array)
         np.clip(array, 0, new_max, out=array)
 
-    # Move minimum value of all corrected images to 0:
-    array -= array.min()
-    # New max should be the max allowed by datatype
-    new_max = np.iinfo(datatype).max
-    return array * (new_max / array.max())
+    return rescale_image(array, np.iinfo(datatype).min, np.iinfo(datatype).max)
+
+
+def rescale_image(
+    array, minimum, maximum, previous_minimum=None, previous_maximum=None
+):
+    if previous_minimum is None:
+        previous_minimum = np.min(array)
+    if previous_maximum is None:
+        previous_maximum = np.max(array)
+    return np.interp(array, (previous_minimum, previous_maximum), (minimum, maximum))
 
 
 def cast_to_dtype(image: np.ndarray, data_type: DTypeLike) -> np.ndarray:
@@ -106,7 +112,7 @@ def cast_to_dtype(image: np.ndarray, data_type: DTypeLike) -> np.ndarray:
                 )
             else:
                 dtype_max = None
-            
+
             if dtype_min is not None or dtype_max is not None:
                 np.clip(image, dtype_min, dtype_max, out=image)
 
@@ -145,9 +151,7 @@ def tile_image_data_to_mosaic(
     return np.tile(refdata, (mosaic_rows, mosaic_columns))
 
 
-def stitch_images(
-    images: np.ndarray, mosaic_dims: List[int]
-) -> np.ndarray:
+def stitch_images(images: np.ndarray, mosaic_dims: List[int]) -> np.ndarray:
     """
     Stitches images into a mosaic stored as a 2D array.
 

@@ -9,6 +9,7 @@ import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 from PIL.ImageOps import autocontrast
 
+from ..utils.image_processing import rescale_image
 from ..utils.file_handler import manual_annotation_save
 from ..xradia_properties import AnnotationTypes, XrmDataTypes as XDT
 
@@ -44,7 +45,9 @@ class AnnotatorMixin:
             self.annotated_image = None
         else:
             # Annotations will be in the wrong place if flipped
-            images = self.get_output(flip=False, clear_images=False)
+            images = rescale_image(
+                self.get_output(flip=False, clear_images=False), 0, 255
+            )
             self.annotated_image = self.apply_annotations(images, annotations)
         return self.annotated_image
 
@@ -97,9 +100,13 @@ class AnnotatorMixin:
             output_images = np.zeros((*images.shape, 3), dtype="uint8")
             for idx, image in enumerate(images, 0):
                 # Make 'L' type PIL image from 2D array, autocontrast, then convert to RGBA
-                image = autocontrast(Image.fromarray(image).convert("L")).convert(
-                    "RGBA"
-                )
+                image = Image.fromarray(image).convert("L")
+                image_auto_contrasted = autocontrast(image)
+                if np.mean(image_auto_contrasted) == np.max(image_auto_contrasted):
+                    image = image_auto_contrasted
+                else:
+                    del image_auto_contrasted
+                image = image.convert("RGBA")
                 # Combine annotations and image by alpha
                 image.alpha_composite(annotations)
                 # Throw away alpha and fill into output array
