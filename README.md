@@ -42,7 +42,7 @@ Available on PyPI and conda-forge as `txrm2tiff`. To install:
 
 ---
 
-If no output path is supplied, the output file will be placed at the input path with the extension ".ome.tif"/".ome.tiff" as appropriate. The ".ome" signifies the OME XML metadata header.
+If no output path is supplied, the output file will be placed at the input path with the extension ".ome.tiff". The ".ome" signifies the OME XML metadata header.
 
 **dragndrop.bat** has been supplied allowing windows users to drag and drop individual files or entire directories for processing (note: you cannot set output path this way). This may require some setup depending on your Python installation, so please see the file.
 
@@ -66,16 +66,16 @@ Saves "input.ome.tiff" with a reference image applied from running Despeckle \& 
 `txrm2tiff --input input.txrm --reference ref_single.xrm --ignore-ref`
 Saves "input.ome.tiff" with custom reference applied from a single image (e.g. a Despeckled_Ave.xrm file). If a custom reference is supplied, the ignore reference argument will be ignored.
 
-`txrm2tiff -i input.xrm -o custom-output.ome.tif`
-Saves "custom-output.ome.tif" with reference applied, if available.
+`txrm2tiff -i input.xrm -o custom-output.ome.tiff`
+Saves "custom-output.ome.tiff" with reference applied, if available.
 
 `txrm2tiff -i input.xrm --annotate`
-Saves "input.ome.tiff", as well as a separate file "input_Annotated.tif", which has annotations overlaid (if annotations are found) and scale bar.
+Saves "input.ome.tiff", as well as a separate file "input_Annotated.tiff", which has annotations overlaid (if annotations are found) and scale bar.
 
 `txrm2tiff --input input.xrm --ignore-ref --set-logging debug`
 Saves "input.ome.tiff" and ignores any reference, shows debug and above level log messages.
 
-`txrm2tiff -i input.xrm --output custom-output.ome.tif --set-logging error`
+`txrm2tiff -i input.xrm --output custom-output.ome.tiff --set-logging error`
 Saves "custom-output.ome.tiff", shows error and above level log messages.
 
 **To batch convert:**
