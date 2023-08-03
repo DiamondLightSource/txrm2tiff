@@ -92,6 +92,16 @@ class TestImageProcessing(unittest.TestCase):
         self.assertEqual(output_array[-1], target_maximum)
         self.assertEqual(output_array[1] - output_array[0], expected_step_size)
 
+    def test_rescale_image_keep_range(self):
+        target_minimum = 0
+        target_maximum = 255
+        array = np.zeros((5, 5), np.uint8)
+        array[0, 0] = 255
+
+        output_array = rescale_image(array, target_minimum, target_maximum)
+        self.assertTrue(np.all(output_array[1:] == target_minimum))
+        self.assertEqual(output_array[0, 0], target_maximum)
+
     def test_cast_to_dtype_with_no_change(self):
         dtype = np.float64
         info = np.finfo(dtype)

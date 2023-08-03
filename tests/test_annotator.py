@@ -244,9 +244,11 @@ class TestAnnotator(unittest.TestCase):
         x0, x1 = 1, 4
         y = 4
         im = np.zeros((5, 6, 7), dtype=np.uint8)  # Z, Y, X
+        im[0, 0, 0] = 255  # Ensure range stays the same as it is cast to 'L' (uint8)
+        im = np.flip(im, axis=1)
         num_annotations = 1
         ann = TestAnnotator()
-        ann.get_output = MagicMock(return_value=np.flip(im, axis=1))
+        ann.get_output = MagicMock(return_value=im)
         ann.output_shape = im.shape
         ann.has_stream = MagicMock(return_value=True)
         ann.read_stream = MagicMock(
@@ -280,8 +282,8 @@ class TestAnnotator(unittest.TestCase):
             ]
         )
 
-        # Extra 3 at the end for RGB
-        expected_output = np.zeros((*im.shape, 3), dtype=np.uint8)
+        # Extra axis of length 3 for RGB
+        expected_output = np.stack([im] * 3, axis=3)
         y = expected_output.shape[1] - 1 - y  # Invert y axis
         expected_output[:, y, x0 : x1 + 1, :] = fill
         self.assertEqual(
