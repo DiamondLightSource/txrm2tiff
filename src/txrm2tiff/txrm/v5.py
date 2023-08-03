@@ -51,8 +51,8 @@ class Txrm5(ShiftsMixin, SaveMixin, ReferenceMixin, AnnotatorMixin, AbstractTxrm
     def get_output(
         self,
         load: bool = False,
-        shifts: bool = True,
-        flip: bool = False,
+        shifts: bool = False,
+        flip: bool = True,
         clear_images: bool = True,
     ) -> typing.Optional[np.ndarray]:
         """

@@ -47,9 +47,7 @@ class Txrm3(ShiftsMixin, SaveMixin, ReferenceMixin, AbstractTxrm):
 
         if isinstance(ref_data, bytes):  # If unable to extract dtype
             img_size = np.prod(self.reference_dims)
-            ref_data = fallback_image_interpreter(
-                ref_data, int(img_size), self.strict
-            )
+            ref_data = fallback_image_interpreter(ref_data, int(img_size), self.strict)
 
         ref_data.shape = self.reference_dims[::-1]
 
@@ -57,12 +55,11 @@ class Txrm3(ShiftsMixin, SaveMixin, ReferenceMixin, AbstractTxrm):
             ref_data = np.tile(ref_data, self.mosaic_dims[::-1])
         return ref_data
 
-
     def get_output(
         self,
         load: bool = False,
-        shifts: bool = True,
-        flip: bool = False,
+        shifts: bool = False,
+        flip: bool = True,
         clear_images: bool = True,
     ) -> typing.Optional[np.ndarray]:
         """
