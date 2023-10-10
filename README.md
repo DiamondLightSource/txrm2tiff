@@ -12,7 +12,7 @@ Available on PyPI and conda-forge as `txrm2tiff`. To install:
 
 ## Instructions
 
-**txrm2tiff** {**--input** input file path (required)} {**--reference** reference file path (optional, default=None)} {**--output** path (optional, default=None)} {**--annotate** (optional)} {**--datatype** output data type (optional, choices=[uint16, float32, float64], default=None)} {**--ignore-ref** (optional)} {**--set-logging** (optional), default="info"}
+**txrm2tiff** {**--input** input file path (required)} {**--reference** reference file path (optional, default=None)} {**--output** path (optional, default=None)} {**--annotate** (optional)} {**--datatype** output data type (optional, choices=[uint16, float32, float64], default=None)} {**--apply-shifts** (optional)} {**--ignore-ref** (optional)} {**--set-logging** (optional), default="info"}
 
 If no output path is supplied, the output file will be placed at the input path with the extension ".ome.tiff". The ".ome" signifies the OME XML metadata header.
 
@@ -77,7 +77,10 @@ Saves "input.ome.tiff", as well as a separate file "input_Annotated.tiff", which
 `txrm2tiff --input input.xrm --ignore-ref --set-logging debug`
 Saves "input.ome.tiff" and ignores any reference, shows debug and above level log messages.
 
-`txrm2tiff -i input.xrm --output custom-output.ome.tiff --set-logging error`
+`txrm2tiff --input input.xrm --apply-shifts --datatype uint16`
+Saves "input.ome.tiff", applies any available shifts within the file, and saves the output as uint16.
+
+`txrm2tiff -i input.xrm --output custom-output.ome.tif --set-logging error`
 Saves "custom-output.ome.tiff", shows error and above level log messages.
 
 #### **To batch convert:**

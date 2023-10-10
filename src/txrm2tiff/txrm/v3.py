@@ -59,7 +59,7 @@ class Txrm3(ShiftsMixin, SaveMixin, ReferenceMixin, AbstractTxrm):
         self,
         load: bool = False,
         shifts: bool = False,
-        flip: bool = True,
+        flip: bool = False,
         clear_images: bool = True,
     ) -> typing.Optional[np.ndarray]:
         """

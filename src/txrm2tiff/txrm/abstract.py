@@ -499,7 +499,7 @@ class AbstractTxrm(ABC):
     def get_output(
         self,
         load: bool = False,
-        shifts: bool = True,
+        shifts: bool = False,
         flip: bool = False,
         clear_images: bool = True,
     ) -> typing.Optional[np.ndarray]:

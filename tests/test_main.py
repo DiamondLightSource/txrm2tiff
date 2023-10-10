@@ -184,7 +184,7 @@ class TestRun(unittest.TestCase):
         _batch_convert_files(input_dir)
         mocked_convert_save.assert_has_calls(
             [
-                call(f_in, f_out, None, True, False, None, True, False)
+                call(f_in, f_out, None, True, False, None, False, False)
                 for f_in, f_out in zip(input_files, output_files)
             ]
         )
@@ -217,7 +217,7 @@ class TestRun(unittest.TestCase):
         _batch_convert_files(input_dir, output_dir)
         mocked_convert_save.assert_has_calls(
             [
-                call(f_in, f_out, None, True, False, None, True, False)
+                call(f_in, f_out, None, True, False, None, False, False)
                 for f_in, f_out in zip(input_paths, output_paths)
             ]
         )
@@ -237,7 +237,7 @@ class TestRun(unittest.TestCase):
                 True,
                 False,
                 dtype,
-                True,
+                False,
                 logging_level,
             )
 
@@ -260,14 +260,14 @@ class TestRun(unittest.TestCase):
             True,
             False,
             dtype,
-            True,
-            True,
+            False,
+            False,
             logging_level,
         )
 
         mocked_create_logger.assert_called_once_with(logging_level)
         mocked_convert_and_save.assert_called_once_with(
-            Path(input_path), Path(output_path), None, True, False, dtype, False, True
+            Path(input_path), Path(output_path), None, True, False, dtype, False, False
         )  # Casts paths to Path
 
     @patch("pathlib.Path.exists", MagicMock(return_value=True))
@@ -290,13 +290,13 @@ class TestRun(unittest.TestCase):
             False,
             dtype,
             True,
-            True,
+            False,
             logging_level,
         )
 
         mocked_create_logger.assert_called_once_with(logging_level)
         mocked_convert_and_save.assert_called_once_with(
-            input_path, output_path, None, True, False, dtype, False, True
+            input_path, output_path, None, True, False, dtype, True, False
         )
 
     @patch("pathlib.Path.is_file", MagicMock(return_value=True))
@@ -320,13 +320,13 @@ class TestRun(unittest.TestCase):
             False,
             dtype,
             True,
-            True,
+            False,
             logging_level,
         )
 
         mocked_create_logger.assert_called_once_with(logging_level)
         mocked_convert_and_save.assert_called_once_with(
-            input_path, output_path, custom_reference, True, False, dtype, False, True
+            input_path, output_path, custom_reference, True, False, dtype, True, False
         )
 
     @patch("pathlib.Path.is_dir", MagicMock(return_value=True))
@@ -347,7 +347,7 @@ class TestRun(unittest.TestCase):
 
         mocked_create_logger.assert_called_once_with(logging_level)
         mocked_batch_convert_files.assert_called_once_with(
-            Path(input_path), Path(output_path), True, False, dtype, False, True
+            Path(input_path), Path(output_path), True, False, dtype, True, True
         )
 
     @patch("pathlib.Path.is_dir", MagicMock(return_value=True))
@@ -363,12 +363,12 @@ class TestRun(unittest.TestCase):
         logging_level = "debug"
 
         convert_and_save(
-            input_path, output_path, None, True, False, dtype, True, True, logging_level
+            input_path, output_path, None, True, False, dtype, True, False, logging_level
         )
 
         mocked_create_logger.assert_called_once_with(logging_level)
         mocked_batch_convert_files.assert_called_once_with(
-            input_path, output_path, True, False, dtype, False, True
+            input_path, output_path, True, False, dtype, True, False
         )
 
     @patch("txrm2tiff.main._convert_and_save")
@@ -378,7 +378,7 @@ class TestRun(unittest.TestCase):
             tmp_in_filepath.touch()
             convert_and_save(tmp_in_filepath)
         mocked_convert.assert_called_with(
-            tmp_in_filepath, None, None, False, False, None, True, False
+            tmp_in_filepath, None, None, False, False, None, False, False
         )
 
     @patch("txrm2tiff.main._batch_convert_files")
@@ -387,5 +387,5 @@ class TestRun(unittest.TestCase):
             tmp_in_path = Path(tmp_in)
             convert_and_save(tmp_in_path)
         mocked_batch_convert.assert_called_with(
-            tmp_in_path, None, False, False, None, True, False
+            tmp_in_path, None, False, False, None, False, False
         )

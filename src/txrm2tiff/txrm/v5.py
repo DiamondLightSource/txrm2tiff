@@ -52,7 +52,7 @@ class Txrm5(ShiftsMixin, SaveMixin, ReferenceMixin, AnnotatorMixin, AbstractTxrm
         self,
         load: bool = False,
         shifts: bool = False,
-        flip: bool = True,
+        flip: bool = False,
         clear_images: bool = True,
     ) -> typing.Optional[np.ndarray]:
         """
