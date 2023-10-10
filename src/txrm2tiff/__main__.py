@@ -51,7 +51,7 @@ convert_group.add_argument(
     "--flip",
     dest="flip",
     action="store_true",
-    help="If specified, the output image will be flipped in the Y-axis with respect to how it displays in XRM Data Explorer",
+    help="if specified, the output image will be flipped in the Y-axis with respect to how it displays in XRM Data Explorer",
 )
 convert_group.add_argument(
     "-d",
@@ -74,7 +74,7 @@ convert_group.add_argument(
     dest="ignore_reference",
     default=False,
     action="store_true",
-    help="if specified ignore any internal reference",
+    help="if specified, ignore any internal reference",
 )
 convert_group.add_argument(
     "--set-logging",

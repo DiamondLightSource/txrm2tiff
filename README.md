@@ -10,20 +10,31 @@ Available on PyPI and conda-forge as `txrm2tiff`. To install:
 - PyPI: `python -m pip install txrm2tiff`
 - conda-forge: `conda install -c conda-forge txrm2tiff`
 
-### Instructions
+## Instructions
 
-**txrm2tiff** {**--input** input file path (required)} {**--reference** reference file path (optional, default=None)} {**--output** path (optional, default=None)} {**--annotate** (optional)} {**--datetype** output data type (optional, choices=[uint16, float32, float64], default=None)} {**--ignore-ref** (optional)} {**--set-logging** (optional, default="info"}
+**txrm2tiff** {**--input** input file path (required)} {**--reference** reference file path (optional, default=None)} {**--output** path (optional, default=None)} {**--annotate** (optional)} {**--datatype** output data type (optional, choices=[uint16, float32, float64], default=None)} {**--ignore-ref** (optional)} {**--set-logging** (optional), default="info"}
 
-**txrm2tiff -h** or **txrm2tiff --help** will give more info.
+If no output path is supplied, the output file will be placed at the input path with the extension ".ome.tiff". The ".ome" signifies the OME XML metadata header.
+
+Unless the data type is specified, the data type will be as it would be direct from XRM Data Explorer. This means that unreferenced images will remain uint16, whereas referenced images will be output as float32.
+
+**Logging options are:**
+* debug OR 1
+* info OR 2
+* warning OR 3
+* error OR 4
+* critical OR 5
+
+**This README aims to be accurate to the latest version with useful examples. However, **txrm2tiff -h** or **txrm2tiff --help** will be 100% accurate to the installed version, unlike this README, so please do consult that too.**
 &nbsp;
 
-##### Setup options:
+#### - Setup options:
 **txrm2tiff setup** {**--windows-shortcut** (WINDOWS ONLY: optional, creates shortcut on the desktop for drag'n'drop processing)}
 
 **txrm2tiff setup -h** or **txrm2tiff setup --help** will give more info.
 &nbsp;
 
-##### Inspector options:
+#### - Inspector options:
 **txrm2tiff inspect** {**--input** input file path (required)} {**--extra** (optional, default=False)} {**--list-streams** (optional, default=False)} {**--inspect-streams** space separated streams (optional)}
 
 **txrm2tiff inspect --input** or **txrm2tiff inspect -i** followed by the path of a txrm/xrm file will output some basic information about the images contained.
@@ -33,29 +44,20 @@ Available on PyPI and conda-forge as `txrm2tiff`. To install:
 
 **txrm2tiff inspect -h** or **txrm2tiff inspect --help** will give more info.
 
+## Additional Notes:
 
 \*XRM and TXRM files are '[OLE](https://en.wikipedia.org/wiki/Object_Linking_and_Embedding)' type files. These files to separate and store information in streams.
 
 \*\* with the exception of images, which do get the image data type saved separately.
 
-**NOTE:** any commands beginning with `txrm2tiff` are essentially equivalent to usng `python -m txrm2tiff` (arguments will be parsed by the same parser via either method). This may be useful if there were any installation issues.
-
----
-
-If no output path is supplied, the output file will be placed at the input path with the extension ".ome.tiff". The ".ome" signifies the OME XML metadata header.
+**NOTE:** any commands beginning with `txrm2tiff` are essentially equivalent to using `python -m txrm2tiff` (arguments will be parsed by the same parser via either method). This may be useful if there were any installation issues.
 
 **dragndrop.bat** has been supplied allowing windows users to drag and drop individual files or entire directories for processing (note: you cannot set output path this way). This may require some setup depending on your Python installation, so please see the file.
 
-##### Logging options are:
-* debug OR 1
-* info OR 2
-* warning OR 3
-* error OR 4
-* critical OR 5
 
+## Examples:
 
-### Examples:
-**`txrm2tiff -h` and `txrm2tiff setup --h` will give more info**
+`txrm2tiff -h` and `txrm2tiff setup --h` will give more info
 
 `txrm2tiff -i input.txrm`
 Saves "input.ome.tiff" with reference applied, if available.
@@ -78,7 +80,8 @@ Saves "input.ome.tiff" and ignores any reference, shows debug and above level lo
 `txrm2tiff -i input.xrm --output custom-output.ome.tiff --set-logging error`
 Saves "custom-output.ome.tiff", shows error and above level log messages.
 
-**To batch convert:**
+#### **To batch convert:**
+
 `txrm2tiff --input path/to/inputDirectory/`
 Converts all XRM/TXRM files within input_directory with reference applied, if available.
 
@@ -95,8 +98,8 @@ Batch conversion notes:
 
 
 ## Features
-* Converts XRM/TXRM v3.0 (from XMController) & v5.0 (from XRMDataExporer) files to TIFF.
-* If a reference has been applied within XMController/XRMDataExplorer, it will automatically apply the reference (_image * 100.0 / reference_, as done by XMController). Internal references can also be ignored.
+* Converts XRM/TXRM v3.0 (from XM Controller) & v5.0 (from XRM Data Explorer) files to TIFF.
+* If a reference has been applied within XM Controller/XRM Data Explorer, it will automatically apply the reference (_image * 100.0 / reference_, as done by XM Controller). Internal references can also be ignored.
 * Custom reference images can be specified (can be a TXRM or XRM file, or a TIFF image or stack) - this option overrides any internally stored reference and the ignore reference option.
 * If the reference exposure is available (e.g. from XRM/TXRM or OME-TIFF), the reference image will be rescaled to the image exposure at 0° (if applicable).
 * Any annotations from XRM/TXRM v5.0 files can be exported and saved (along with a scale bar).
