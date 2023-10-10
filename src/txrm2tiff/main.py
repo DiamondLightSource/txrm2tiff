@@ -16,7 +16,7 @@ def convert_and_save(
     annotate: bool = False,
     flip: bool = False,
     data_type: Optional[str] = None,
-    ignore_shifts: bool = False,
+    apply_shifts: bool = False,
     ignore_reference: bool = False,
     logging_level: Union[str, int] = "info",
 ) -> None:
@@ -28,20 +28,21 @@ def convert_and_save(
         custom_reference (str, optional): File path, not valid for batch processing. Defaults to None.
         output_path (str, optional): Output path, for batch processing output must be a directory otherwise outputs will be saved in the same directory as each input file found. Defaults to None.
         annotate (bool, optional): Save additional annotated image (if annotations are available). Defaults to False.
+        apply_shifts (bool, optional): Apply saved shifts (if available)
         ignore_reference (bool, optional): Ignore any internal reference. Defaults to False.
         logging_level (str, optional): Defaults to "info".
     """
     create_logger(str(logging_level).lower())
     logging.debug(
         "Running with arguments: "
-        "input_path=%s, custom_reference=%s, output_path=%s, annotate=%s, flip=%s, data_type=%s, ignore_shifts=%s, ignore_reference=%s, logging_level=%s",
+        "input_path=%s, custom_reference=%s, output_path=%s, annotate=%s, flip=%s, data_type=%s, apply_shifts=%s, ignore_reference=%s, logging_level=%s",
         input_path,
         custom_reference,
         output_path,
         annotate,
         flip,
         data_type,
-        ignore_shifts,
+        apply_shifts,
         ignore_reference,
         logging_level,
     )
@@ -59,7 +60,7 @@ def convert_and_save(
                 annotate,
                 flip,
                 data_type,
-                not ignore_shifts,
+                apply_shifts,
                 ignore_reference,
             )
         else:
@@ -79,7 +80,7 @@ def convert_and_save(
                 annotate,
                 flip,
                 data_type,
-                not ignore_shifts,
+                apply_shifts,
                 ignore_reference,
             )
     else:
@@ -93,7 +94,7 @@ def _batch_convert_files(
     annotate: bool = True,
     flip: bool = False,
     data_type: Optional[DTypeLike] = None,
-    shifts: bool = True,
+    shifts: bool = False,
     ignore_reference: bool = False,
 ) -> None:
     filepath_list = _find_files(input_directory)
@@ -139,7 +140,7 @@ def _convert_and_save(
     annotate: bool = True,
     flip: bool = False,
     data_type: Optional[DTypeLike] = None,
-    shifts: bool = True,
+    shifts: bool = False,
     ignore_reference: bool = False,
 ) -> None:
     with open_txrm(input_path) as txrm:
