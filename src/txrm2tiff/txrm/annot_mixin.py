@@ -36,7 +36,11 @@ class AnnotatorMixin:
             },
         )
 
-    def annotate(self, scale_bar=True) -> Optional[np.ndarray]:
+    def annotate(
+        self,
+        scale_bar: bool = True,
+        clip_percentiles: Tuple[int | float, int | float] = (2, 98),
+    ) -> Optional[np.ndarray]:
         """Annotate output image. Please ensure that the image has been referenced first, if applicable."""
         annotations = self.extract_annotations(scale_bar=scale_bar)
         # Checks if anything has been added
@@ -45,8 +49,14 @@ class AnnotatorMixin:
             self.annotated_image = None
         else:
             # Annotations will be in the wrong place if flipped
+            images = self.get_output(flip=False, clear_images=False)
+            lower_percentile, upper_percentile = np.percentile(images, clip_percentiles)
             images = rescale_image(
-                self.get_output(flip=False, clear_images=False), 0, 255
+                images,
+                0,
+                255,
+                previous_minimum=lower_percentile,
+                previous_maximum=upper_percentile,
             )
             self.annotated_image = self.apply_annotations(images, annotations)
         return self.annotated_image
