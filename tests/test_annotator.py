@@ -243,9 +243,16 @@ class TestAnnotator(unittest.TestCase):
         fill = (0, 125, 0)
         x0, x1 = 1, 4
         y = 4
-        im = np.zeros((5, 6, 7), dtype=np.uint8)  # Z, Y, X
-        im[0, 0, 0] = 255  # Ensure range stays the same as it is cast to 'L' (uint8)
-        im = np.flip(im, axis=1)
+        lower_value = 100
+        im = np.full((5, 6, 7), fill_value=lower_value, dtype=np.uint8)  # Z, Y, X
+        im[:, 0, 0] = 254  # Upper, non-clipped value so there is some dynamic range
+        im[0, 0, 0] = 255  # This should be clipped off the top
+        im[1, 1, 1] = 0  # This should be clipped off the bottom
+
+        # lower_value should have been cast to 0
+        expected_output = np.zeros_like(im, dtype=np.uint8)
+        expected_output[:, 0, 0] = 255  # the 254 values should have been cast to 255
+
         num_annotations = 1
         ann = TestAnnotator()
         ann.get_output = MagicMock(return_value=im)
@@ -269,7 +276,7 @@ class TestAnnotator(unittest.TestCase):
             patched_colour.return_value = (*fill, 255)
             patched_thickness.return_value = 1
 
-            ann.annotate()
+            annotated_image = ann.annotate()
 
         ann.read_stream.assert_has_calls(
             [
@@ -283,15 +290,15 @@ class TestAnnotator(unittest.TestCase):
         )
 
         # Extra axis of length 3 for RGB
-        expected_output = np.stack([im] * 3, axis=3)
+        expected_output = np.stack([expected_output] * 3, axis=3)
         y = expected_output.shape[1] - 1 - y  # Invert y axis
         expected_output[:, y, x0 : x1 + 1, :] = fill
         self.assertEqual(
-            ann.annotated_image.shape, expected_output.shape, msg="Shapes don't match"
+            annotated_image.shape, expected_output.shape, msg="Shapes don't match"
         )
-        unequal_pos = np.where(ann.annotated_image != expected_output)
+        unequal_pos = np.where(annotated_image != expected_output)
         assert_array_equal(
-            ann.annotated_image,
+            annotated_image,
             expected_output,
-            err_msg=f"{[(x, y, z, c) for z, y, x, c in zip(*unequal_pos)]}:\n{ann.annotated_image[unequal_pos]}\n\n{expected_output[unequal_pos]}",
+            err_msg=f"{[(x, y, z, c) for z, y, x, c in zip(*unequal_pos)]}:\n{annotated_image[unequal_pos]}\n\n{expected_output[unequal_pos]}",
         )
