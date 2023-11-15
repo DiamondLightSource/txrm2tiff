@@ -63,10 +63,19 @@ def normalise_to_datatype(
     if clip:
         num_std = 3.0
         logging.info("Clipping outliers (>%g std from mean)", num_std)
-        new_max = np.mean(array) + num_std * np.std(array)
-        np.clip(array, 0, new_max, out=array)
+        minimum = 0
+        maximum = np.mean(array) + num_std * np.std(array)
+    else:
+        minimum = array.min()
+        maximum = array.max()
 
-    return rescale_image(array, np.iinfo(datatype).min, np.iinfo(datatype).max)
+    return rescale_image(
+        array,
+        np.iinfo(datatype).min,
+        np.iinfo(datatype).max,
+        previous_minimum=minimum,
+        previous_maximum=maximum,
+    )
 
 
 def rescale_image(
@@ -76,7 +85,12 @@ def rescale_image(
         previous_minimum = np.min(array)
     if previous_maximum is None:
         previous_maximum = np.max(array)
-    return np.interp(array, (previous_minimum, previous_maximum), (minimum, maximum))
+
+    return np.interp(
+        np.clip(array, a_min=previous_minimum, a_max=previous_maximum),
+        (previous_minimum, previous_maximum),
+        (minimum, maximum),
+    )
 
 
 def cast_to_dtype(image: np.ndarray, data_type: DTypeLike) -> np.ndarray:
