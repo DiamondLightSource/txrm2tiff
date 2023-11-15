@@ -1,25 +1,11 @@
-{   
-    "python.condaPath": "/dls_sw/apps/python/anaconda/4.6.14/64/envs/b24",
-    "python.pythonPath": "/dls_sw/apps/python/anaconda/4.6.14/64/envs/b24/bin/python",
+{
+    "python.condaPath": "/dls_sw/apps/python/miniforge/4.10.0-0/envs/b24-3.11",
+    "python.pythonPath": "/dls_sw/apps/python/miniforge/4.10.0-0/envs/b24-3.11/bin/python",
     "python.terminal.activateEnvironment": true,
-    "python.testing.nosetestArgs": [
-        "test",
-        "-v",
-        "--logging-level=INFO",
-        // // optional arguments to skip drmaa job submission and end to end tests
-        // "-e=*end*",
-        // "-e=*drmaa*",
-        // "-e=*test_get_cluster_job_data",
-    ],
-    "python.testing.pytestEnabled": false,
-    "python.testing.unittestEnabled": true,
-    "python.testing.nosetestsEnabled": false,
-    "python.testing.unittestArgs": [
-        "-v",
-        "-s",
-        "tests",
-        "-p",
-        "test_*.py",
-        "-b"
-    ],
+    "python.testing.pytestEnabled": true,
+    "python.testing.unittestEnabled": false,
+    "jupyter.debugJustMyCode": false,
+    "debug.allowBreakpointsEverywhere": true,
+    "debug.showBreakpointsInOverviewRuler": false,
+    "livePreview.debugOnExternalPreview": false,
 }
