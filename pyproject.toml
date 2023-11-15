@@ -1,19 +1,26 @@
 [build-system]
-requires = ["setuptools>=61.0"]
+requires = [
+    "setuptools>=61.0",
+]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "txrm2tiff"
 description = "A converter for Zeiss txrm and xrm files, created by & for B24 of Diamond Light Source"
-authors=[{name="Thomas Fish", email="thomas.fish@diamond.ac.uk"}]
-license = {text = "BSD-3-Clause"}
+authors = [
+    { name = "Thomas Fish", email = "thomas.fish@diamond.ac.uk" },
+]
+license = { text = "BSD-3-Clause" }
 classifiers = [
     "Programming Language :: Python :: 3",
     "License :: OSI Approved :: BSD License",
     "Operating System :: OS Independent",
 ]
 requires-python = ">=3.6"
-dynamic = ["version", "readme"]
+dynamic = [
+    "version",
+    "readme",
+]
 dependencies = [
     "tifffile>=2020.9.30",
     "numpy>=1.20",
@@ -25,19 +32,29 @@ dependencies = [
 ]
 
 [tool.setuptools.dynamic]
-version = {attr = "txrm2tiff.info.__version__"}
-readme = {file = "README.md", content-type="text/markdown"}
+version = { attr = "txrm2tiff.info.__version__" }
+readme = { file = "README.md", content-type = "text/markdown" }
 
 [tool.setuptools.packages.find]
-where = ["src"]
-exclude=["scripts", "tests"]
+where = [
+    "src",
+]
+exclude = [
+    "scripts",
+    "tests",
+]
 
 [tool.setuptools]
 include-package-data = true
-license-files = ["LICENSE", "license.txt"]
+license-files = [
+    "LICENSE",
+    "license.txt",
+]
 
 [tool.setuptools.package-data]
-txrm2tiff = ["font/CallingCode-Regular.otf"]
+txrm2tiff = [
+    "font/CallingCode-Regular.otf",
+]
 
 [project.scripts]
 txrm2tiff = "txrm2tiff.__main__:main"
@@ -45,18 +62,15 @@ txrm2tiff = "txrm2tiff.__main__:main"
 [project.optional-dependencies]
 test = [
     "pytest-cov ~=3.0.0",
-    "Parameterized"
+    "Parameterized",
 ]
 
 [tool.pytest.ini_options]
 minversion = "6.0"
+addopts = "-ra -q --import-mode=importlib --cov=src/txrm2tiff --cov-report=term --cov-report=xml"
 testpaths = [
-    "src/tests",
+    "tests",
 ]
-python_files = ["test_*.py"]
-python_classes = ["Test"]
-python_functions = ["test_"]
-addopts = "--cov=src/txrm2tiff --cov-report=term --cov-report=xml"
 
 [tool.coverage.report]
 show_missing = true
