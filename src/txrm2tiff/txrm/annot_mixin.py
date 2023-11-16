@@ -3,7 +3,7 @@ import math
 from numbers import Number
 from pathlib import Path
 from collections import defaultdict
-from typing import Iterable, Optional, Tuple
+from typing import Iterable, Optional, Tuple, Union
 
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
@@ -39,7 +39,7 @@ class AnnotatorMixin:
     def annotate(
         self,
         scale_bar: bool = True,
-        clip_percentiles: Tuple[int | float, int | float] = (2, 98),
+        clip_percentiles: Tuple[Union[int, float], Union[int, float]] = (2, 98),
     ) -> Optional[np.ndarray]:
         """Annotate output image. Please ensure that the image has been referenced first, if applicable."""
         annotations = self.extract_annotations(scale_bar=scale_bar)
