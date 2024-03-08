@@ -106,39 +106,64 @@ class MetaMixin:
         }
 
     def _get_objectives(self, index):
-        id_ = getattr(self, "__obj_id", 0)
-        # TODO: Replace 'ObjectiveName' (a little reduntant) with zoneplate name, which is the actual optical objective
-        # This is waiting on the zoneplate name actually being populated in the metadata.
         stream_stem = f"ConfigureBackup/ConfigCamera/Camera {index + 1}"
-        name_stream = f"{stream_stem}/ConfigObjectives/ObjectiveName"
-        objective_names = self.read_stream(name_stream, XrmDataTypes.XRM_STRING)
-
+        id_stream = f"{stream_stem}/ConfigObjectives/ObjectiveID"
+        objective_ids = self.read_stream(id_stream, XrmDataTypes.XRM_STRING)
         magnifications = self.read_stream(
             f"{stream_stem}/ConfigObjectives/OpticalMagnification",
             XrmDataTypes.XRM_FLOAT,
         )
+        objective_names = self.read_stream(
+            f"{stream_stem}/ConfigObjectives/ObjectiveName",
+            XrmDataTypes.XRM_STRING
+        )
+        zoneplate_names = self.read_stream(
+            f"{stream_stem}/ConfigZonePlates/Name",
+            XrmDataTypes.XRM_STRING
+        )
+        if not zoneplate_names:  # Fallback if zoneplate names fail
+            return {
+                objective_name:
+                    model.Objective(
+                        id=f"Objective:{obj_id}.0",
+                        nominal_magnification=magnification,
+                        model=objective_name,
+                    )
+                for obj_id, objective_name, magnification in zip(
+                    objective_ids, objective_names, magnifications
+                )
+            }
+
         return {
-            name: model.Objective(
-                id=f"Objective:{self.__obj_id}",
-                nominal_magnification=magnification,
-                model=name,
+            objective_name: {
+                zp_name: model.Objective(
+                    id=f"Objective:{obj_id}.{zp_number}",
+                    nominal_magnification=magnification,
+                    model=zp_name,
+                )
+                for zp_number, zp_name in enumerate(zoneplate_names)
+            }
+            for obj_id, objective_name, magnification in zip(
+                objective_ids, objective_names, magnifications
             )
-            for self.__obj_id, name, magnification in zip(
-                range(id_, id_ + len(objective_names)), objective_names, magnifications
-            )
+
         }
+
 
     @txrm_property(fallback=None)
     def _ome_instrument(self):
+        objectives = [
+                obj
+                for cameras in self._ome_configured_objectives.values()
+                for objectives in cameras.values()
+                for item in (objectives.values() if isinstance(objectives, dict) else [objectives])
+                for obj in item  # Cope with either dict or Objective instance
+            ]
         return model.Instrument(
             id="Instrument:0",
             detectors=list(self._ome_configured_detectors.values()),
             microscope=self._ome_microscope,
-            objectives=[
-                ob
-                for d in self._ome_configured_objectives.values()
-                for ob in d.values()
-            ],
+            objectives=objectives,
             light_source_group=self._ome_configured_light_sources,
         )
 
@@ -157,7 +182,11 @@ class MetaMixin:
         obj_name = self.read_stream("ImageInfo/ObjectiveName", XrmDataTypes.XRM_STRING)[
             0
         ]
-        return self._ome_configured_objectives[camera_id][obj_name]
+        zp_name = self.read_stream("ImageInfo/ZonePlateName", XrmDataTypes.XRM_STRING)
+        objectives = self._ome_configured_objectives[camera_id][obj_name]
+        if zp_name and isinstance(objectives, dict):
+            return objectives[zp_name[0]]
+        return objectives
 
     @txrm_property(fallback=None)
     def _ome_objective_settings(self):
