@@ -1,4 +1,8 @@
+from scipy import constants
+import numpy as np
 from ome_types import model
+from ome_types.model.simple_types import UnitsLength, UnitsFrequency, Binning
+from ome_types.model.channel import AcquisitionMode, IlluminationType
 
 from .txrm_property import txrm_property
 from ..xradia_properties.enums import (
@@ -145,3 +149,48 @@ class MetaMixin:
             0
         ]  # Stream counts from 0
         return self.configured_light_sources[source_idx]
+
+    @txrm_property(fallback=None)
+    def light_source_settings(self):
+        mean_energy = np.mean(self.energies)
+        kwargs = {}
+        if mean_energy:
+            kwargs["wavelength"] = (
+                1.0e9 * mean_energy / constants.electron_volt / constants.Planck
+            )
+            kwargs["wavelength_unit"] = UnitsLength.NANOMETER
+
+        return model.LightSourceSettings(id=self.light_source.id, **kwargs)
+
+    @txrm_property(fallback=None)
+    def detector_settings(self):
+        return model.DetectorSettings(
+            id=self.detector.id,
+            binning=Binning(
+                "{0}x{0}".format(self.read_stream("ImageInfo/CameraBinning")[0])
+            ),
+            integration=self.read_stream(
+                "ImageInfo/FramesPerImage", XrmDataTypes.XRM_UNSIGNED_INT, strict=False
+            )[0],
+            read_out_rate=self.read_stream(
+                "ImageInfo/ReadoutFreq", XrmDataTypes.XRM_FLOAT, strict=False
+            )[0],
+            read_out_rate_unit=UnitsFrequency.HERTZ,
+            zoom=self.read_stream(
+                "ImageInfo/OpticalMagnification", XrmDataTypes.XRM_FLOAT, strict=False
+            )[0],
+        )
+
+    @txrm_property(fallback=model.Channel(id="Channel:0"))
+    def channel(self):
+        return model.Channel(
+            id="Channel:0",
+            # Energies are 0 for VLM
+            acquisition_mode=AcquisitionMode.OTHER
+            if self.energies
+            else AcquisitionMode.BRIGHT_FIELD,
+            illumination_type=IlluminationType.TRANSMITTED,
+            light_source_settings=self.light_source_settings,
+            detector_settings=self.detector_settings,
+            samples_per_pixel=1,
+        )
