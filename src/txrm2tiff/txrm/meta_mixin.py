@@ -1,5 +1,6 @@
 import logging
 from collections import OrderedDict
+import typing
 from scipy import constants
 import numpy as np
 from ome_types import model
@@ -401,9 +402,7 @@ class MetaMixin:
     def _ome_image(self):
         kwargs = {}
         if self._ome_modulo is not None:
-            kwargs["annotation_ref"] = [
-                model.AnnotationRef(id=self._ome_modulo.xml_annotations.id)
-            ]
+            kwargs["annotation_ref"] = [model.AnnotationRef(id=self._ome_modulo.id)]
         return model.Image(
             id="Image:0",
             acquisition_date=self.datetimes[0],
@@ -441,12 +440,10 @@ class MetaMixin:
         if not el.getchildren:
             # If no modulos were added, don't add the annotation
             return None
-        return model.StructuredAnnotations(
-            xml_annotations=model.XMLAnnotation(
-                id="Annotation:0",
-                value=el,
-                namespace="openmicroscopy.org/omero/dimension/modulo",
-            )
+        return model.XMLAnnotation(
+            id="Annotation:0",
+            value=el,
+            namespace="openmicroscopy.org/omero/dimension/modulo",
         )
 
     def _add_energy_subelement(self, element, energies):
