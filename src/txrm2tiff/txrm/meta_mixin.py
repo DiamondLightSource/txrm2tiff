@@ -106,7 +106,7 @@ class MetaMixin:
         }
 
     def _get_objectives(self, index):
-        id_ = getattr(self, "__obj_id", default=0)
+        id_ = getattr(self, "__obj_id", 0)
         # TODO: Replace 'ObjectiveName' (a little reduntant) with zoneplate name, which is the actual optical objective
         # This is waiting on the zoneplate name actually being populated in the metadata.
         stream_stem = f"ConfigureBackup/ConfigCamera/Camera {index + 1}"
