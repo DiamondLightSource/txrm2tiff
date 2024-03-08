@@ -6,8 +6,10 @@ from datetime import datetime
 from tempfile import NamedTemporaryFile, TemporaryDirectory
 import numpy as np
 from numpy.testing import assert_array_equal
-from oxdls import OMEXML
 import tifffile as tf
+from ome_types import model
+from ome_types.model.simple_types import PixelType
+from ome_types.model.pixels import DimensionOrder
 
 from txrm2tiff.utils.file_handler import (
     file_can_be_opened,
@@ -91,8 +93,24 @@ class TestFileHandler(unittest.TestCase):
             prefix="saving_test_", dir=Path(__name__).parent
         ) as tmpdir:
             im_path = Path(tmpdir) / "saved.tiff"
-            metadata = OMEXML()
-
+            metadata = model.OME(
+                images=[
+                    model.Image(
+                        id="Image:0",
+                        pixels=model.Pixels(
+                            dimension_order=DimensionOrder.XYCTZ,
+                            id="Pixels:0",
+                            size_c=1,
+                            size_t=1,
+                            size_x=1,
+                            size_y=1,
+                            size_z=1,
+                            type=PixelType.FLOAT,
+                            tiff_data_blocks=[model.TiffData()],
+                        ),
+                    ),
+                ]
+            )
             image = np.ones((5, 30, 35), dtype=np.float64)
             self.assertFalse(im_path.exists())
             manual_save(im_path, image, data_type=np.uint16, metadata=metadata)
@@ -102,8 +120,8 @@ class TestFileHandler(unittest.TestCase):
                 saved_meta = tiff.pages[0].description
 
         # Image name and data type should be set while being saved
-        metadata.image().set_Name(im_path.name)
-        metadata.image().Pixels.set_PixelType("uint16")
+        metadata.images[0].name = im_path.name
+        metadata.images[0].pixels.type = PixelType.UINT16
 
         self.assertEqual(saved_arr.dtype, target_dtype)
         assert_array_equal(saved_arr, image)
@@ -125,15 +143,14 @@ class TestFileHandler(unittest.TestCase):
             self.assertTrue(im_path.exists())
             with tf.TiffFile(im_path) as tiff:
                 saved_arr = tiff.asarray()
-                x_resolution = tiff.pages[0].tags['XResolution'].value
-                y_resolution = tiff.pages[0].tags['YResolution'].value
-                resolution_unit = tiff.pages[0].tags['ResolutionUnit'].value
+                x_resolution = tiff.pages[0].tags["XResolution"].value
+                y_resolution = tiff.pages[0].tags["YResolution"].value
+                resolution_unit = tiff.pages[0].tags["ResolutionUnit"].value
 
         assert_array_equal(saved_arr, image)
-        self.assertEqual(x_resolution, (int(1.e7), 1))
-        self.assertEqual(y_resolution, (int(5.e6), 1))
+        self.assertEqual(x_resolution, (int(1.0e7), 1))
+        self.assertEqual(y_resolution, (int(5.0e6), 1))
         self.assertEqual(resolution_unit, int(tf.TIFF.RESUNIT.CENTIMETER))
-
 
     def test_manual_annotation_save(self):
         with TemporaryDirectory(

@@ -6,7 +6,10 @@ from numpy.testing import assert_array_equal
 
 from pathlib import Path
 import numpy as np
-from oxdls import OMEXML
+from ome_types import model
+from ome_types.model.simple_types import PixelType
+from ome_types.model.pixels import DimensionOrder
+
 
 from txrm2tiff.utils.file_handler import manual_save
 from txrm2tiff.txrm.ref_mixin import ReferenceMixin
@@ -61,12 +64,35 @@ class TestReferencer(unittest.TestCase):
         ) as mocked_apply_array:
             with TemporaryDirectory("tiff_ref_test_", dir=".") as tmp_dir:
                 array = np.ones((3, 5, 5))
-                exposures = (1, 2, 3)
-                metadata = OMEXML()
-                metadata.image().Pixels.set_plane_count(len(exposures))
-                for idx, exposure in enumerate(exposures):
-                    metadata.image().Pixels.Plane(idx).set_ExposureTime(exposure)
-                tif_path = Path(tmp_dir) / "image.ome.tiff"
+                exposures = tuple(range(1, array.shape[0] + 1))
+                metadata = model.OME(
+                    images=[
+                        model.Image(
+                            id="Image:0",
+                            pixels=model.Pixels(
+                                dimension_order=DimensionOrder.XYCTZ,
+                                id="Pixels:0",
+                                size_c=1,
+                                size_t=1,
+                                size_x=array.shape[2],
+                                size_y=array.shape[1],
+                                size_z=array.shape[0],
+                                type=PixelType.FLOAT,
+                                tiff_data_blocks=[
+                                    model.TiffData(first_z=i, ifd=i)
+                                    for i in range(array.shape[0])
+                                ],
+                                planes=[
+                                    model.Plane(
+                                        the_c=0, the_t=0, the_z=i, exposure_time=exp
+                                    )
+                                    for i, exp in enumerate(exposures)
+                                ],
+                            ),
+                        ),
+                    ]
+                )
+                tif_path = Path(tmp_dir) / "image.ome.tif"
                 manual_save(tif_path, array, metadata=metadata)
 
                 referencer.apply_reference(tif_path, True)
