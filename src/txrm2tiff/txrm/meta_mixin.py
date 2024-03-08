@@ -188,10 +188,9 @@ class MetaMixin:
             source = model.LightEmittingDiode
         else:
             source = model.GenericExcitationSource
-            self.read_stream(f"{stream_stem}/SourceName", XrmDataTypes.XRM_STRING)[0]
 
             m = []
-            current, current_units = self.position_info.get("Current")
+            current, current_units = self.position_info.get("Current", [[], None])
             if current and current_units:
                 m.append(M(k="Current", value=", ".join(map(str, current))))
                 m.append(M(k="CurrentUnits", value=str(current_units)))
