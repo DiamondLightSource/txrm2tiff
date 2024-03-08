@@ -8,8 +8,7 @@ import numpy as np
 from numpy.testing import assert_array_equal
 import tifffile as tf
 from ome_types import model
-from ome_types.model.simple_types import PixelType
-from ome_types.model.pixels import DimensionOrder
+from ome_types.model.simple_types import PixelType, UnitsLength
 
 from txrm2tiff.utils.file_handler import (
     file_can_be_opened,
@@ -98,7 +97,7 @@ class TestFileHandler(unittest.TestCase):
                     model.Image(
                         id="Image:0",
                         pixels=model.Pixels(
-                            dimension_order=DimensionOrder.XYCTZ,
+                            dimension_order=model.Pixels_DimensionOrder.XYCTZ,
                             id="Pixels:0",
                             size_c=1,
                             size_t=1,
@@ -132,12 +131,24 @@ class TestFileHandler(unittest.TestCase):
             prefix="saving_test_", dir=Path(__name__).parent
         ) as tmpdir:
             im_path = Path(tmpdir) / "saved.tiff"
-            metadata = OMEXML()
-            pixel_size_xy = (1, 2)  # nm
-            pixels = metadata.image().Pixels
-            pixels.set_PhysicalSizeX(pixel_size_xy[0])
-            pixels.set_PhysicalSizeY(pixel_size_xy[1])
             image = np.ones((5, 30, 35), dtype=np.float64)
+            pixel_size_xy = (1, 2)  # nm
+            image = model.Image(
+                pixels=model.Pixels(
+                    size_x=image[2],
+                    size_y=image[1],
+                    size_z=image[0],
+                    size_c=1,
+                    size_t=1,
+                    physical_size_x=pixel_size_xy[0],
+                    physical_size_x_unit=UnitsLength.NANOMETER,
+                    physical_size_y=pixel_size_xy[1],
+                    physical_size_y_unit=UnitsLength.NANOMETER,
+                    physical_size_z=1,
+                    physical_size_z_unit=UnitsLength.REFERENCEFRAME,
+                )
+            )
+            metadata = model.OME(images=[image])
             self.assertFalse(im_path.exists())
             manual_save(im_path, image, data_type=np.uint16, metadata=metadata)
             self.assertTrue(im_path.exists())

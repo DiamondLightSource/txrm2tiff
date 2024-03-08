@@ -8,7 +8,6 @@ from pathlib import Path
 import numpy as np
 from ome_types import model
 from ome_types.model.simple_types import PixelType
-from ome_types.model.pixels import DimensionOrder
 
 
 from txrm2tiff.utils.file_handler import manual_save
@@ -17,7 +16,7 @@ from txrm2tiff.txrm.v3 import Txrm3
 from txrm2tiff.txrm.v5 import Txrm5
 
 
-class TestReferencer(unittest.TestCase):
+class TestReferencerMixin(unittest.TestCase):
     def test_apply_reference_defaults_with_internal(self):
         referencer = ReferenceMixin()
         referencer.has_reference = True
@@ -70,7 +69,7 @@ class TestReferencer(unittest.TestCase):
                         model.Image(
                             id="Image:0",
                             pixels=model.Pixels(
-                                dimension_order=DimensionOrder.XYCTZ,
+                                dimension_order=model.Pixels_DimensionOrder.XYCTZ,
                                 id="Pixels:0",
                                 size_c=1,
                                 size_t=1,

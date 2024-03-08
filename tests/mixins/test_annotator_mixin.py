@@ -35,7 +35,7 @@ test_files = [
 ]
 
 
-class TestAnnotator(unittest.TestCase):
+class TestAnnotatorMixin(unittest.TestCase):
     @parameterized.expand(test_files)
     @unittest.skipUnless(visit_path.exists(), "dls paths cannot be accessed")
     def test_with_real_image(self, test_file):

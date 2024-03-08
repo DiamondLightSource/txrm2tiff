@@ -6,10 +6,11 @@ from .abstract import AbstractTxrm
 from .ref_mixin import ReferenceMixin
 from .save_mixin import SaveMixin
 from .shifts_mixin import ShiftsMixin
-from .meta_mixin import MetaMixin, get_ome_pixel_type
+from .meta_mixin import MetaMixin
 from .txrm_property import txrm_property
 from ..txrm_functions.images import fallback_image_interpreter
 from ..utils.functions import convert_to_int
+from ..utils.metadata import get_ome_pixel_type
 
 
 class Txrm3(ShiftsMixin, SaveMixin, ReferenceMixin, MetaMixin, AbstractTxrm):
@@ -88,4 +89,3 @@ class Txrm3(ShiftsMixin, SaveMixin, ReferenceMixin, MetaMixin, AbstractTxrm):
     def set_dtype(self, dtype):
         if super().set_dtype(dtype):
             self._ome_pixels.type = get_ome_pixel_type(dtype)
-        

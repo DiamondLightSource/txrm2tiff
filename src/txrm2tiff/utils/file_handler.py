@@ -1,3 +1,4 @@
+from __future__ import annotations
 import logging
 import tifffile as tf
 import numpy as np
@@ -6,13 +7,16 @@ from os import access, R_OK, PathLike
 from pathlib import Path
 from typing import Optional, Union, List
 from olefile import OleFileIO, isOleFile
-from ome_types import OME
 
 from .metadata import dtype_dict
 from .image_processing import cast_to_dtype
 from ..txrm_functions import read_stream
 from ..xradia_properties import XrmDataTypes as XDT
+from ..utils.metadata import handle_tiff_resolution
 from ..info import __version__
+
+if TYPE_CHECKING:
+    from ome_types import OME
 
 
 def file_can_be_opened(path: Union[str, PathLike]) -> bool:
@@ -70,6 +74,21 @@ def manual_save(
         meta_img = metadata.images[0]
         meta_img.pixels.type = dtype_dict[image.dtype.name]
         meta_img.name = filepath.name
+        resolution_unit = (
+            tf.RESUNIT.CENTIMETER
+        )  # Must use CENTIMETER for maximum compatibility
+        try:
+            resolution = handle_tiff_resolution(metadata, resolution_unit)
+            if tf.__version__ >= "2022.7.28":
+                # 2022.7.28: Deprecate third resolution argument on write (use resolutionunit)
+                tiff_kwargs["resolutionunit"] = resolution_unit
+            else:
+                resolution.append(resolution_unit)
+            tiff_kwargs["resolution"] = tuple(resolution)
+        except Exception:
+            logging.warning(
+                "Failed to include resolution info in tiff tags", exc_info=True
+            )
         metadata = metadata.to_xml()
 
     num_frames = len(image)

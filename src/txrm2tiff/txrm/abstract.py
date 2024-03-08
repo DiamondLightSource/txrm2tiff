@@ -13,7 +13,7 @@ from pathlib import Path
 
 from ..xradia_properties.enums import XrmDataTypes
 from ..xradia_properties.stream_dtypes import streams_dict
-from ..utils.metadata import dtype_dict
+from ..utils.metadata import get_ome_pixel_type
 from .. import txrm_functions
 from .txrm_property import txrm_property
 
@@ -207,7 +207,6 @@ class AbstractTxrm(ABC):
                 raise
             logging.error("Error occurred extracting reference image", exc_info=True)
 
-
     def get_reference(self, load: bool = True) -> typing.Optional[np.ndarray]:
         """Get images from file (numpy ndarray with shape [idx, y, x]).
 
@@ -387,7 +386,8 @@ class AbstractTxrm(ABC):
     def energies(self) -> typing.List[float]:
         energies = self.image_info["Energy"]
         if not np.sum(energies):
-            energies = self.position_info["Energy"]
+            # position_info includes units
+            energies = self.position_info["Energy"][0]
         if np.sum(energies):
             return energies
         raise ValueError("Could not get energies")
@@ -505,21 +505,22 @@ class AbstractTxrm(ABC):
     ) -> typing.Optional[np.ndarray]:
         raise NotImplementedError
 
-    def set_dtype(self, dtype):
+    def set_dtype(self, dtype, ensure_ome_compatability: bool = True):
         if self._images is None:
             logging.error("Images must be loaded before a datatype can be set.")
             return False
-        try:
-            dtype = np.dtype(dtype).name
-        except TypeError:
-            # No need to handle type error dtype will not be in the dict if invalid
-            pass
-        if dtype not in dtype_dict:
-            logging.error("Cannot cast to unsupported dtype '%s'. Images will remain %s", dtype, self._images[0].dtype)
-            return False
-        else:
-            self._images = self._images.astype(dtype)
-        
+        if ensure_ome_compatability:
+            try:
+                # Check this can be handled when saving
+                get_ome_pixel_type(dtype)
+            except TypeError:
+                logging.error(
+                    "Cannot cast to unsupported dtype '%s'. Images will remain %s",
+                    dtype,
+                    self._images[0].dtype,
+                )
+                return False
+        self._images = self._images.astype(dtype)
         return True
 
     @property

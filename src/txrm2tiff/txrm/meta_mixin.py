@@ -1,8 +1,8 @@
+from __future__ import annotations
 import logging
-from collections import OrderedDict
-import typing
 from scipy import constants
 import numpy as np
+from xml.etree import ElementTree
 from ome_types import model
 from ome_types.model.simple_types import (
     UnitsLength,
@@ -10,9 +10,7 @@ from ome_types.model.simple_types import (
     UnitsTime,
     Binning,
 )
-from ome_types.model.channel import AcquisitionMode, IlluminationType
-from ome_types.model.map import M
-from ome_types.model.xml_annotation import Element, ElementTree
+from typing import TYPE_CHECKING
 
 from ..info import __version__
 from .txrm_property import txrm_property
@@ -20,33 +18,26 @@ from ..xradia_properties.enums import (
     XrmDataTypes,
     XrmSourceType,
 )
-from ..utils.metadata import dtype_dict
 
-
-def get_ome_pixel_type(dtype):
-    try:
-        return dtype_dict[np.dtype(dtype).name]
-    except Exception:
-        raise TypeError(f"{dtype} is unsupported data type")
+if TYPE_CHECKING:
+    from collections.abc import Iterable
 
 
 class MetaMixin:
     @txrm_property(fallback=0)
-    def _ome_configured_camera_count(self):
+    def _ome_configured_camera_count(self) -> int:
         return self.read_stream(
             "ConfigureBackup/ConfigCamera/NumberOfCamera", XrmDataTypes.XRM_UNSIGNED_INT
         )[0]
 
-    @txrm_property(fallback=OrderedDict())
-    def _ome_configured_detectors(self):
-        return OrderedDict(
-            {
-                self._camera_ids[i]: self._get_detector(i)
-                for i in range(self._ome_configured_camera_count)
-            }
-        )
+    @txrm_property(fallback=dict())
+    def _ome_configured_detectors(self) -> dict[int, model.Detector]:
+        return {
+            self._camera_ids[i]: self._get_detector(i)
+            for i in range(self._ome_configured_camera_count)
+        }
 
-    def _get_detector(self, index):
+    def _get_detector(self, index: int) -> model.Detector:
         stream_stem = f"ConfigureBackup/ConfigCamera/Camera {index + 1}"
         camera_name = self.read_stream(
             f"{stream_stem}/CameraName", XrmDataTypes.XRM_STRING
@@ -63,19 +54,19 @@ class MetaMixin:
         )
 
     @txrm_property(fallback=[])
-    def _camera_ids(self):
+    def _camera_ids(self) -> list[int]:
         return [
             self._get_camera_id(i) for i in range(self._ome_configured_camera_count)
         ]
 
-    def _get_camera_id(self, index):
+    def _get_camera_id(self, index: int) -> int:
         stream_stem = f"ConfigureBackup/ConfigCamera/Camera {index + 1}"
         return self.read_stream(
             f"{stream_stem}/CameraID", XrmDataTypes.XRM_UNSIGNED_INT
         )[0]
 
     @txrm_property(fallback=None)
-    def _ome_detector(self):
+    def _ome_detector(self) -> model.Detector:
         camera_id = self.read_stream(
             "ImageInfo/CameraNo", XrmDataTypes.XRM_UNSIGNED_INT
         )[
@@ -84,7 +75,7 @@ class MetaMixin:
         return self._ome_configured_detectors[camera_id]
 
     @txrm_property(fallback=None)
-    def _ome_microscope(self):
+    def _ome_microscope(self) -> model.Microscope:
         kwargs = {}
         id_stream = "ConfigureBackup/XRMConfiguration/MachineID"
         if self.has_stream(id_stream):
@@ -98,14 +89,14 @@ class MetaMixin:
             **kwargs,
         )
 
-    @txrm_property(fallback=OrderedDict())
-    def _ome_configured_objectives(self):
+    @txrm_property(fallback=dict())
+    def _ome_configured_objectives(self) -> dict[int, dict[str, model.Objective]]:
         return {
-            self._camera_ids[i]: self._get_objectives(i)
+            self._get_camera_id(i): self._get_objectives(i)
             for i in range(self._ome_configured_camera_count)
         }
 
-    def _get_objectives(self, index):
+    def _get_objectives(self, index: int) -> dict[str, model.Objective]:
         stream_stem = f"ConfigureBackup/ConfigCamera/Camera {index + 1}"
         id_stream = f"{stream_stem}/ConfigObjectives/ObjectiveID"
         objective_ids = self.read_stream(id_stream, XrmDataTypes.XRM_STRING)
@@ -114,51 +105,46 @@ class MetaMixin:
             XrmDataTypes.XRM_FLOAT,
         )
         objective_names = self.read_stream(
-            f"{stream_stem}/ConfigObjectives/ObjectiveName",
-            XrmDataTypes.XRM_STRING
+            f"{stream_stem}/ConfigObjectives/ObjectiveName", XrmDataTypes.XRM_STRING
         )
         zoneplate_names = self.read_stream(
-            f"{stream_stem}/ConfigZonePlates/Name",
-            XrmDataTypes.XRM_STRING
+            f"{stream_stem}/ConfigZonePlates/Name", XrmDataTypes.XRM_STRING
         )
         if not zoneplate_names:  # Fallback if zoneplate names fail
             return {
-                objective_name:
-                    model.Objective(
-                        id=f"Objective:{obj_id}.0",
-                        nominal_magnification=magnification,
-                        model=objective_name,
-                    )
+                "objective_name": model.Objective(
+                    id=f"Objective:{obj_id}.0",
+                    nominal_magnification=magnification,
+                    model=objective_name,
+                )
                 for obj_id, objective_name, magnification in zip(
                     objective_ids, objective_names, magnifications
                 )
             }
 
         return {
-            objective_name: {
-                zp_name: model.Objective(
-                    id=f"Objective:{obj_id}.{zp_number}",
-                    nominal_magnification=magnification,
-                    model=zp_name,
-                )
-                for zp_number, zp_name in enumerate(zoneplate_names)
-            }
+            f"{objective_name}_{zp_name}": model.Objective(
+                id=f"Objective:{obj_id}.{zp_number}",
+                nominal_magnification=magnification,
+                model=zp_name,
+            )
+            for zp_number, zp_name in enumerate(zoneplate_names)
             for obj_id, objective_name, magnification in zip(
                 objective_ids, objective_names, magnifications
             )
-
         }
 
-
     @txrm_property(fallback=None)
-    def _ome_instrument(self):
+    def _ome_instrument(self) -> model.Instrument:
         objectives = [
-                obj
-                for cameras in self._ome_configured_objectives.values()
-                for objectives in cameras.values()
-                for item in (objectives.values() if isinstance(objectives, dict) else [objectives])
-                for obj in item  # Cope with either dict or Objective instance
-            ]
+            obj
+            for cameras in self._ome_configured_objectives.values()
+            for objectives in cameras.values()
+            for item in (
+                objectives.values() if isinstance(objectives, dict) else [objectives]
+            )
+            for obj in item  # Cope with either dict or Objective instance
+        ]
         return model.Instrument(
             id="Instrument:0",
             detectors=list(self._ome_configured_detectors.values()),
@@ -168,14 +154,14 @@ class MetaMixin:
         )
 
     @txrm_property(fallback=None)
-    def _ome_instrument_ref(self):
+    def _ome_instrument_ref(self) -> model.InstrumentRef:
         if self._ome_instrument is None:
             logging.info("No instrument to reference")
             return None
         return model.InstrumentRef(id=self._ome_instrument.id)
 
     @txrm_property(fallback=None)
-    def _ome_objective(self):
+    def _ome_objective(self) -> model.Objective:
         camera_id = self.read_stream(
             "ImageInfo/CameraNo", XrmDataTypes.XRM_UNSIGNED_INT
         )[0]
@@ -183,32 +169,32 @@ class MetaMixin:
             0
         ]
         zp_name = self.read_stream("ImageInfo/ZonePlateName", XrmDataTypes.XRM_STRING)
-        objectives = self._ome_configured_objectives[camera_id][obj_name]
-        if zp_name and isinstance(objectives, dict):
-            return objectives[zp_name[0]]
-        return objectives
+        if zp_name:
+            obj_name = f"{obj_name}_{zp_name}"
+        objective = self._get_objectives[camera_id][obj_name]
+        return objective
 
     @txrm_property(fallback=None)
-    def _ome_objective_settings(self):
+    def _ome_objective_settings(self) -> model.ObjectiveSettings:
         if self._ome_objective is None:
             logging.info("No objective to reference")
             return None
         return model.ObjectiveSettings(id=self._ome_objective.id)
 
     @txrm_property(fallback=0)
-    def _ome_configured_source_count(self):
+    def _ome_configured_source_count(self) -> int:
         return self.read_stream(
             "ConfigureBackup/ConfigSources/NumberOfSources",
             XrmDataTypes.XRM_UNSIGNED_INT,
         )[0]
 
     @txrm_property(fallback=[])
-    def _ome_configured_light_sources(self):
+    def _ome_configured_light_sources(self) -> list[model.LightSource]:
         return [
             self._get_light_source(i) for i in range(self._ome_configured_source_count)
         ]
 
-    def _get_light_source(self, index):
+    def _get_light_source(self, index: int) -> model.LightSource:
         stream_stem = (
             f"ConfigureBackup/ConfigSources/Source {index + 1}"  # Stream from 1
         )
@@ -226,15 +212,15 @@ class MetaMixin:
             m = []
             current, current_units = self.position_info.get("Current", [[], None])
             if current and current_units:
-                m.append(M(k="Current", value=", ".join(map(str, current))))
-                m.append(M(k="CurrentUnits", value=str(current_units)))
+                m.append(model.Map.M(k="Current", value=", ".join(map(str, current))))
+                m.append(model.Map.M(k="CurrentUnits", value=str(current_units)))
             if m:
                 kwargs["map"] = model.Map(k="BeamProperties", m=m)
 
         return source(id=id_, model=name, **kwargs)
 
     @txrm_property(fallback=None)
-    def _ome_light_source(self):
+    def _ome_light_source(self) -> model.LightSource:
         source_idx = self.read_stream(
             "AcquisitionSettings/SourceIndex", XrmDataTypes.XRM_UNSIGNED_INT
         )[
@@ -243,7 +229,7 @@ class MetaMixin:
         return self._ome_configured_light_sources[source_idx]
 
     @txrm_property(fallback=None)
-    def _ome_light_source_settings(self):
+    def _ome_light_source_settings(self) -> model.LightSourceSettings | None:
         if self._ome_light_source is None:
             logging.info("No light source to reference")
             return None
@@ -259,7 +245,7 @@ class MetaMixin:
         return model.LightSourceSettings(id=self._ome_light_source.id, **kwargs)
 
     @txrm_property(fallback=None)
-    def _ome_detector_settings(self):
+    def _ome_detector_settings(self) -> model.DetectorSettings:
         kwargs = {}
         if self.has_stream("ImageInfo/CameraBinning"):
             binning_str = "{0}x{0}".format(
@@ -284,21 +270,23 @@ class MetaMixin:
         )
 
     @txrm_property(fallback=model.Channel(id="Channel:0"))
-    def _ome_channel(self):
+    def _ome_channel(self) -> model.Channel:
         return model.Channel(
             id="Channel:0",
             # Energies are 0 for VLM
-            acquisition_mode=AcquisitionMode.OTHER
-            if self.energies
-            else AcquisitionMode.BRIGHT_FIELD,
-            illumination_type=IlluminationType.TRANSMITTED,
+            acquisition_mode=(
+                model.Channel_AcquisitionMode.OTHER
+                if self.energies
+                else model.Channel_AcquisitionMode.BRIGHT_FIELD
+            ),
+            illumination_type=model.Channel_IlluminationType.TRANSMITTED,
             # light_source_settings=self._ome_light_source_settings,
             detector_settings=self._ome_detector_settings,
             samples_per_pixel=1,
         )
 
     @txrm_property(fallback=None)
-    def _ome_pixels(self):
+    def _ome_pixels(self) -> model.Pixels:
         # Get image shape
         # number of frames (T in tilt series), Y, X:
         shape = self.output_shape
@@ -432,7 +420,7 @@ class MetaMixin:
         )
 
     @txrm_property(fallback=None)
-    def _ome_image(self):
+    def _ome_image(self) -> model.Image:
         kwargs = {}
         if self._ome_modulo is not None:
             kwargs["annotation_ref"] = [model.AnnotationRef(id=self._ome_modulo.id)]
@@ -447,7 +435,7 @@ class MetaMixin:
         )
 
     @txrm_property(fallback=None)
-    def metadata(self):
+    def metadata(self) -> model.OME:
         kwargs = {}
         if self._ome_instrument is not None:
             # If ome instrument metadata fails due to a bad config,
@@ -460,8 +448,8 @@ class MetaMixin:
         )
 
     @txrm_property(fallback=None)
-    def _ome_modulo(self):
-        el = Element(
+    def _ome_modulo(self) -> model.XMLAnnotation:
+        el = ElementTree.Element(
             "Modulo",
             namespace="http://www.openmicroscopy.org/Schemas/Additions/2011-09",
         )
@@ -479,7 +467,9 @@ class MetaMixin:
             namespace="openmicroscopy.org/omero/dimension/modulo",
         )
 
-    def _add_energy_subelement(self, element, energies):
+    def _add_energy_subelement(
+        self, element: ElementTree.Element, energies: Iterable[float]
+    ) -> None:
         sub_el = ElementTree.SubElement(
             element, "ModuloAlongZ", Type="other", TypeDescription="energy", Unit="eV"
         )
@@ -487,7 +477,9 @@ class MetaMixin:
             label_sub_el = ElementTree.SubElement(sub_el, "Label")
             label_sub_el.text = str(eng)
 
-    def _add_angle_subelement(self, element, angles):
+    def _add_angle_subelement(
+        self, element: ElementTree.Element, angles: Iterable[float]
+    ) -> None:
         sub_el = ElementTree.SubElement(
             element, "ModuloAlongZ", Type="angle", Unit="degree"
         )
