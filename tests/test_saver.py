@@ -6,8 +6,7 @@ from txrm2tiff.txrm.save_mixin import SaveMixin
 from txrm2tiff.txrm.annot_mixin import AnnotatorMixin
 
 
-class SaveAnnotatorMixin(SaveMixin, AnnotatorMixin):
-    ...
+class SaveAnnotatorMixin(SaveMixin, AnnotatorMixin): ...
 
 
 class TestSaver(unittest.TestCase):
@@ -23,9 +22,7 @@ class TestSaver(unittest.TestCase):
     @patch("txrm2tiff.txrm.annot_mixin.manual_annotation_save")
     @patch("txrm2tiff.txrm.save_mixin.manual_save")
     @patch("pathlib.Path.mkdir")
-    def test_save_images(
-        self, mocked_mkdir, mocked_manual_save, mocked_ann_save, mocked_create_metadata
-    ):
+    def test_save_images(self, mocked_mkdir, mocked_manual_save, mocked_ann_save):
         filepath = Path("path/to/file.ext")
         dtype = None
         shifts = True
@@ -35,10 +32,9 @@ class TestSaver(unittest.TestCase):
 
         image = "image"
         metadata = "metadata"
-
         saver = SaveMixin()
-
-        mocked_create_metadata.return_value = metadata
+        saver.set_dtype = MagicMock()
+        saver.metadata = metadata
         saver.get_output = MagicMock(return_value=image)
         saver.referenced = False
         saver.annotated_image = None
@@ -49,12 +45,43 @@ class TestSaver(unittest.TestCase):
             )
         )
 
+        saver.set_dtype.assert_not_called()
         saver.get_output.assert_called_once_with(
             load=True, shifts=shifts, flip=flip, clear_images=clear_images
         )
         mocked_mkdir.assert_not_called()
         mocked_manual_save.assert_called_once_with(filepath, image, dtype, metadata)
         mocked_ann_save.assert_not_called()
+
+    @patch("txrm2tiff.txrm.save_mixin.manual_save")
+    @patch("pathlib.Path.mkdir")
+    def test_calls_set_dtype(self, mocked_mkdir, mocked_manual_save):
+        filepath = Path("path/to/file.ext")
+        dtype = "test_dtype"
+        shifts = True
+        flip = True
+        clear_images = True
+        mkdir = False
+
+        image = "image"
+        metadata = "metadata"
+        saver = SaveMixin()
+        saver.set_dtype = MagicMock()
+        saver.metadata = metadata
+        saver.get_output = MagicMock(return_value=image)
+        saver.referenced = False
+        saver.annotated_image = None
+
+        self.assertTrue(
+            saver.save_images(filepath, dtype, shifts, flip, clear_images, mkdir)
+        )
+
+        saver.set_dtype.assert_called_once_with(dtype)
+        saver.get_output.assert_called_once_with(
+            load=True, shifts=shifts, flip=flip, clear_images=clear_images
+        )
+        mocked_mkdir.assert_not_called()
+        mocked_manual_save.assert_called_once_with(filepath, image, dtype, metadata)
 
     @patch.object(SaveMixin, "create_metadata")
     @patch("txrm2tiff.txrm.save_mixin.manual_save")
@@ -73,8 +100,8 @@ class TestSaver(unittest.TestCase):
         metadata = "metadata"
 
         saver = SaveMixin()
-
-        mocked_create_metadata.return_value = metadata
+        saver.set_dtype = MagicMock()
+        saver.metadata = metadata
         saver.get_output = MagicMock(return_value=image)
         saver.save_annotations = MagicMock()
         saver.referenced = False
@@ -89,6 +116,7 @@ class TestSaver(unittest.TestCase):
         saver.get_output.assert_called_once_with(
             load=True, shifts=shifts, flip=flip, clear_images=clear_images
         )
+        saver.set_dtype.assert_not_called()
         mocked_mkdir.assert_called_once()
         mocked_manual_save.assert_called_once_with(filepath, image, dtype, metadata)
         saver.save_annotations.assert_not_called()
@@ -110,13 +138,13 @@ class TestSaver(unittest.TestCase):
         metadata = "metadata"
 
         saver = SaveMixin()
-
-        mocked_create_metadata.return_value = metadata
+        saver.set_dtype = MagicMock()
         saver.path = filepath
         saver.get_output = MagicMock(return_value=image)
         saver.save_annotations = MagicMock()
         saver.referenced = False
         saver.annotated_image = None
+        saver.metadata = metadata
 
         self.assertTrue(
             saver.save_images(
@@ -127,18 +155,18 @@ class TestSaver(unittest.TestCase):
         saver.get_output.assert_called_once_with(
             load=True, shifts=shifts, flip=flip, clear_images=clear_images
         )
+        saver.set_dtype.assert_not_called()
         mocked_mkdir.assert_not_called()
         mocked_manual_save.assert_called_once_with(
-            filepath.resolve().with_suffix(".ome.tiff"), image, dtype, metadata
+            filepath.with_suffix(".ome.tiff").resolve(), image, dtype, metadata
         )
         saver.save_annotations.assert_not_called()
 
-    @patch.object(SaveMixin, "create_metadata")
     @patch("txrm2tiff.txrm.annot_mixin.manual_annotation_save")
     @patch("txrm2tiff.txrm.save_mixin.manual_save")
     @patch("pathlib.Path.mkdir")
     def test_save_images_and_annotations_simple_ext(
-        self, mocked_mkdir, mocked_manual_save, mocked_ann_save, mocked_create_metadata
+        self, mocked_mkdir, mocked_manual_save, mocked_ann_save
     ):
         filepath = Path("path/to/file.ext")
         dtype = None
@@ -152,11 +180,12 @@ class TestSaver(unittest.TestCase):
         annotated_image = "annotated"
 
         saver = SaveAnnotatorMixin()
-
-        mocked_create_metadata.return_value = metadata
+        saver.set_dtype = MagicMock()
+        saver.metadata = metadata
         saver.get_output = MagicMock(return_value=image)
         saver.referenced = False
         saver.annotated_image = annotated_image
+        saver.metadata = metadata
 
         self.assertTrue(
             saver.save_images(
@@ -168,17 +197,17 @@ class TestSaver(unittest.TestCase):
             load=True, shifts=shifts, flip=flip, clear_images=clear_images
         )
         mocked_mkdir.assert_has_calls([call(parents=True, exist_ok=True)] * 2)
+        saver.set_dtype.assert_not_called()
         mocked_manual_save.assert_called_once_with(filepath, image, dtype, metadata)
         mocked_ann_save.assert_called_once_with(
             Path("path/to/file_Annotated.ext"), annotated_image
         )
 
-    @patch.object(SaveMixin, "create_metadata")
     @patch("txrm2tiff.txrm.annot_mixin.manual_annotation_save")
     @patch("txrm2tiff.txrm.save_mixin.manual_save")
     @patch("pathlib.Path.mkdir")
     def test_save_images_and_annotations_tiff(
-        self, mocked_mkdir, mocked_manual_save, mocked_ann_save, mocked_create_metadata
+        self, mocked_mkdir, mocked_manual_save, mocked_ann_save
     ):
         filepath = Path("path/to/file.ome.tiff")
         dtype = None
@@ -192,8 +221,8 @@ class TestSaver(unittest.TestCase):
         annotated_image = "annotated"
 
         saver = SaveAnnotatorMixin()
-
-        mocked_create_metadata.return_value = metadata
+        saver.set_dtype = MagicMock()
+        saver.metadata = metadata
         saver.get_output = MagicMock(return_value=image)
         saver.referenced = False
         saver.annotated_image = annotated_image
@@ -213,12 +242,11 @@ class TestSaver(unittest.TestCase):
             Path("path/to/file_Annotated.tiff"), annotated_image
         )
 
-    @patch.object(SaveMixin, "create_metadata")
     @patch("txrm2tiff.txrm.annot_mixin.manual_annotation_save")
     @patch("txrm2tiff.txrm.save_mixin.manual_save")
     @patch("pathlib.Path.mkdir")
     def test_save_images_and_annotations_specific_filepath(
-        self, mocked_mkdir, mocked_manual_save, mocked_ann_save, mocked_create_metadata
+        self, mocked_mkdir, mocked_manual_save, mocked_ann_save
     ):
         filepath = Path("path/to/file.ome.tiff")
         dtype = None
@@ -234,11 +262,11 @@ class TestSaver(unittest.TestCase):
         requested_filepath = Path("path/to/file_Annotated.tiff")
 
         saver = SaveAnnotatorMixin()
-
-        mocked_create_metadata.return_value = metadata
+        saver.set_dtype = MagicMock()
         saver.get_output = MagicMock(return_value=image)
         saver.referenced = False
         saver.annotated_image = annotated_image
+        saver.metadata = metadata
 
         self.assertTrue(
             saver.save_images(
@@ -257,14 +285,14 @@ class TestSaver(unittest.TestCase):
             load=True, shifts=shifts, flip=flip, clear_images=clear_images
         )
         mocked_mkdir.assert_has_calls([call(parents=True, exist_ok=True)] * 2)
+        saver.set_dtype.assert_not_called()
         mocked_manual_save.assert_called_once_with(filepath, image, dtype, metadata)
         mocked_ann_save.assert_called_once_with(requested_filepath, annotated_image)
 
-    @patch.object(SaveMixin, "create_metadata")
     @patch("txrm2tiff.txrm.save_mixin.manual_save")
     @patch("pathlib.Path.mkdir")
     def test_save_images_returns_False_without_image(
-        self, mocked_mkdir, mocked_manual_save, mocked_create_metadata
+        self, mocked_mkdir, mocked_manual_save
     ):
         filepath = Path("path/to/file.ext")
         dtype = None
@@ -278,12 +306,12 @@ class TestSaver(unittest.TestCase):
         annotated_image = "annotated"
 
         saver = SaveMixin()
-
-        mocked_create_metadata.return_value = metadata
+        saver.set_dtype = MagicMock()
         saver.get_output = MagicMock(return_value=image)
         saver.save_annotations = MagicMock()
         saver.referenced = False
         saver.annotated_image = annotated_image
+        saver.metadata = metadata
 
         self.assertFalse(
             saver.save_images(
@@ -294,7 +322,7 @@ class TestSaver(unittest.TestCase):
         saver.get_output.assert_called_once_with(
             load=True, shifts=shifts, flip=flip, clear_images=clear_images
         )
-
+        saver.set_dtype.assert_not_called()
         mocked_mkdir.assert_not_called()
         mocked_manual_save.assert_not_called()
         saver.save_annotations.assert_not_called()
