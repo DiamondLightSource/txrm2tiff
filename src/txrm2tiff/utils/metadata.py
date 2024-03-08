@@ -77,7 +77,7 @@ def get_ome_pixel_type(dtype: DTypeLike) -> PixelType:
         return __DTYPE_DICT[np.dtype(dtype).name]
     except Exception:
         raise TypeError(
-            f"{dtype} is unsupported data type. Supported dtypes are {__DTYPE_DICT.keys()}.",
+            f"{dtype} is unsupported data type. Supported dtypes are {', '.join(__DTYPE_DICT.keys())}.",
         )
 
 
