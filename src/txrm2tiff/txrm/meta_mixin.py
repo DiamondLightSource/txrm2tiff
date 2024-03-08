@@ -233,11 +233,16 @@ class MetaMixin:
 
     @txrm_property(fallback=None)
     def _ome_detector_settings(self):
+        kwargs = {}
+        if self.has_stream("ImageInfo/CameraBinning"):
+            binning_str = "{0}x{0}".format(
+                self.read_stream("ImageInfo/CameraBinning")[0]
+            )
+            kwargs["binning"] = (
+                Binning(binning_str) if binning_str in Binning else Binning.OTHER
+            )
         return model.DetectorSettings(
             id=self._ome_detector.id,
-            binning=Binning(
-                "{0}x{0}".format(self.read_stream("ImageInfo/CameraBinning")[0])
-            ),
             integration=self.read_stream(
                 "ImageInfo/FramesPerImage", XrmDataTypes.XRM_UNSIGNED_INT, strict=False
             )[0],
@@ -248,6 +253,7 @@ class MetaMixin:
             zoom=self.read_stream(
                 "ImageInfo/OpticalMagnification", XrmDataTypes.XRM_FLOAT, strict=False
             )[0],
+            **kwargs,
         )
 
     @txrm_property(fallback=model.Channel(id="Channel:0"))
