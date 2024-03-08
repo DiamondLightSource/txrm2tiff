@@ -127,11 +127,11 @@ class MetaMixin:
         return self._ome_configured_objectives[camera_idx]
 
     @txrm_property(fallback=None)
-    def _ome_objective_ref(self):
+    def _ome_objective_settings(self):
         if self._ome_objective is None:
             logging.info("No objective to reference")
             return None
-        return model.InstrumentRef(id=self._ome_objective.id)
+        return model.ObjectiveSettings(id=self._ome_objective.id)
 
     @txrm_property(fallback=0)
     def _ome_configured_source_count(self):
@@ -362,7 +362,7 @@ class MetaMixin:
             description="An OME-TIFF file, converted by txrm2tiff",
             pixels=self._ome_pixels,
             instrument_ref=self._ome_instrument_ref,
-            objective_settings=self._ome_objective_ref,
+            objective_settings=self._ome_objective_settings,
         )
 
     @txrm_property(fallback=None)
