@@ -6,6 +6,7 @@ if os.name == "nt":
     sys.stdout.reconfigure(encoding="utf-8")
 
 from .info import __version__
+from .utils.metadata import dtype_dict
 
 parser = argparse.ArgumentParser(
     prog="txrm2tiff",
@@ -59,7 +60,7 @@ convert_group.add_argument(
     dest="data_type",
     default=None,
     action="store",
-    choices=["uint16", "float32", "float64"],
+    choices=dtype_dict.keys(),
     help="specify output data type (default: decides data type from input)",
 )
 convert_group.add_argument(
