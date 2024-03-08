@@ -5,7 +5,6 @@ from typing import Optional
 import numpy as np
 from numpy.typing import DTypeLike
 
-from ..utils.metadata import create_ome_metadata, dtype_dict
 from ..utils.file_handler import manual_save
 
 
@@ -41,21 +40,12 @@ class SaveMixin:
             if im is None:
                 raise AttributeError("Cannot save image as no image has been loaded.")
             if datatype is not None:
-                datatype = np.dtype(datatype)
-                if datatype.name not in dtype_dict:
-                    datatype = None
-                    logging.warning(
-                        "Invalid data type '%s', must be %s or None. Defaulting to saving as %s",
-                        datatype,
-                        ", ".join(dtype_dict.keys()),
-                        str(im.dtype),
-                    )
-            metadata = self.create_metadata(filepath)
+                self.set_dtype(datatype)
 
             if mkdir:
                 filepath.parent.mkdir(parents=True, exist_ok=True)
 
-            manual_save(filepath, im, datatype, metadata)
+            manual_save(filepath, im, datatype, self.metadata)
             if (
                 save_annotations
                 and hasattr(self, "annotate")
@@ -77,6 +67,3 @@ class SaveMixin:
             if strict:
                 raise
             return False
-
-    def create_metadata(self, filepath: Path):
-        return create_ome_metadata(self, filepath.stem)

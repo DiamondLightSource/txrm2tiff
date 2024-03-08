@@ -29,7 +29,7 @@ class MetaMixin:
 
     @txrm_property(fallback=[])
     def _ome_configured_detectors(self):
-        return [self._get_detector(i) for i in range(self.configured_camera_count)]
+        return [self._get_detector(i) for i in range(self._ome_configured_camera_count)]
 
     def _get_detector(self, index):
         stream_stem = f"ConfigureBackup/ConfigCamera/Camera {index + 1}"
@@ -113,11 +113,23 @@ class MetaMixin:
         )
 
     @txrm_property(fallback=None)
+    def _ome_instrument_ref(self):
+        if self._ome_instrument is None:
+            return None
+        return model.InstrumentRef(id=self._ome_instrument.id)
+
+    @txrm_property(fallback=None)
     def _ome_objective(self):
         camera_idx = (
             self.read_stream("ImageInfo/CameraNo", XrmDataTypes.XRM_UNSIGNED_INT)[0] - 1
         )  # Stream counts from 1
         return self.configured_objectives[camera_idx]
+
+    @txrm_property(fallback=None)
+    def _ome_objective_ref(self):
+        if self._ome_objective is None:
+            return None
+        return model.InstrumentRef(id=self._ome_objective.id)
 
     @txrm_property(fallback=0)
     def _ome_configured_source_count(self):
@@ -128,7 +140,7 @@ class MetaMixin:
 
     @txrm_property(fallback=[])
     def _ome_configured_light_sources(self):
-        return [self._get_light_source(i) for i in range(self.configured_source_count)]
+        return [self._get_light_source(i) for i in range(self._ome_configured_source_count)]
 
     def _get_light_source(self, index):
         stream_stem = (
@@ -160,6 +172,9 @@ class MetaMixin:
 
     @txrm_property(fallback=None)
     def _ome_light_source_settings(self):
+        if self._ome_light_source is None:
+            return None
+        
         mean_energy = np.mean(self.energies)
         kwargs = {}
         if mean_energy:
@@ -168,7 +183,7 @@ class MetaMixin:
             )
             kwargs["wavelength_unit"] = UnitsLength.NANOMETER
 
-        return model.LightSourceSettings(id=self.light_source.id, **kwargs)
+        return model.LightSourceSettings(id=self._ome_light_source.id, **kwargs)
 
     @txrm_property(fallback=None)
     def _ome_detector_settings(self):
@@ -336,21 +351,11 @@ class MetaMixin:
             channels=[self._ome_channel],
         )
 
-    def _ome_instrument_ref(self):
-        if self._ome_instrument is None:
-            return None
-        return model.InstrumentRef(id=self._ome_instrument.id)
-
-    def _ome_objective_ref(self):
-        if self._ome_objective is None:
-            return None
-        return model.InstrumentRef(id=self._ome_objective.id)
-
     @txrm_property(fallback=None)
     def _ome_image(self):
         return model.Image(
             id="Image:0",
-            acquisition_date=self.datetimes[0].isoformat(),
+            acquisition_date=self.datetimes[0],
             description="An OME-TIFF file, converted by txrm2tiff",
             pixels=self._ome_pixels,
             instrument_ref=self._ome_instrument_ref,
@@ -359,8 +364,12 @@ class MetaMixin:
 
     @txrm_property(fallback=None)
     def metadata(self):
+        instruments = []
+        print("OME image: ", self._ome_image)
+        if self._ome_instrument is not None:
+            instruments.append(self._ome_instrument)
         return model.OME(
-        creator=f"txrm2tiff {__version__}",
-        images=[self._ome_image],
-        instruments=[self._ome_instrument],
-    )
+            creator=f"txrm2tiff {__version__}",
+            images=[self._ome_image],
+            instruments=instruments,
+        )

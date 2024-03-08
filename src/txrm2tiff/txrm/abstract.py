@@ -13,6 +13,7 @@ from pathlib import Path
 
 from ..xradia_properties.enums import XrmDataTypes
 from ..xradia_properties.stream_dtypes import streams_dict
+from ..utils.metadata import dtype_dict
 from .. import txrm_functions
 from .txrm_property import txrm_property
 
@@ -503,3 +504,25 @@ class AbstractTxrm(ABC):
         clear_images: bool = True,
     ) -> typing.Optional[np.ndarray]:
         raise NotImplementedError
+
+    def set_dtype(self, dtype):
+        if self._images is None:
+            logging.error("Images must be loaded before a datatype can be set.")
+            return False
+        try:
+            dtype = np.dtype(dtype).name
+        except TypeError:
+            # No need to handle type error dtype will not be in the dict if invalid
+            pass
+        if dtype not in dtype_dict:
+            logging.error("Cannot cast to unsupported dtype '%s'. Images will remain %s", dtype, self._images[0].dtype)
+            return False
+        else:
+            self._images = self._images.astype(dtype)
+        
+        return True
+
+    @property
+    def metadata(self):
+        logging.warning("Metadata creation is unavailable")
+        return None
