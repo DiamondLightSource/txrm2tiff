@@ -188,7 +188,7 @@ class MetaMixin:
     @txrm_property(fallback=None)
     def _ome_detector_settings(self):
         return model.DetectorSettings(
-            id=self.detector.id,
+            id=self._ome_detector.id,
             binning=Binning(
                 "{0}x{0}".format(self.read_stream("ImageInfo/CameraBinning")[0])
             ),
