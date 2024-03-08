@@ -123,7 +123,7 @@ class MetaMixin:
         camera_idx = (
             self.read_stream("ImageInfo/CameraNo", XrmDataTypes.XRM_UNSIGNED_INT)[0] - 1
         )  # Stream counts from 1
-        return self.configured_objectives[camera_idx]
+        return self._ome_configured_objectives[camera_idx]
 
     @txrm_property(fallback=None)
     def _ome_objective_ref(self):

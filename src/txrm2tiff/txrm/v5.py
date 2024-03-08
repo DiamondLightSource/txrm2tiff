@@ -82,4 +82,4 @@ class Txrm5(ShiftsMixin, SaveMixin, ReferenceMixin, AnnotatorMixin, MetaMixin, A
 
     def set_dtype(self, dtype):
         if super().set_dtype(dtype):
-            self.pixels.type = get_ome_pixel_type(dtype)
+            self._ome_pixels.type = get_ome_pixel_type(dtype)
