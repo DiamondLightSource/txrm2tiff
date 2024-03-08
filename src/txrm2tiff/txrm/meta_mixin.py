@@ -18,7 +18,6 @@ from ..info import __version__
 from .txrm_property import txrm_property
 from ..xradia_properties.enums import (
     XrmDataTypes,
-    XrmObjectiveType,
     XrmSourceType,
 )
 from ..utils.metadata import dtype_dict
@@ -102,9 +101,9 @@ class MetaMixin:
     @txrm_property(fallback=OrderedDict())
     def _ome_configured_objectives(self):
         return {
-                self._camera_ids[i]: self._get_objectives(i)
-                for i in range(self._ome_configured_camera_count)
-            }
+            self._camera_ids[i]: self._get_objectives(i)
+            for i in range(self._ome_configured_camera_count)
+        }
 
     def _get_objectives(self, index):
         id_ = getattr(self, "__obj_id", default=0)
@@ -135,7 +134,11 @@ class MetaMixin:
             id="Instrument:0",
             detectors=list(self._ome_configured_detectors.values()),
             microscope=self._ome_microscope,
-            objectives=[ob for d in self._ome_configured_objectives.values() for ob in d.values()],
+            objectives=[
+                ob
+                for d in self._ome_configured_objectives.values()
+                for ob in d.values()
+            ],
             light_source_group=self._ome_configured_light_sources,
         )
 
@@ -150,12 +153,8 @@ class MetaMixin:
     def _ome_objective(self):
         camera_id = self.read_stream(
             "ImageInfo/CameraNo", XrmDataTypes.XRM_UNSIGNED_INT
-        )[
-            0
-        ]
-        obj_name = self.read_stream(
-            "ImageInfo/ObjectiveName", XrmDataTypes.XRM_STRING
-        )[
+        )[0]
+        obj_name = self.read_stream("ImageInfo/ObjectiveName", XrmDataTypes.XRM_STRING)[
             0
         ]
         return self._ome_configured_objectives[camera_id][obj_name]
