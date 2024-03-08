@@ -36,7 +36,6 @@ class TestMetadata(unittest.TestCase):
 
             pixel_size_nm = txrm.image_info["PixelSize"][0] * 1.e3
             
-            print(txrm.metadata)
             ome_metadata = txrm.metadata
             self.assertEqual(ome_metadata.instruments, [])
             self.assertIsNone(ome_metadata.images[0].instrument_ref)

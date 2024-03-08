@@ -365,7 +365,6 @@ class MetaMixin:
     @txrm_property(fallback=None)
     def metadata(self):
         instruments = []
-        print("OME image: ", self._ome_image)
         if self._ome_instrument is not None:
             instruments.append(self._ome_instrument)
         return model.OME(
