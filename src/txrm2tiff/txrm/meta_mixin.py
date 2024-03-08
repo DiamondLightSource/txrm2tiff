@@ -401,7 +401,9 @@ class MetaMixin:
     def _ome_image(self):
         kwargs = {}
         if self._ome_modulo is not None:
-            kwargs["annotation_ref"] = model.AnnotationRef(id=self._ome_modulo.id)
+            kwargs["annotation_ref"] = [
+                model.AnnotationRef(id=self._ome_modulo.xml_annotations.id)
+            ]
         return model.Image(
             id="Image:0",
             acquisition_date=self.datetimes[0],
@@ -427,11 +429,10 @@ class MetaMixin:
 
     @txrm_property(fallback=None)
     def _ome_modulo(self):
-
         el = Element(
-            tag='Modulo namespace="http://www.openmicroscopy.org/Schemas/Additions/2011-09"'
+            "Modulo",
+            namespace="http://www.openmicroscopy.org/Schemas/Additions/2011-09",
         )
-
         angles = self.image_info.get("Angles", [])
         if angles and np.sum(angles):
             self._add_angle_subelement(el, angles)
@@ -450,14 +451,18 @@ class MetaMixin:
 
     def _add_energy_subelement(self, element, energies):
         sub_el = ElementTree.SubElement(
-            element, tag=f'ModuloAlongZ Type="other" Unit="eV"'
+            element, "ModuloAlongZ", Type="other", Unit="eV"
         )
         for eng in energies:
-            ElementTree.SubElement(sub_el, tag="Label", text=str(eng))
+            label_sub_el = ElementTree.SubElement(
+                sub_el, "Label", TypeDescription="energy"
+            )
+            label_sub_el.text = str(eng)
 
     def _add_angle_subelement(self, element, angles):
         sub_el = ElementTree.SubElement(
-            element, tag=f'ModuloAlongZ Type="angle" Unit="degree"'
+            element, "ModuloAlongZ", Type="angle", Unit="degree"
         )
         for ang in angles:
-            ElementTree.SubElement(sub_el, tag="Label", text=str(ang))
+            label_sub_el = ElementTree.SubElement(sub_el, "Label")
+            label_sub_el.text = str(ang)
