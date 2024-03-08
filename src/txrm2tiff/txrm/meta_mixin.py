@@ -193,7 +193,7 @@ class MetaMixin:
             m = []
             current, current_units = self.position_info.get("Current")
             if current and current_units:
-                m.append(M(k="Current", value=str(current)))
+                m.append(M(k="Current", value=", ".join(map(str, current))))
                 m.append(M(k="CurrentUnits", value=str(current_units)))
             if m:
                 kwargs["map"] = model.Map(k="BeamProperties", m=m)
