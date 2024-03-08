@@ -30,7 +30,9 @@ class SaveMixin:
                     raise ValueError(
                         "An output filepath must be given if an input path was not given."
                     )
-                filepath = self.path.resolve().with_suffix(".ome.tiff")
+                filepath = self.path.with_suffix(".ome.tiff")
+            # Get absolute path
+            filepath = filepath.resolve()
             if not self.referenced:
                 logging.info("Saving without reference")
 
