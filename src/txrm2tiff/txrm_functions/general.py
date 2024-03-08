@@ -5,6 +5,7 @@ import numbers
 import numpy as np
 import olefile as of
 import numpy.typing as npt
+from itertools import takewhile
 
 from .. import xradia_properties as xp
 
@@ -65,9 +66,11 @@ def _read_text_stream_to_list(ole: of.OleFileIO, key: str) -> typing.List[str]:
     """
     if ole.exists(key):
         byte_str = ole.openstream(key).read()
-        return [
-            s for s in hex_pattern.split(byte_str.decode("ascii", errors="ignore")) if s
-        ]
+        # Anything after empty values will just be random bytes
+        return list(takewhile(
+            lambda s: s,
+            hex_pattern.split(byte_str.decode("ascii", errors="ignore"))
+        ))
 
 
 def get_image_info_dict(
