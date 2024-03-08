@@ -101,13 +101,10 @@ class MetaMixin:
 
     @txrm_property(fallback=OrderedDict())
     def _ome_configured_objectives(self):
-        return OrderedDict(
-            {
-                self._camera_ids[i]: obj
+        return {
+                self._camera_ids[i]: self._get_objectives(i)
                 for i in range(self._ome_configured_camera_count)
-                for obj in self._get_objectives(i)
             }
-        )
 
     def _get_objectives(self, index):
         id_ = getattr(self, "__obj_id", default=0)
@@ -121,8 +118,8 @@ class MetaMixin:
             f"{stream_stem}/ConfigObjectives/OpticalMagnification",
             XrmDataTypes.XRM_FLOAT,
         )
-        return [
-            model.Objective(
+        return {
+            name: model.Objective(
                 id=f"Objective:{self.__obj_id}",
                 nominal_magnification=magnification,
                 model=name,
@@ -130,7 +127,7 @@ class MetaMixin:
             for self.__obj_id, name, magnification in zip(
                 range(id_, id_ + len(objective_names)), objective_names, magnifications
             )
-        ]
+        }
 
     @txrm_property(fallback=None)
     def _ome_instrument(self):
@@ -138,7 +135,7 @@ class MetaMixin:
             id="Instrument:0",
             detectors=list(self._ome_configured_detectors.values()),
             microscope=self._ome_microscope,
-            objectives=list(self._ome_configured_objectives.values()),
+            objectives=[ob for d in self._ome_configured_objectives.values() for ob in d.values()],
             light_source_group=self._ome_configured_light_sources,
         )
 
@@ -155,8 +152,13 @@ class MetaMixin:
             "ImageInfo/CameraNo", XrmDataTypes.XRM_UNSIGNED_INT
         )[
             0
-        ]  # Stream counts from 1
-        return self._ome_configured_objectives[camera_id]
+        ]
+        obj_name = self.read_stream(
+            "ImageInfo/ObjectiveName", XrmDataTypes.XRM_STRING
+        )[
+            0
+        ]
+        return self._ome_configured_objectives[camera_id][obj_name]
 
     @txrm_property(fallback=None)
     def _ome_objective_settings(self):
