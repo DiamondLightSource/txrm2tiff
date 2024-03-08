@@ -399,6 +399,9 @@ class MetaMixin:
 
     @txrm_property(fallback=None)
     def _ome_image(self):
+        kwargs = {}
+        if self._ome_modulo is not None:
+            kwargs["annotation_ref"] = model.AnnotationRef(id=self._ome_modulo.id)
         return model.Image(
             id="Image:0",
             acquisition_date=self.datetimes[0],
@@ -406,17 +409,20 @@ class MetaMixin:
             pixels=self._ome_pixels,
             instrument_ref=self._ome_instrument_ref,
             objective_settings=self._ome_objective_settings,
+            **kwargs,
         )
 
     @txrm_property(fallback=None)
     def metadata(self):
-        instruments = []
+        kwargs = {}
         if self._ome_instrument is not None:
-            instruments.append(self._ome_instrument)
+            # If ome instrument metadata fails due to a bad config,
+            # it's still worth appending the image info
+            kwargs["instruments"] = [self._ome_instrument]
+        if self._ome_modulo is not None:
+            kwargs["structured_annotations"] = [self._ome_modulo]
         return model.OME(
-            creator=f"txrm2tiff {__version__}",
-            images=[self._ome_image],
-            instruments=instruments,
+            creator=f"txrm2tiff {__version__}", images=[self._ome_image], **kwargs
         )
 
     @txrm_property(fallback=None)
