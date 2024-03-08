@@ -71,6 +71,7 @@ class AnnotationTypes(enum.Enum):
     ANN_FREE_HAND_SKETCH = 14
     ANN_SIZE = 15
 
+
 class XrmCameraType(enum.Enum):
     ANDOR = 0
     PICOLO = 1
@@ -83,24 +84,6 @@ class XrmCameraType(enum.Enum):
     PCO_EDGE = 8
     COUNT_CAM_TYPE = 9
 
-class XrmObjectiveType(enum.Enum):
-    s1x = 0
-    s2x = 1
-    s4x = 2
-    s10x = 3
-    s20x = 4
-    s40x = 5
-    s0_4x = 6
-    sFlatsPanel = 7
-    sDCT = 8
-    sDCTs4x = 9
-
-    @DynamicClassAttribute
-    def name(self):
-        """The name of the Enum member."""
-        # s is a space
-        # _ is a dot
-        return self._name_.replace("s", " ").replace("_", ".").strip()
 
 class XrmSourceType(enum.Enum):
     XRM_RIGAKU_SOURCE = 0

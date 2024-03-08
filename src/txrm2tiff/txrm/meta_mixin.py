@@ -110,28 +110,25 @@ class MetaMixin:
         )
 
     def _get_objectives(self, index):
+        id_ = getattr(self, "__obj_id", default=0)
         # TODO: Replace 'ObjectiveName' (a little reduntant) with zoneplate name, which is the actual optical objective
         # This is waiting on the zoneplate name actually being populated in the metadata.
         stream_stem = f"ConfigureBackup/ConfigCamera/Camera {index + 1}"
         name_stream = f"{stream_stem}/ConfigObjectives/ObjectiveName"
         objective_names = self.read_stream(name_stream, XrmDataTypes.XRM_STRING)
-        objective_ids = [
-            XrmObjectiveType(id_).name.replace(" ", "_")
-            for id_ in self.read_stream(
-                f"{stream_stem}/ConfigObjectives/ObjectiveID",
-                XrmDataTypes.XRM_UNSIGNED_INT,
-            )
-        ]
+
         magnifications = self.read_stream(
             f"{stream_stem}/ConfigObjectives/OpticalMagnification",
             XrmDataTypes.XRM_FLOAT,
         )
         return [
             model.Objective(
-                id=f"Objective:{id_}", nominal_magnification=magnification, model=name
+                id=f"Objective:{self.__obj_id}",
+                nominal_magnification=magnification,
+                model=name,
             )
-            for id_, name, magnification in zip(
-                objective_ids, objective_names, magnifications
+            for self.__obj_id, name, magnification in zip(
+                range(id_, id_ + len(objective_names)), objective_names, magnifications
             )
         ]
 
