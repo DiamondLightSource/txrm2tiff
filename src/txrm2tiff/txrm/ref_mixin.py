@@ -5,7 +5,7 @@ from numbers import Number
 import numpy as np
 import tifffile as tf
 from olefile import isOleFile
-from oxdls import OMEXML
+from ome_types import from_xml
 from tifffile.tifffile import TiffFileError
 
 from . import main
@@ -48,13 +48,9 @@ class ReferenceMixin:
                 kwargs = {}
                 if compensate_exposure:
                     try:
-                        pixels = OMEXML(xml=tif.pages[0].description).image().Pixels
-                        plane_count = pixels.get_plane_count()
+                        pixels = from_xml(tif.pages[0].description).images[0].pixels
                         kwargs["custom_exposure"] = np.mean(
-                            [
-                                pixels.Plane(i).get_ExposureTime()
-                                for i in range(plane_count)
-                            ]
+                            [plane.exposure_time for plane in pixels.planes]
                         )
                     except Exception:
                         logging.warning(
