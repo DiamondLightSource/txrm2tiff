@@ -78,12 +78,13 @@ class MetaMixin:
 
     @txrm_property(fallback=None)
     def _ome_microscope(self):
-        machine_id = self.read_stream(
-            "ConfigureBackup/XRMConfiguration/MachineID", dtype=XrmDataTypes.XRM_STRING
-        )
         kwargs = {}
-        if machine_id:
-            kwargs["model"] = machine_id[0]
+        id_stream = "ConfigureBackup/XRMConfiguration/MachineID"
+        if self.has_stream(id_stream):
+            machine_id = self.read_stream(id_stream, dtype=XrmDataTypes.XRM_STRING)
+            if machine_id:
+                kwargs["model"] = machine_id[0]
+
         return model.Microscope(
             type="Other",
             manufacturer="Xradia",
