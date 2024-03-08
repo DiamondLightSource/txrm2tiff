@@ -1,15 +1,22 @@
 import logging
 import numpy as np
-from oxdls import OMEXML, DO_XYZCT, PT_UINT16, PT_UINT16, PT_FLOAT, PT_DOUBLE
-
+from scipy import constants
+from ome_types import model
+from ome_types.model.simple_types import UnitsLength, UnitsTime, UnitsFrequency, Binning
+from ome_types.model.channel import AcquisitionMode, IlluminationType
 from ..txrm import abstract
-
-dtype_dict = {"uint16": PT_UINT16, "float32": PT_FLOAT, "float64": PT_DOUBLE}
-
-
+from ..xradia_properties.enums import XrmDataTypes as XDT
+from ..info import __version__
 
 
-def create_ome_metadata(txrm: abstract.AbstractTxrm, filename: str = None) -> OMEXML:
+dtype_dict = {
+    "uint16": "uint16",
+    "float32": "float",
+    "float64": "double"
+    }
+
+
+def create_ome_metadata(txrm: abstract.AbstractTxrm, filename: str = None) -> model.OME:
     # Get image shape
     # number of frames (T in tilt series), Y, X:
     shape = txrm.output_shape
@@ -29,39 +36,6 @@ def create_ome_metadata(txrm: abstract.AbstractTxrm, filename: str = None) -> OM
         coord * 1.0e3 for coord in txrm.image_info["ZPosition"]
     ]  # micron to nm
 
-    ox = OMEXML()
-
-    image = ox.image()
-    image.set_ID("Image:0")
-    image.set_AcquisitionDate(txrm.datetimes[0].isoformat())  # formatted as: "yyyy-mm-ddThh:mm:ss"
-    if filename is not None:
-        image.set_Name(filename)
-
-    pixels = image.Pixels
-    pixels.DimensionOrder = DO_XYZCT
-    pixels.set_ID("Pixels:0")
-
-    pixels.set_SizeX(shape[2])
-    pixels.set_SizeY(shape[1])
-    pixels.set_SizeC(1)
-    pixels.set_SizeZ(shape[0])
-
-    pixels.set_SizeT(1)
-
-    # Physical size of a pixel
-    pixels.set_PhysicalSizeX(pixel_size)
-    pixels.set_PhysicalSizeXUnit("nm")
-    pixels.set_PhysicalSizeY(pixel_size)
-    pixels.set_PhysicalSizeYUnit("nm")
-    pixels.set_PhysicalSizeZ(1)
-    pixels.set_PhysicalSizeZUnit("reference frame")
-
-    pixels.set_tiffdata_count(shape[0])  # tiffdata must be created before planes
-    pixels.set_plane_count(shape[0])
-
-    channel = pixels.Channel(0)
-    channel.set_ID("Channel:0:0")
-    channel.set_Name("C:0")
 
     if txrm.is_mosaic:
         mosaic_columns, mosaic_rows = txrm.mosaic_dims
@@ -126,25 +100,91 @@ def create_ome_metadata(txrm: abstract.AbstractTxrm, filename: str = None) -> OM
             y_positions.append(0)
 
     # Add plane/tiffdata for each plane in the stack
+    tiffdata_list = []
+    plane_list = []
     for count in range(shape[0]):
-        tiffdata = pixels.tiffdata(count)
-        tiffdata.set_FirstC(0)
-        tiffdata.set_FirstZ(count)
-        tiffdata.set_FirstT(0)
-        tiffdata.set_IFD(count)
-        tiffdata.set_plane_count(1)
+        tiffdata_list.append(model.TiffData(
+            first_z=count,
+            ifd=count,
+            plane_count=1
+        ))
+        
+        plane_list.append(model.Plane(
+            the_c=0,
+            the_t=0,
+            the_z=count,
+            delta_t=(txrm.datetimes[count] - txrm.datetimes[0]).total_seconds(),
+            delta_t_unit=UnitsTime.SECOND,
+            exposure_time=exposures[count],
+            position_x=x_positions[count],
+            positions_x_unit=UnitsLength.NANOMETER,
+            position_y=y_positions[count],
+            positions_u_unit=UnitsLength.NANOMETER,
+            positions_z=z_positions[count],
+            positions_z_unit=UnitsLength.REFERENCEFRAME
+        ))
 
-        plane = pixels.Plane(count)
-        plane.set_ExposureTime(exposures[count])
-        plane.set_TheZ(count)
-        plane.set_TheC(0)
-        plane.set_TheT(0)
+    mean_energy = np.mean(txrm.energies)
+    kwargs = {}
+    if mean_energy:  
+        kwargs["mean_energy"] = 1.e9 * mean_energy / (constants.electron_volt * constants.Planck)
+        kwargs["wavelength_unit"] = UnitsLength.NANOMETER
+    light_source_settings = model.LightSourceSettings(
+        id=txrm.light_source.id,
+        **kwargs
+    )
+    
+    detector_settings = model.DetectorSettings(
+        id=txrm.detector.id,
+        binning=Binning("{0}x{0}".format(txrm.read_stream("ImageInfo/CameraBinning")[0])),
+        integration=txrm.read_stream("ImageInfo/FramesPerImage", XDT.XRM_UNSIGNED_INT, strict=False)[0],
+        read_out_rate=txrm.read_stream("ImageInfo/ReadoutFreq", XDT.XRM_FLOAT, strict=False)[0],
+        read_out_rate_unit=UnitsFrequency.HERTZ,
+        zoom=txrm.read_stream("ImageInfo/OpticalMagnification", XDT.XRM_FLOAT, strict=False)[0]
+    )
 
-        plane.set_PositionXUnit("nm")
-        plane.set_PositionYUnit("nm")
-        plane.set_PositionZUnit("reference frame")
-        plane.set_PositionX(x_positions[count])
-        plane.set_PositionY(y_positions[count])
-        plane.set_PositionZ(z_positions[count])
+    channel = model.Channel(
+        id="Channel:0",
+        # Energies are 0 for VLM
+        acquisition_mode=AcquisitionMode.OTHER if txrm.energies else AcquisitionMode.BRIGHT_FIELD,
+        illumination_type=IlluminationType.TRANSMITTED,
+        light_source_settings=light_source_settings,
+        detector_settings=detector_settings,
+    )
 
-    return ox
+    pixels=model.Pixels(
+        id="Pixels:0",
+        dimension_order="XYCZT",
+        size_x=shape[2],
+        size_y=shape[1],
+        size_c=1,
+        size_z=shape[0],
+        size_t=1,
+        type="uint16",
+        physical_size_x=pixel_size,
+        physical_size_x_unit=UnitsLength.NANOMETER,
+        physical_size_y=pixel_size,
+        physical_size_y_unit=UnitsLength.NANOMETER,
+        physical_size_z=1,
+        physical_size_z_unit=UnitsLength.REFERENCEFRAME,
+        tiff_data_blocks=tiffdata_list,
+        planes=plane_list,
+        channels=[channel]
+        )
+
+    image = model.Image(
+            id="Image:0",
+            acquisition_date=txrm.datetimes[0].isoformat(),
+            description='An OME-TIFF file, converted from an XRM type file by txrm2tiff',
+            pixels=pixels,
+            instrument_ref=model.InstrumentRef(id=txrm.instrument.id),
+            objective_settings=model.ObjectiveSettings(id=txrm.objective.id)
+            )
+
+    ome = model.OME(
+        creator=f"txrm2tiff {__version__}",
+        images=[image],
+        instruments=[txrm.instrument]
+        )
+
+    return ome

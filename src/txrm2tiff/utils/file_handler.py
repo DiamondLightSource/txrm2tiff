@@ -67,20 +67,9 @@ def manual_save(
     else:
         logging.info("No data type specified. Saving with default data type.")
     if metadata is not None:
-        meta_img = metadata.image()
-        pixels = meta_img.Pixels
-        pixels.set_PixelType(dtype_dict[image.dtype.name])
-        meta_img.set_Name(filepath.name)
-        resolution = [pixels.get_PhysicalSizeX(), pixels.get_PhysicalSizeY()]
-        if None not in resolution:  # Check that both have values
-            resolution = [1.e7 / (pixel_size)  for pixel_size in resolution]  # Pixels per resolution unit (converted from nm to cm)
-            resolution_unit = tf.TIFF.RESUNIT.CENTIMETER  # Must use CENTIMETER for maximum compatibility
-            if tf.__version__ >= "2022.7.28":
-                # 2022.7.28: Deprecate third resolution argument on write (use resolutionunit)
-                tiff_kwargs["resolutionunit"] = resolution_unit
-            else:
-                resolution.append(resolution_unit)
-            tiff_kwargs["resolution"] = tuple(resolution)
+        meta_img = metadata.images[0]
+        meta_img.pixels.type = dtype_dict[image.dtype.name]
+        meta_img.name = filepath.name
         metadata = metadata.to_xml().encode()
 
     num_frames = len(image)
@@ -100,7 +89,7 @@ def manual_save(
             description=metadata,
             metadata={"axes": "ZYX"},
             software=f"txrm2tiff {__version__}",
-            **tiff_kwargs
+            **tiff_kwargs,
         )
 
 

@@ -1,5 +1,6 @@
 import enum
 import numpy as np
+from types import DynamicClassAttribute
 
 
 class IntValueEnum(int, enum.Enum):
@@ -69,3 +70,56 @@ class AnnotationTypes(enum.Enum):
     ANN_POLYLINE = 13
     ANN_FREE_HAND_SKETCH = 14
     ANN_SIZE = 15
+
+class XrmCameraType(enum.Enum):
+    ANDOR = 0
+    PICOLO = 1
+    PIXIS = 2
+    RETIGA = 3
+    UEYE = 4
+    WEBCAM = 5
+    SIMCAM = 6
+    DEXELA = 7
+    PCO_EDGE = 8
+    COUNT_CAM_TYPE = 9
+
+class XrmObjectiveType(enum.Enum):
+    s1x = 0
+    s2x = 1
+    s4x = 2
+    s10x = 3
+    s20x = 4
+    s40x = 5
+    s0_4x = 6
+    sFlatsPanel = 7
+    sDCT = 8
+    sDCTs4x = 9
+
+    @DynamicClassAttribute
+    def name(self):
+        """The name of the Enum member."""
+        # s is a space
+        # _ is a dot
+        return self._name_.replace("s", " ").replace("_", ".").strip()
+
+class XrmSourceType(enum.Enum):
+    XRM_RIGAKU_SOURCE = 0
+    XRM_HAMAMATSU_100 = 1
+    XRM_HAMAMATSU_150 = 2
+    XRM_KEVEX_133 = 3
+    XRM_NO_SOURCE = 4  # Synchrotron
+    XRM_HAMAMATSU_90 = 5
+    XRM_HAMAMATSU_100_20W = 6
+    XRM_KEVEX_90KV_8W = 7
+    XRM_SOURCE_DAGE_MARKIII = 8
+    XRM_HAMAMATSU_150_30W = 9
+    XRM_XRAYSOURCE_SIMULATED_DO_NOT_USE = 10  # obsolete, set simulation flag in config instead
+    XRM_RIGAKU_SIMULATED_DO_NOT_USE = 11  # obsolete, use emulated XRM_RIGAKU_SOURCE
+    XRM_HAMAMATSU_150_V2 = 12
+    XRM_HAMAMATSU_150_30W_V2 = 13
+    XRM_ENERGETIQ_SOURCE = 14
+    XRM_VISUAL_LIGHT_SOURCE = 15
+    XRM_SOURCE_DAGE_MARKIV_LP = 16
+    XRM_SOURCE_DAGE_MARKIV_HP = 17
+    XRM_ARTESIAN = 18
+    XRM_RIGAKU_SOURCE_V2 = 19

@@ -6,12 +6,13 @@ from .abstract import AbstractTxrm
 from .ref_mixin import ReferenceMixin
 from .save_mixin import SaveMixin
 from .shifts_mixin import ShiftsMixin
+from .meta_mixin import MetaMixin
 from .txrm_property import txrm_property
 from ..txrm_functions.images import fallback_image_interpreter
 from ..utils.functions import convert_to_int
 
 
-class Txrm3(ShiftsMixin, SaveMixin, ReferenceMixin, AbstractTxrm):
+class Txrm3(ShiftsMixin, SaveMixin, ReferenceMixin, MetaMixin, AbstractTxrm):
     @txrm_property(fallback=None)
     def is_mosaic(self) -> bool:
         return self.image_info.get("MosiacMode", [0])[0] == 1

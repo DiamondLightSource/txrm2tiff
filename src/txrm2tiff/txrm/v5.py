@@ -7,12 +7,13 @@ from .ref_mixin import ReferenceMixin
 from .annot_mixin import AnnotatorMixin
 from .save_mixin import SaveMixin
 from .shifts_mixin import ShiftsMixin
+from .meta_mixin import MetaMixin
 from .txrm_property import txrm_property
 from ..txrm_functions.images import fallback_image_interpreter
 from ..utils.image_processing import stitch_images
 
 
-class Txrm5(ShiftsMixin, SaveMixin, ReferenceMixin, AnnotatorMixin, AbstractTxrm):
+class Txrm5(ShiftsMixin, SaveMixin, ReferenceMixin, AnnotatorMixin, MetaMixin, AbstractTxrm):
     @txrm_property(fallback=None)
     def is_mosaic(self) -> bool:
         return bool(np.sum(self.mosaic_dims))
