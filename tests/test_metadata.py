@@ -11,7 +11,7 @@ class TestMetadata(unittest.TestCase):
         dims = (45, 40, 1)
         mosaic_rows = 2
         mosaic_cols = 3
-        
+
         with patch.object(meta_mixin.model, "Instrument") as mocked_instrument:
             mocked_instrument.return_value = None
             txrm = meta_mixin.MetaMixin()
@@ -27,7 +27,7 @@ class TestMetadata(unittest.TestCase):
                 "YPosition": [10, 10, 10, 20, 20, 20],
                 "ZPosition": [1, 1, 1, 1, 1, 1],
             }
-            
+
             txrm.energies = [500.] * len(exposures)
             acquisition_time = datetime(2021, 12, 30, 23, 55, 59)
             txrm.datetimes = [acquisition_time]
@@ -35,7 +35,7 @@ class TestMetadata(unittest.TestCase):
             txrm.is_mosaic = False
 
             pixel_size_nm = txrm.image_info["PixelSize"][0] * 1.e3
-            
+
             ome_metadata = txrm.metadata
             self.assertEqual(ome_metadata.instruments, [])
             self.assertIsNone(ome_metadata.images[0].instrument_ref)
@@ -48,7 +48,7 @@ class TestMetadata(unittest.TestCase):
             self.assertEqual(
                 ome_metadata.images[0].acquisition_date, acquisition_time
             )
-            
+
 
     def test_mosaic_exposure_averaged(self):
         filename = "test_file.ext"
@@ -58,6 +58,7 @@ class TestMetadata(unittest.TestCase):
 
         with patch.object(meta_mixin.model, "Instrument") as mocked_instrument:
             txrm = meta_mixin.MetaMixin()
+            txrm.name = filename
             txrm.strict = False
             txrm.file_is_open = False
 
@@ -104,6 +105,7 @@ class TestMetadata(unittest.TestCase):
 
         with patch.object(meta_mixin.model, "Instrument") as mocked_instrument:
             txrm = meta_mixin.MetaMixin()
+            txrm.name = filename
             txrm.strict = False
             txrm.file_is_open = False
 
@@ -134,6 +136,8 @@ class TestMetadata(unittest.TestCase):
             txrm.mosaic_dims = [mosaic_cols, mosaic_rows]
             txrm.is_mosaic = True
             txrm.energies = [500.] * len(exposures)
+
+            txrm.ome_instrument = mocked_instrument
 
             ome_metadata = txrm.metadata
             plane = ome_metadata.images[0].pixels.planes[0]
