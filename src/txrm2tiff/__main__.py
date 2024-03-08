@@ -7,7 +7,7 @@ if os.name == "nt":
     sys.stdout.reconfigure(encoding="utf-8")
 
 from .info import __version__
-from .utils.metadata import __dtype_dict
+from .utils.metadata import CLI_DTYPES
 
 parser = argparse.ArgumentParser(
     prog="txrm2tiff",
@@ -61,7 +61,7 @@ convert_group.add_argument(
     dest="data_type",
     default=None,
     action="store",
-    choices=__dtype_dict.keys(),
+    choices=CLI_DTYPES,
     help="specify output data type (default: decides data type from input)",
 )
 convert_group.add_argument(

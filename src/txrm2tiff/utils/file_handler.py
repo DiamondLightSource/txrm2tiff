@@ -2,21 +2,21 @@ from __future__ import annotations
 import logging
 import tifffile as tf
 import numpy as np
-from numpy.typing import DTypeLike
-from os import access, R_OK, PathLike
+from os import access, R_OK
 from pathlib import Path
 from typing import Optional, Union, List
 from olefile import OleFileIO, isOleFile
 
-from .metadata import dtype_dict
-from .image_processing import cast_to_dtype
 from ..txrm_functions import read_stream
 from ..xradia_properties import XrmDataTypes as XDT
-from ..utils.metadata import handle_tiff_resolution
+from .metadata import handle_tiff_resolution, get_ome_pixel_type
 from ..info import __version__
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from ome_types import OME
+    from numpy.typing import DTypeLike
+    from os import PathLike
 
 
 def file_can_be_opened(path: Union[str, PathLike]) -> bool:
@@ -60,19 +60,14 @@ def ole_file_works(path: Union[str, PathLike]) -> bool:
 def manual_save(
     filepath: Union[str, PathLike],
     image: Union[np.ndarray, List[np.ndarray]],
-    data_type: Optional[DTypeLike] = None,
     metadata: Optional[OME] = None,
 ):
     filepath = Path(filepath)
     image = np.asarray(image)
     tiff_kwargs = {}
-    if data_type is not None:
-        image = cast_to_dtype(image, data_type)
-    else:
-        logging.info("No data type specified. Saving with default data type.")
     if metadata is not None:
         meta_img = metadata.images[0]
-        meta_img.pixels.type = dtype_dict[image.dtype.name]
+        meta_img.pixels.type = get_ome_pixel_type(image.dtype)
         meta_img.name = filepath.name
         resolution_unit = (
             tf.RESUNIT.CENTIMETER

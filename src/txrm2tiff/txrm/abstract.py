@@ -14,6 +14,7 @@ from pathlib import Path
 from ..xradia_properties.enums import XrmDataTypes
 from ..xradia_properties.stream_dtypes import streams_dict
 from ..utils.metadata import get_ome_pixel_type
+from ..utils.image_processing import cast_to_dtype
 from .. import txrm_functions
 from .txrm_property import txrm_property
 
@@ -505,7 +506,9 @@ class AbstractTxrm(ABC):
     ) -> typing.Optional[np.ndarray]:
         raise NotImplementedError
 
-    def set_dtype(self, dtype, ensure_ome_compatability: bool = True):
+    def set_dtype(
+        self, dtype, ensure_ome_compatability: bool = True, allow_clipping: bool = False
+    ):
         if self._images is None:
             logging.error("Images must be loaded before a datatype can be set.")
             return False
@@ -515,12 +518,14 @@ class AbstractTxrm(ABC):
                 get_ome_pixel_type(dtype)
             except TypeError:
                 logging.error(
-                    "Cannot cast to unsupported dtype '%s'. Images will remain %s",
+                    "Casting images to '%s' failed. Images will remain '%s'.",
                     dtype,
                     self._images[0].dtype,
+                    exc_info=True,
                 )
                 return False
-        self._images = self._images.astype(dtype)
+
+        self._images = cast_to_dtype(self._images, dtype, allow_clipping=allow_clipping)
         return True
 
     @property

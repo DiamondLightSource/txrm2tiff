@@ -83,6 +83,6 @@ class Txrm5(
             return np.flip(images, axis=1)
         return images
 
-    def set_dtype(self, dtype):
-        if super().set_dtype(dtype):
+    def set_dtype(self, dtype, allow_clipping: bool = False):
+        if super().set_dtype(dtype, allow_clipping=allow_clipping):
             self._ome_pixels.type = get_ome_pixel_type(dtype)

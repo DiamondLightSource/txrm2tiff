@@ -69,22 +69,6 @@ class TestFileHandler(unittest.TestCase):
             manual_save(im_path, image)
             self.assertTrue(im_path.exists())
 
-    def test_manual_save_with_datatype(self):
-        target_dtype = np.uint16
-        with TemporaryDirectory(
-            prefix="saving_test_", dir=Path(__name__).parent
-        ) as tmpdir:
-            im_path = Path(tmpdir) / "saved.tiff"
-            image = np.ones((5, 30, 35), dtype=np.float64)
-            self.assertFalse(im_path.exists())
-            manual_save(im_path, image, data_type=target_dtype)
-            self.assertTrue(im_path.exists())
-            with tf.TiffFile(im_path) as tiff:
-                saved_arr = tiff.asarray()
-
-        self.assertEqual(saved_arr.dtype, target_dtype)
-        assert_array_equal(saved_arr, image)
-
     def test_manual_save_with_metadata(self):
         target_dtype = np.uint16
 
@@ -104,15 +88,15 @@ class TestFileHandler(unittest.TestCase):
                             size_x=1,
                             size_y=1,
                             size_z=1,
-                            type=PixelType.FLOAT,
+                            type=PixelType.UINT16,
                             tiff_data_blocks=[model.TiffData()],
                         ),
                     ),
                 ]
             )
-            image = np.ones((5, 30, 35), dtype=np.float64)
+            image = np.ones((5, 30, 35), dtype=np.uint16)
             self.assertFalse(im_path.exists())
-            manual_save(im_path, image, data_type=np.uint16, metadata=metadata)
+            manual_save(im_path, image, metadata=metadata)
             self.assertTrue(im_path.exists())
             with tf.TiffFile(im_path) as tiff:
                 saved_arr = tiff.asarray()

@@ -6,6 +6,9 @@ from numpy.typing import DTypeLike, NDArray
 from .functions import convert_to_int
 
 
+class RangeClipError(ValueError): ...
+
+
 def dynamic_despeckle_and_average_series(
     images: np.ndarray, average: bool = True
 ) -> np.ndarray:
@@ -93,7 +96,9 @@ def rescale_image(
     )
 
 
-def cast_to_dtype(image: np.ndarray, data_type: DTypeLike) -> np.ndarray:
+def cast_to_dtype(
+    image: np.ndarray, data_type: DTypeLike, allow_clipping: bool = True
+) -> np.ndarray:
     try:
         dtype = np.dtype(data_type)
         if dtype is image.dtype:
@@ -109,8 +114,12 @@ def cast_to_dtype(image: np.ndarray, data_type: DTypeLike) -> np.ndarray:
             img_min, img_max = image.min(), image.max()
             dtype_min, dtype_max = dtype_info.min, dtype_info.max
             if dtype_min > img_min:
+                if not allow_clipping:
+                    RangeClipError(
+                        f"Image minimum {img_min} is below {dtype} minimum of {dtype_min}"
+                    )
                 logging.warning(
-                    "Image min %f below %s minimum of %i, values below this will be cut off",
+                    "Image min %s below %s minimum of %s, values below this will be cut off",
                     img_min,
                     dtype,
                     dtype_min,
@@ -118,12 +127,17 @@ def cast_to_dtype(image: np.ndarray, data_type: DTypeLike) -> np.ndarray:
             else:
                 dtype_min = None
             if dtype_max < img_max:
+                if not allow_clipping:
+                    RangeClipError(
+                        f"Image maximum {img_max} is above {dtype} maximum of {dtype_max}"
+                    )
                 logging.warning(
-                    "Image max %f above %s maximum of %i, values above this will be cut off",
+                    "Image max %s above %s maximum of %s, values above this will be cut off",
                     img_max,
                     dtype,
                     dtype_max,
                 )
+
             else:
                 dtype_max = None
 
@@ -137,13 +151,6 @@ def cast_to_dtype(image: np.ndarray, data_type: DTypeLike) -> np.ndarray:
 
             image = image.astype(dtype, copy=False)
             logging.info("Image has been cast to %s", data_type)
-    except TypeError:
-        logging.warning(
-            "Invalid data type given: %s aka %s. Image will remain as %s.",
-            data_type,
-            dtype,
-            image.dtype,
-        )
     except Exception:
         logging.error(
             "An error occurred casting image from %s to %s", image.dtype, data_type

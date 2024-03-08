@@ -2,7 +2,7 @@ import unittest
 from parameterized import parameterized
 
 import numpy as np
-from ome_types.model.simple_types import UnitsLength
+from ome_types.model.simple_types import UnitsLength, PixelType
 from txrm2tiff.utils import metadata
 
 
@@ -33,3 +33,7 @@ class TestMetadataFunctions(unittest.TestCase):
         self.assertAlmostEqual(
             metadata.convert_to_unit(value, current_unit, new_unit), expected_value
         )
+
+    def test_CLI_dtypes_are_supported(self):
+        for dtype in metadata.CLI_DTYPES:
+            self.assertIsInstance(metadata.get_ome_pixel_type(dtype), PixelType)

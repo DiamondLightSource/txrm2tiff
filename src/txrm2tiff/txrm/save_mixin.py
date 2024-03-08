@@ -2,7 +2,6 @@ import logging
 
 from pathlib import Path
 from typing import Optional
-import numpy as np
 from numpy.typing import DTypeLike
 
 from ..utils.file_handler import manual_save
