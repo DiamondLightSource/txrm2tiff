@@ -448,12 +448,10 @@ class MetaMixin:
 
     def _add_energy_subelement(self, element, energies):
         sub_el = ElementTree.SubElement(
-            element, "ModuloAlongZ", Type="other", Unit="eV"
+            element, "ModuloAlongZ", Type="other", TypeDescription="energy", Unit="eV"
         )
         for eng in energies:
-            label_sub_el = ElementTree.SubElement(
-                sub_el, "Label", TypeDescription="energy"
-            )
+            label_sub_el = ElementTree.SubElement(sub_el, "Label")
             label_sub_el.text = str(eng)
 
     def _add_angle_subelement(self, element, angles):
