@@ -70,7 +70,7 @@ def manual_save(
         meta_img = metadata.images[0]
         meta_img.pixels.type = dtype_dict[image.dtype.name]
         meta_img.name = filepath.name
-        metadata = metadata.to_xml().encode()
+        metadata = metadata.to_xml()
 
     num_frames = len(image)
     bigtiff = (
