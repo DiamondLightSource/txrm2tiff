@@ -5,6 +5,7 @@ import numpy as np
 from ome_types import model
 from ome_types.model.simple_types import UnitsLength, UnitsFrequency, UnitsTime, Binning
 from ome_types.model.channel import AcquisitionMode, IlluminationType
+from ome_types.model.map import M
 
 from ..info import __version__
 from .txrm_property import txrm_property
@@ -182,15 +183,22 @@ class MetaMixin:
         )
         id_ = f"LightSource:{index}"
         name = self.read_stream(f"{stream_stem}/SourceName", XrmDataTypes.XRM_STRING)[0]
+        kwargs = {}
         if source_type == XrmSourceType.XRM_VISUAL_LIGHT_SOURCE:
             source = model.LightEmittingDiode
         else:
             source = model.GenericExcitationSource
+            self.read_stream(f"{stream_stem}/SourceName", XrmDataTypes.XRM_STRING)[0]
 
-        return source(
-            id=id_,
-            model=name,
-        )
+            m = []
+            current, current_units = self.position_info.get("Current")
+            if current and current_units:
+                m.append(M(k="Current", value=str(current)))
+                m.append(M(k="CurrentUnits", value=str(current_units)))
+            if m:
+                kwargs["map"] = model.Map(k="BeamProperties", m=m)
+
+        return source(id=id_, model=name, **kwargs)
 
     @txrm_property(fallback=None)
     def _ome_light_source(self):
