@@ -6,7 +6,7 @@ from os import access, R_OK, PathLike
 from pathlib import Path
 from typing import Optional, Union, List
 from olefile import OleFileIO, isOleFile
-from oxdls import OMEXML
+from ome_types import OME
 
 from .metadata import dtype_dict
 from .image_processing import cast_to_dtype
@@ -57,7 +57,7 @@ def manual_save(
     filepath: Union[str, PathLike],
     image: Union[np.ndarray, List[np.ndarray]],
     data_type: Optional[DTypeLike] = None,
-    metadata: Optional[OMEXML] = None,
+    metadata: Optional[OME] = None,
 ):
     filepath = Path(filepath)
     image = np.asarray(image)
