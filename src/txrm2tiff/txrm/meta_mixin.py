@@ -401,13 +401,13 @@ class MetaMixin:
 
         return model.Pixels(
             id="Pixels:0",
-            dimension_order="XYCZT",
+            dimension_order=model.Pixels_DimensionOrder.XYCZT,
             size_x=shape[2],
             size_y=shape[1],
             size_c=1,
             size_z=shape[0],
             size_t=1,
-            type="uint16",
+            type=model.PixelType.UINT16,
             physical_size_x=pixel_size,
             physical_size_x_unit=UnitsLength.NANOMETER,
             physical_size_y=pixel_size,
