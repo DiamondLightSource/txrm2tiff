@@ -406,7 +406,7 @@ class MetaMixin:
         return model.Image(
             id="Image:0",
             acquisition_date=self.datetimes[0],
-            description="An OME-TIFF file, converted by txrm2tiff",
+            description="An OME-TIFF file converted from XRM/TXRM",
             pixels=self._ome_pixels,
             instrument_ref=self._ome_instrument_ref,
             objective_settings=self._ome_objective_settings,
