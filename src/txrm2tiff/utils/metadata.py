@@ -124,6 +124,6 @@ def handle_tiff_resolution(metadata: OME, resolution_unit: int) -> list[float, f
     except KeyError:
         raise ValueError(f"Unit {resolution_unit} is not a supported TIFF unit")
     return [
-        convert_to_unit(size_info[0], size_info[1], new_unit)
+        1.0 / convert_to_unit(size_info[0], size_info[1], new_unit)
         for size_info in (x_size_info, y_size_info)
     ]
