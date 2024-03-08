@@ -117,11 +117,13 @@ class TestFileHandler(unittest.TestCase):
             im_path = Path(tmpdir) / "saved.tiff"
             image = np.ones((5, 30, 35), dtype=np.float64)
             pixel_size_xy = (1, 2)  # nm
-            image = model.Image(
+            meta_image = model.Image(
                 pixels=model.Pixels(
-                    size_x=image[2],
-                    size_y=image[1],
-                    size_z=image[0],
+                    type=PixelType.UINT16,
+                    dimension_order=model.Pixels_DimensionOrder.XYCTZ,
+                    size_x=image.shape[2],
+                    size_y=image.shape[1],
+                    size_z=image.shape[0],
                     size_c=1,
                     size_t=1,
                     physical_size_x=pixel_size_xy[0],
@@ -132,9 +134,9 @@ class TestFileHandler(unittest.TestCase):
                     physical_size_z_unit=UnitsLength.REFERENCEFRAME,
                 )
             )
-            metadata = model.OME(images=[image])
+            metadata = model.OME(images=[meta_image])
             self.assertFalse(im_path.exists())
-            manual_save(im_path, image, data_type=np.uint16, metadata=metadata)
+            manual_save(im_path, image, metadata=metadata)
             self.assertTrue(im_path.exists())
             with tf.TiffFile(im_path) as tiff:
                 saved_arr = tiff.asarray()
@@ -145,7 +147,7 @@ class TestFileHandler(unittest.TestCase):
         assert_array_equal(saved_arr, image)
         self.assertEqual(x_resolution, (int(1.0e7), 1))
         self.assertEqual(y_resolution, (int(5.0e6), 1))
-        self.assertEqual(resolution_unit, int(tf.TIFF.RESUNIT.CENTIMETER))
+        self.assertEqual(resolution_unit, int(tf.RESUNIT.CENTIMETER))
 
     def test_manual_annotation_save(self):
         with TemporaryDirectory(
