@@ -3,9 +3,15 @@ from collections import OrderedDict
 from scipy import constants
 import numpy as np
 from ome_types import model
-from ome_types.model.simple_types import UnitsLength, UnitsFrequency, UnitsTime, Binning
+from ome_types.model.simple_types import (
+    UnitsLength,
+    UnitsFrequency,
+    UnitsTime,
+    Binning,
+)
 from ome_types.model.channel import AcquisitionMode, IlluminationType
 from ome_types.model.map import M
+from ome_types.model.xml_annotation import Element, ElementTree
 
 from ..info import __version__
 from .txrm_property import txrm_property
@@ -252,7 +258,7 @@ class MetaMixin:
             if self.energies
             else AcquisitionMode.BRIGHT_FIELD,
             illumination_type=IlluminationType.TRANSMITTED,
-            light_source_settings=self._ome_light_source_settings,
+            # light_source_settings=self._ome_light_source_settings,
             detector_settings=self._ome_detector_settings,
             samples_per_pixel=1,
         )
@@ -412,3 +418,40 @@ class MetaMixin:
             images=[self._ome_image],
             instruments=instruments,
         )
+
+    @txrm_property(fallback=None)
+    def _ome_modulo(self):
+
+        el = Element(
+            tag='Modulo namespace="http://www.openmicroscopy.org/Schemas/Additions/2011-09"'
+        )
+
+        angles = self.image_info.get("Angles", [])
+        if angles and np.sum(angles):
+            self._add_angle_subelement(el, angles)
+        if self.energies and np.sum(self.energies):
+            self._add_energy_subelement(el, self.energies)
+        if not el.getchildren:
+            # If no modulos were added, don't add the annotation
+            return None
+        return model.StructuredAnnotations(
+            xml_annotations=model.XMLAnnotation(
+                id="Annotation:0",
+                value=el,
+                namespace="openmicroscopy.org/omero/dimension/modulo",
+            )
+        )
+
+    def _add_energy_subelement(self, element, energies):
+        sub_el = ElementTree.SubElement(
+            element, tag=f'ModuloAlongZ Type="other" Unit="eV"'
+        )
+        for eng in energies:
+            ElementTree.SubElement(sub_el, tag="Label", text=str(eng))
+
+    def _add_angle_subelement(self, element, angles):
+        sub_el = ElementTree.SubElement(
+            element, tag=f'ModuloAlongZ Type="angle" Unit="degree"'
+        )
+        for ang in angles:
+            ElementTree.SubElement(sub_el, tag="Label", text=str(ang))
