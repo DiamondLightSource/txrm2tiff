@@ -115,6 +115,7 @@ class MetaMixin:
     @txrm_property(fallback=None)
     def _ome_instrument_ref(self):
         if self._ome_instrument is None:
+            logging.info("No instrument to reference")
             return None
         return model.InstrumentRef(id=self._ome_instrument.id)
 
@@ -128,6 +129,7 @@ class MetaMixin:
     @txrm_property(fallback=None)
     def _ome_objective_ref(self):
         if self._ome_objective is None:
+            logging.info("No objective to reference")
             return None
         return model.InstrumentRef(id=self._ome_objective.id)
 
@@ -173,6 +175,7 @@ class MetaMixin:
     @txrm_property(fallback=None)
     def _ome_light_source_settings(self):
         if self._ome_light_source is None:
+            logging.info("No light source to reference")
             return None
         
         mean_energy = np.mean(self.energies)
