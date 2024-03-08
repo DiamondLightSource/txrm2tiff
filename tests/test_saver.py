@@ -67,6 +67,7 @@ class TestSaver(unittest.TestCase):
 
         image = "image"
         metadata = "metadata"
+        SaveMixin.strict = True
         saver = SaveMixin()
         saver.set_dtype = MagicMock()
         saver.metadata = metadata
