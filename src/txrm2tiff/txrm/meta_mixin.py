@@ -115,13 +115,6 @@ class MetaMixin:
         stream_stem = f"ConfigureBackup/ConfigCamera/Camera {index + 1}"
         name_stream = f"{stream_stem}/ConfigObjectives/ObjectiveName"
         objective_names = self.read_stream(name_stream, XrmDataTypes.XRM_STRING)
-        objective_ids = [
-            XrmObjectiveType(id_).name.replace(" ", "_")
-            for id_ in self.read_stream(
-                f"{stream_stem}/ConfigObjectives/ObjectiveID",
-                XrmDataTypes.XRM_UNSIGNED_INT,
-            )
-        ]
         magnifications = self.read_stream(
             f"{stream_stem}/ConfigObjectives/OpticalMagnification",
             XrmDataTypes.XRM_FLOAT,
@@ -131,7 +124,7 @@ class MetaMixin:
                 id=f"Objective:{id_}", nominal_magnification=magnification, model=name
             )
             for id_, name, magnification in zip(
-                objective_ids, objective_names, magnifications
+                range(len(objective_names)), objective_names, magnifications
             )
         ]
 
