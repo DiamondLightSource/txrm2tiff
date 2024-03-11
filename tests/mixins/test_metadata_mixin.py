@@ -12,8 +12,7 @@ class TestMetadataMixin(unittest.TestCase):
         mosaic_rows = 2
         mosaic_cols = 3
 
-        with patch.object(meta_mixin.model, "Instrument") as mocked_instrument:
-            mocked_instrument.return_value = None
+        with patch.object(meta_mixin.MetaMixin, "_ome_instrument", None):
             txrm = meta_mixin.MetaMixin()
             txrm.strict = False
             txrm.file_is_open = False
@@ -26,6 +25,7 @@ class TestMetadataMixin(unittest.TestCase):
                 "XPosition": [7.5, 22.5, 37.5] * 2,
                 "YPosition": [10, 10, 10, 20, 20, 20],
                 "ZPosition": [1, 1, 1, 1, 1, 1],
+                "Binning": [],
             }
 
             txrm.energies = [500.0] * len(exposures)
@@ -57,7 +57,7 @@ class TestMetadataMixin(unittest.TestCase):
         mosaic_rows = 2
         mosaic_cols = 3
 
-        with patch.object(meta_mixin.model, "Instrument") as mocked_instrument:
+        with patch.object(meta_mixin.MetaMixin, "_ome_instrument", None):
             txrm = meta_mixin.MetaMixin()
             txrm.name = filename
             txrm.strict = False
@@ -105,7 +105,7 @@ class TestMetadataMixin(unittest.TestCase):
             (20.0 + offset[1]) * pixel_size * 1.0e3,
         )
 
-        with patch.object(meta_mixin.model, "Instrument") as mocked_instrument:
+        with patch.object(meta_mixin.MetaMixin, "_ome_instrument", None):
             txrm = meta_mixin.MetaMixin()
             txrm.name = filename
             txrm.strict = False
@@ -139,8 +139,6 @@ class TestMetadataMixin(unittest.TestCase):
             txrm.is_mosaic = True
             txrm.energies = [500.0] * len(exposures)
 
-            txrm.ome_instrument = mocked_instrument
-
             ome_metadata = txrm.metadata
             plane = ome_metadata.images[0].pixels.planes[0]
             ome_centre = (float(plane.position_x), float(plane.position_y))
@@ -148,3 +146,5 @@ class TestMetadataMixin(unittest.TestCase):
                 self.assertAlmostEqual(ome, expected)
                 for ome, expected in zip(ome_centre, expected_centre)
             ]
+
+    # TODO: Test whether the OME parsing works as intended

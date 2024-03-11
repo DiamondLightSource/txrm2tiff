@@ -66,12 +66,11 @@ class MetaMixin:
         )[0]
 
     @txrm_property(fallback=None)
-    def _ome_detector(self) -> model.Detector:
-        camera_id = self.read_stream(
-            "ImageInfo/CameraNo", XrmDataTypes.XRM_UNSIGNED_INT
-        )[
-            0
-        ]  # Stream counts from 1
+    def _ome_detector(self) -> model.Detector | None:
+        camera_id = self.image_info.get("CameraNo", [None])[0]
+        if camera_id is None:
+            logging.info("Failed to get detector information")
+            return None
         return self._ome_configured_detectors[camera_id]
 
     @txrm_property(fallback=None)
@@ -153,7 +152,7 @@ class MetaMixin:
             light_source_group=self._ome_configured_light_sources,
         )
 
-    @txrm_property(fallback=None)
+    @property  # Just property as this doesn't rely on file, just _ome_instrument
     def _ome_instrument_ref(self) -> model.InstrumentRef:
         if self._ome_instrument is None:
             logging.info("No instrument to reference")
@@ -161,14 +160,14 @@ class MetaMixin:
         return model.InstrumentRef(id=self._ome_instrument.id)
 
     @txrm_property(fallback=None)
-    def _ome_objective(self) -> model.Objective:
-        camera_id = self.read_stream(
-            "ImageInfo/CameraNo", XrmDataTypes.XRM_UNSIGNED_INT
-        )[0]
-        obj_name = self.read_stream("ImageInfo/ObjectiveName", XrmDataTypes.XRM_STRING)[
-            0
-        ]
-        zp_name = self.read_stream("ImageInfo/ZonePlateName", XrmDataTypes.XRM_STRING)
+    def _ome_objective(self) -> model.Objective | None:
+        camera_id = self.image_info.get("CameraNo", [None])[0]
+        obj_name = self.image_info.get("ObjectiveName", [None])[0]
+        if camera_id is None or obj_name is None:
+            logging.info("Failed to get camera objective information")
+            return None
+
+        zp_name = self.image_info.get("ZonePlateName", [None])[0]
         if zp_name:
             obj_name = f"{obj_name}_{zp_name}"
         objective = self._get_objectives[camera_id][obj_name]
@@ -245,27 +244,22 @@ class MetaMixin:
         return model.LightSourceSettings(id=self._ome_light_source.id, **kwargs)
 
     @txrm_property(fallback=None)
-    def _ome_detector_settings(self) -> model.DetectorSettings:
+    def _ome_detector_settings(self) -> model.DetectorSettings | None:
+        if self._ome_detector is None:
+            return None
         kwargs = {}
-        if self.has_stream("ImageInfo/CameraBinning"):
-            binning_str = "{0}x{0}".format(
-                self.read_stream("ImageInfo/CameraBinning")[0]
-            )
+        binning = self.image_info.get("CameraBinning", [None])[0]
+        if binning is not None:
+            binning_str = "{0}x{0}".format(binning)
             kwargs["binning"] = (
                 Binning(binning_str) if binning_str in Binning else Binning.OTHER
             )
         return model.DetectorSettings(
             id=self._ome_detector.id,
-            integration=self.read_stream(
-                "ImageInfo/FramesPerImage", XrmDataTypes.XRM_UNSIGNED_INT, strict=False
-            )[0],
-            read_out_rate=self.read_stream(
-                "ImageInfo/ReadoutFreq", XrmDataTypes.XRM_FLOAT, strict=False
-            )[0],
+            integration=self.image_info.get("CameraNumberOfFramesPerImage", [None])[0],
+            read_out_rate=self.image_info.get("ReadoutFreq", [None])[0],
             read_out_rate_unit=UnitsFrequency.HERTZ,
-            zoom=self.read_stream(
-                "ImageInfo/OpticalMagnification", XrmDataTypes.XRM_FLOAT, strict=False
-            )[0],
+            zoom=self.image_info.get("OpticalMagnification", [None])[0],
             **kwargs,
         )
 
@@ -458,12 +452,14 @@ class MetaMixin:
             self._add_angle_subelement(el, angles)
         if self.energies and np.sum(self.energies):
             self._add_energy_subelement(el, self.energies)
-        if not el.getchildren:
+        if not el.keys():
             # If no modulos were added, don't add the annotation
             return None
+        # TODO: Find a better way than this that works:
+        value = model.XMLAnnotation.Value.from_xml(xml=ElementTree.tostring(el))
         return model.XMLAnnotation(
             id="Annotation:0",
-            value=el,
+            value=value,
             namespace="openmicroscopy.org/omero/dimension/modulo",
         )
 
