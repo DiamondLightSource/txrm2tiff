@@ -1,13 +1,15 @@
+from __future__ import annotations
 import logging
 import re
-import typing
-import numbers
 import numpy as np
 import olefile as of
-import numpy.typing as npt
-from itertools import takewhile
+from typing import TYPE_CHECKING
 
 from .. import xradia_properties as xp
+
+if TYPE_CHECKING:
+    from typing import Any
+    from numpy.typing import DTypeLike, NDArray
 
 hex_pattern = re.compile(r"[^\x20-\x7e]+")
 
@@ -15,9 +17,9 @@ hex_pattern = re.compile(r"[^\x20-\x7e]+")
 def read_stream(
     ole: of.OleFileIO,
     key: str,
-    dtype: typing.Optional[typing.Union[xp.XrmDataTypes, npt.DTypeLike, None]] = None,
+    dtype: xp.XrmDataTypes | DTypeLike | None = None,
     strict: bool = False,
-) -> typing.List[typing.Any]:
+) -> list[str | float | int]:
     """Reads and returns list containing stream specified by key, decoded as dtype"""
     try:
         if dtype is None:
@@ -42,20 +44,20 @@ def read_stream(
         return []
 
 
-def get_stream_from_bytes(stream_bytes: bytes, dtype: npt.DTypeLike) -> np.ndarray:
+def get_stream_from_bytes(stream_bytes: bytes, dtype: DTypeLike) -> NDArray[Any]:
     """Converts olefile bytes to np.ndarray of values of type dtype."""
     return np.frombuffer(stream_bytes, dtype)
 
 
 def _read_number_stream_to_list(
-    ole: of.OleFileIO, key: str, dtype: typing.Union[npt.DTypeLike, None]
-) -> typing.List[typing.Union[numbers.Number, bytes]]:
+    ole: of.OleFileIO, key: str, dtype: DTypeLike | None
+) -> list[int | float | bytes]:
     """Reads olefile stream and returns to list of values of type dtype."""
     stream_bytes = ole.openstream(key).getvalue()
     return get_stream_from_bytes(stream_bytes, dtype).tolist()
 
 
-def _read_text_stream_to_list(ole: of.OleFileIO, key: str) -> typing.List[str]:
+def _read_text_stream_to_list(ole: of.OleFileIO, key: str) -> list[str]:
     """
     Returns list of strings.
 
@@ -64,16 +66,15 @@ def _read_text_stream_to_list(ole: of.OleFileIO, key: str) -> typing.List[str]:
 
     Splitting by hex keeps real spaces while splitting entries (such as with Date).
     """
-    if ole.exists(key):
-        byte_str = ole.openstream(key).read()
-        return [
-            s for s in hex_pattern.split(byte_str.decode("ascii", errors="ignore")) if s
-        ]
+    byte_str = ole.openstream(key).read()
+    return [
+        s for s in hex_pattern.split(byte_str.decode("ascii", errors="ignore")) if s
+    ]
 
 
 def get_image_info_dict(
     ole: of.OleFileIO, ref: bool = False, strict: bool = False
-) -> typing.Dict[str, typing.List[typing.Any]]:
+) -> dict[str, list[str | float | int]]:
     """
     Reads a selection of useful ImageInfo streams from an XRM/TXRM file.
 
@@ -104,7 +105,7 @@ def get_image_info_dict(
 
 def get_position_dict(
     ole: of.OleFileIO,
-) -> typing.Dict[str, typing.Tuple[typing.Union[typing.List, str]]]:
+) -> dict[str, tuple[list[float], str]]:
     """
     Gets dictionary of motor positions.
 
@@ -130,7 +131,7 @@ def get_position_dict(
     return positions_dict
 
 
-def get_file_version(ole: of.OleFileIO, strict: bool = False) -> typing.Optional[float]:
+def get_file_version(ole: of.OleFileIO, strict: bool = False) -> float | None:
     v = read_stream(ole, "Version", xp.XrmDataTypes.XRM_FLOAT, strict=strict)
     if v:
         return v[0]
