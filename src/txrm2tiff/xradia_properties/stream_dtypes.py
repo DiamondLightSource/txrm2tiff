@@ -6,6 +6,8 @@ image_info_dict = {
     "ImageInfo/CameraBinning": XrmDataTypes.XRM_INT,
     "ImageInfo/CameraName": XrmDataTypes.XRM_STRING,
     "ImageInfo/CameraNumberOfFramesPerImage": XrmDataTypes.XRM_INT,
+    "ImageInfo/FramesPerImage": XrmDataTypes.XRM_INT,
+    "ImageInfo/CameraNo": XrmDataTypes.XRM_UNSIGNED_INT,
     "ImageInfo/CameraTemperature": XrmDataTypes.XRM_FLOAT,
     "ImageInfo/CamPixelSize": XrmDataTypes.XRM_FLOAT,
     "ImageInfo/Current": XrmDataTypes.XRM_FLOAT,
@@ -29,6 +31,7 @@ image_info_dict = {
     "ImageInfo/ObjectiveName": XrmDataTypes.XRM_STRING,
     "ImageInfo/OpticalMagnification": XrmDataTypes.XRM_FLOAT,
     "ImageInfo/PixelSize": XrmDataTypes.XRM_FLOAT,
+    "ImageInfo/ReadoutFreq": XrmDataTypes.XRM_FLOAT,
     "ImageInfo/Temperature": XrmDataTypes.XRM_INT,
     "ImageInfo/XPosition": XrmDataTypes.XRM_FLOAT,
     "ImageInfo/XrayCurrent": XrmDataTypes.XRM_FLOAT,
@@ -38,9 +41,7 @@ image_info_dict = {
     "ImageInfo/ZonePlateName": XrmDataTypes.XRM_STRING,
 }
 
-reference_data_dict = {
-    "ReferenceData/ExpTime": XrmDataTypes.XRM_FLOAT
-    }
+reference_data_dict = {"ReferenceData/ExpTime": XrmDataTypes.XRM_FLOAT}
 
 ref_image_info_dict = {f"ReferenceData/{k}": v for k, v in image_info_dict.items()}
 
@@ -66,8 +67,8 @@ alignment_dict = {
     "Alignment/ReferenceShiftsApplied": XrmDataTypes.XRM_INT,
     "Alignment/StageShiftsApplied": XrmDataTypes.XRM_INT,
     "Alignment/StaticRunoutApplied": XrmDataTypes.XRM_INT,
-    "Alignment/X-Shifts": XrmDataTypes.XRM_FLOAT, # Pixels
-    "Alignment/Y-Shifts": XrmDataTypes.XRM_FLOAT, # Pixels
+    "Alignment/X-Shifts": XrmDataTypes.XRM_FLOAT,  # Pixels
+    "Alignment/Y-Shifts": XrmDataTypes.XRM_FLOAT,  # Pixels
 }
 
 misc = {"exeVersion": XrmDataTypes.XRM_STRING}
