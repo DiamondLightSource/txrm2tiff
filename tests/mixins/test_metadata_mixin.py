@@ -1,8 +1,15 @@
-from datetime import datetime
 import unittest
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, patch, call
+from parameterized import parameterized
 
+from datetime import datetime
+
+from ome_types import model
 from txrm2tiff.txrm import meta_mixin
+from txrm2tiff.xradia_properties.enums import (
+    XrmDataTypes,
+    XrmSourceType,
+)
 
 
 class TestMetadataMixin(unittest.TestCase):
@@ -146,5 +153,219 @@ class TestMetadataMixin(unittest.TestCase):
                 self.assertAlmostEqual(ome, expected)
                 for ome, expected in zip(ome_centre, expected_centre)
             ]
+
+    def test_ome_configured_camera_count(self):
+        camera_count = 5
+        txrm = meta_mixin.MetaMixin()
+        txrm.read_stream = MagicMock(return_value=[camera_count])
+        self.assertEqual(txrm._ome_configured_camera_count, camera_count)
+        txrm.read_stream.assert_called_once_with(
+            "ConfigureBackup/ConfigCamera/NumberOfCamera",
+            XrmDataTypes.XRM_UNSIGNED_INT,
+        )
+
+    def test_ome_configured_detectors(self):
+        camera_count = 5
+        camera_ids = [f"camera {i}" for i in range(camera_count)]
+        detectors = [f"detector {i}" for i in range(camera_count)]
+        with (
+            patch.object(meta_mixin.MetaMixin, "_camera_ids", camera_ids),
+            patch.object(
+                meta_mixin.MetaMixin,
+                "_get_detector",
+                MagicMock(side_effect=lambda i: f"detector {i}"),
+            ),
+            patch.object(
+                meta_mixin.MetaMixin, "_ome_configured_camera_count", camera_count
+            ),
+        ):
+            txrm = meta_mixin.MetaMixin()
+            self.assertEqual(
+                txrm._ome_configured_detectors,
+                {cam: det for cam, det in zip(camera_ids, detectors)},
+            )
+            txrm._get_detector.assert_has_calls([call(i) for i in range(camera_count)])
+
+    def test_get_detector(self):
+        index = 999
+        preamp_gain = 2.5
+        detector_model = "model name"
+        output_gain = 5.9
+        txrm = meta_mixin.MetaMixin()
+        txrm.read_stream = MagicMock(
+            side_effect=[[preamp_gain], [output_gain], [detector_model]]
+        )
+
+        detector = txrm._get_detector(index)
+        self.assertEqual(
+            detector,
+            model.Detector(
+                id=f"Detector:{index}",
+                gain=preamp_gain,
+                amplification_gain=output_gain,
+                model=detector_model,
+            ),
+        )
+        stream_stem = f"ConfigureBackup/ConfigCamera/Camera {index + 1}"
+        txrm.read_stream.assert_has_calls(
+            [
+                call(f"{stream_stem}/PreAmpGain", XrmDataTypes.XRM_FLOAT),
+                call(f"{stream_stem}/OutputAmplifier", XrmDataTypes.XRM_FLOAT),
+                call(f"{stream_stem}/CameraName", XrmDataTypes.XRM_STRING),
+            ]
+        )
+
+    def test_camera_ids(self):
+        camera_count = 5
+        camera_indexes = tuple(range(camera_count))
+        with patch.object(
+            meta_mixin.MetaMixin, "_ome_configured_camera_count", camera_count
+        ):
+            txrm = meta_mixin.MetaMixin()
+            txrm._get_camera_id = MagicMock(side_effect=lambda i: f"camera {i}")
+
+            self.assertEqual(txrm._camera_ids, [f"camera {i}" for i in camera_indexes]),
+        txrm._get_camera_id.assert_has_calls([call(i) for i in camera_indexes])
+
+    def test_get_camera_id(self):
+        index = 999
+        camera_id = "camera id"
+        txrm = meta_mixin.MetaMixin()
+        txrm.read_stream = MagicMock(side_effect=[[camera_id]])
+        self.assertEqual(txrm._get_camera_id(index), camera_id)
+        txrm.read_stream.assert_called_once_with(
+            f"ConfigureBackup/ConfigCamera/Camera {index + 1}/CameraID",
+            XrmDataTypes.XRM_UNSIGNED_INT,
+        )
+
+    def test_ome_detector(self):
+        camera_number = 3
+        detector = "detector"
+        with patch.object(
+            meta_mixin.MetaMixin, "_ome_configured_detectors", {camera_number: detector}
+        ):
+            txrm = meta_mixin.MetaMixin()
+            txrm.image_info = {"CameraNo": [camera_number]}
+            self.assertEqual(txrm._ome_detector, detector)
+
+    @parameterized.expand([("has ID", "Machine ID"), ("no ID", None)])
+    def test_ome_microscope(self, _name, machine_id):
+        txrm = meta_mixin.MetaMixin()
+        has_machine_id = machine_id is not None
+        txrm.has_stream = MagicMock(return_value=has_machine_id)
+        kwargs = {}
+        if has_machine_id:
+            txrm.read_stream = MagicMock(return_value=[machine_id])
+            kwargs["model"] = machine_id
+        microscope = txrm._ome_microscope
+        self.assertEqual(
+            microscope,
+            model.Microscope(
+                type=model.Microscope_Type.OTHER, manufacturer="Xradia", **kwargs
+            ),
+            msg=f"Returned {microscope}",
+        )
+        txrm.has_stream.assert_called_once_with(
+            "ConfigureBackup/XRMConfiguration/MachineID"
+        )
+
+    def test_ome_configured_objectives(self):
+        camera_count = 5
+        obj_count = 3
+        camera_ids = [f"camera {i}" for i in range(camera_count)]
+        objectives = [
+            {f"obj {i} {j}": f"objective {i} {j}" for i in range(obj_count)}
+            for j in range(camera_count)
+        ]
+        with (
+            patch.object(meta_mixin.MetaMixin, "_camera_ids", camera_ids),
+            patch.object(
+                meta_mixin.MetaMixin,
+                "_get_objectives",
+                MagicMock(side_effect=lambda i: objectives[i]),
+            ),
+            patch.object(
+                meta_mixin.MetaMixin, "_ome_configured_camera_count", camera_count
+            ),
+        ):
+            txrm = meta_mixin.MetaMixin()
+            self.assertEqual(
+                txrm._ome_configured_objectives,
+                {cam: obj for cam, obj in zip(camera_ids, objectives)},
+            )
+            txrm._get_objectives.assert_has_calls(
+                [call(i) for i in range(camera_count)]
+            )
+
+    @parameterized.expand(
+        [
+            ("zoneplate names", None),
+            ("no zoneplate names", [f"zp {i}" for i in range(3)]),
+        ]
+    )
+    def test_get_objectives(self, _name, zoneplate_names):
+        index = 999
+        objective_count = 3
+        objective_names = [f"obj name {i}" for i in range(objective_count)]
+        objective_ids = [f"obj name {i}" for i in range(objective_count)]
+        magnifications = [0.5 for _ in range(objective_count)]
+        txrm = meta_mixin.MetaMixin()
+        txrm.read_stream = MagicMock(
+            side_effect=[
+                objective_ids,
+                magnifications,
+                objective_names,
+                zoneplate_names,
+            ]
+        )
+
+        if zoneplate_names is None:
+
+            expected_objectives = {
+                objective_name: model.Objective(
+                    id=f"Objective:{obj_id}.0",
+                    nominal_magnification=magnification,
+                    model=objective_name,
+                )
+                for obj_id, objective_name, magnification in zip(
+                    objective_ids, objective_names, magnifications
+                )
+            }
+        else:
+            expected_objectives = {
+                f"{objective_name}_{zp_name}": model.Objective(
+                    id=f"Objective:{obj_id}.{zp_number}",
+                    nominal_magnification=magnification,
+                    model=zp_name,
+                )
+                for zp_number, zp_name in enumerate(zoneplate_names)
+                for obj_id, objective_name, magnification in zip(
+                    objective_ids, objective_names, magnifications
+                )
+            }
+
+        self.assertEqual(txrm._get_objectives(index), expected_objectives)
+
+        stream_stem = f"ConfigureBackup/ConfigCamera/Camera {index + 1}"
+        txrm.read_stream.assert_has_calls(
+            [
+                call(
+                    f"{stream_stem}/ConfigObjectives/ObjectiveID",
+                    XrmDataTypes.XRM_STRING,
+                ),
+                call(
+                    f"{stream_stem}/ConfigObjectives/OpticalMagnification",
+                    XrmDataTypes.XRM_FLOAT,
+                ),
+                call(
+                    f"{stream_stem}/ConfigObjectives/ObjectiveName",
+                    XrmDataTypes.XRM_STRING,
+                ),
+                call(
+                    f"{stream_stem}/ConfigZonePlates/Name",
+                    XrmDataTypes.XRM_STRING,
+                ),
+            ]
+        )
 
     # TODO: Test whether the OME parsing works as intended

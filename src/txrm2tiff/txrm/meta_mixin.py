@@ -39,9 +39,7 @@ class MetaMixin:
 
     def _get_detector(self, index: int) -> model.Detector:
         stream_stem = f"ConfigureBackup/ConfigCamera/Camera {index + 1}"
-        camera_name = self.read_stream(
-            f"{stream_stem}/CameraName", XrmDataTypes.XRM_STRING
-        )[0]
+        logging.debug("Getting detector %i info", index)
         return model.Detector(
             id=f"Detector:{index}",
             gain=self.read_stream(f"{stream_stem}/PreAmpGain", XrmDataTypes.XRM_FLOAT)[
@@ -50,7 +48,9 @@ class MetaMixin:
             amplification_gain=self.read_stream(
                 f"{stream_stem}/OutputAmplifier", XrmDataTypes.XRM_FLOAT
             )[0],
-            model=camera_name,
+            model=self.read_stream(
+                f"{stream_stem}/CameraName", XrmDataTypes.XRM_STRING
+            )[0],
         )
 
     @txrm_property(fallback=[])
@@ -83,7 +83,7 @@ class MetaMixin:
                 kwargs["model"] = machine_id[0]
 
         return model.Microscope(
-            type="Other",
+            type=model.Microscope_Type.OTHER,
             manufacturer="Xradia",
             **kwargs,
         )
@@ -91,14 +91,15 @@ class MetaMixin:
     @txrm_property(fallback=dict())
     def _ome_configured_objectives(self) -> dict[int, dict[str, model.Objective]]:
         return {
-            self._get_camera_id(i): self._get_objectives(i)
+            self._camera_ids[i]: self._get_objectives(i)
             for i in range(self._ome_configured_camera_count)
         }
 
     def _get_objectives(self, index: int) -> dict[str, model.Objective]:
         stream_stem = f"ConfigureBackup/ConfigCamera/Camera {index + 1}"
-        id_stream = f"{stream_stem}/ConfigObjectives/ObjectiveID"
-        objective_ids = self.read_stream(id_stream, XrmDataTypes.XRM_STRING)
+        objective_ids = self.read_stream(
+            f"{stream_stem}/ConfigObjectives/ObjectiveID", XrmDataTypes.XRM_STRING
+        )
         magnifications = self.read_stream(
             f"{stream_stem}/ConfigObjectives/OpticalMagnification",
             XrmDataTypes.XRM_FLOAT,
@@ -109,25 +110,24 @@ class MetaMixin:
         zoneplate_names = self.read_stream(
             f"{stream_stem}/ConfigZonePlates/Name", XrmDataTypes.XRM_STRING
         )
-        if not zoneplate_names:  # Fallback if zoneplate names fail
+        if zoneplate_names:  # Fallback if zoneplate names fail
             return {
-                "objective_name": model.Objective(
-                    id=f"Objective:{obj_id}.0",
+                f"{objective_name}_{zp_name}": model.Objective(
+                    id=f"Objective:{obj_id}.{zp_number}",
                     nominal_magnification=magnification,
-                    model=objective_name,
+                    model=zp_name,
                 )
                 for obj_id, objective_name, magnification in zip(
                     objective_ids, objective_names, magnifications
                 )
+                for zp_number, zp_name in enumerate(zoneplate_names)
             }
-
         return {
-            f"{objective_name}_{zp_name}": model.Objective(
-                id=f"Objective:{obj_id}.{zp_number}",
+            objective_name: model.Objective(
+                id=f"Objective:{obj_id}.0",
                 nominal_magnification=magnification,
-                model=zp_name,
+                model=objective_name,
             )
-            for zp_number, zp_name in enumerate(zoneplate_names)
             for obj_id, objective_name, magnification in zip(
                 objective_ids, objective_names, magnifications
             )
