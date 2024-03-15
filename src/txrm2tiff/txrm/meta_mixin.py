@@ -135,20 +135,16 @@ class MetaMixin:
 
     @txrm_property(fallback=None)
     def _ome_instrument(self) -> model.Instrument:
-        objectives = [
+        objectives = {
             obj
-            for cameras in self._ome_configured_objectives.values()
-            for objectives in cameras.values()
-            for item in (
-                objectives.values() if isinstance(objectives, dict) else [objectives]
-            )
-            for obj in item  # Cope with either dict or Objective instance
-        ]
+            for cam_objs in self._ome_configured_objectives.values()
+            for obj in cam_objs.values()
+        }
         return model.Instrument(
             id="Instrument:0",
             detectors=list(self._ome_configured_detectors.values()),
             microscope=self._ome_microscope,
-            objectives=objectives,
+            objectives=list(objectives),
             light_source_group=self._ome_configured_light_sources,
         )
 

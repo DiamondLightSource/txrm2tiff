@@ -368,4 +368,28 @@ class TestMetadataMixin(unittest.TestCase):
             ]
         )
 
+    def test_ome_instrument(self):
+        objective_generator = lambda cam: {
+            f"obj {cam} {i}": MagicMock(spec=model.Objective, name=f"{cam} {i}")
+            for i in range(4)
+        }
+        detectors = {
+            i: MagicMock(spec=model.Detector, name=f"det {i}") for i in range(3)
+        }
+        light_sources = [model.GenericExcitationSource(), model.LightEmittingDiode()]
+        cameras = ["pixis", "vlm"]
+        with (
+            patch.object(
+                meta_mixin.MetaMixin,
+                "_ome_configured_objectives",
+                {objective_generator(cam) for cam in cameras},
+            ),
+            patch.object(meta_mixin.MetaMixin, "_ome_configured_detectors", detectors),
+            patch.object(
+                meta_mixin.MetaMixin, "_ome_configured_light_sources", light_sources
+            ),
+        ):
+            txrm = meta_mixin.MetaMixin()
+            txrm._ome_instrument
+
     # TODO: Test whether the OME parsing works as intended
