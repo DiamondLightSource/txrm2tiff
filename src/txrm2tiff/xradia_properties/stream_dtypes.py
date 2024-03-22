@@ -1,7 +1,7 @@
 from .enums import XrmDataTypes
 
 
-image_info_dict = {
+image_info_dict: dict[str, XrmDataTypes] = {
     "ImageInfo/Angles": XrmDataTypes.XRM_FLOAT,
     "ImageInfo/CameraBinning": XrmDataTypes.XRM_INT,
     "ImageInfo/CameraName": XrmDataTypes.XRM_STRING,
@@ -41,27 +41,31 @@ image_info_dict = {
     "ImageInfo/ZonePlateName": XrmDataTypes.XRM_STRING,
 }
 
-reference_data_dict = {"ReferenceData/ExpTime": XrmDataTypes.XRM_FLOAT}
+reference_data_dict: dict[str, XrmDataTypes] = {
+    "ReferenceData/ExpTime": XrmDataTypes.XRM_FLOAT
+}
 
-ref_image_info_dict = {f"ReferenceData/{k}": v for k, v in image_info_dict.items()}
+ref_image_info_dict: dict[str, XrmDataTypes] = {
+    f"ReferenceData/{k}": v for k, v in image_info_dict.items()
+}
 
-dtypes_dict = {
+dtypes_dict: dict[str, XrmDataTypes] = {
     "ImageInfo/DataType": XrmDataTypes.XRM_INT,
     "ReferenceData/ImageInfo/DataType": XrmDataTypes.XRM_INT,
     "ReferenceData/DataType": XrmDataTypes.XRM_INT,
 }
-annotations_dict = {
+annotations_dict: dict[str, XrmDataTypes] = {
     "Annot/TotalAnn": XrmDataTypes.XRM_INT,
 }
 
-position_info_dict = {
+position_info_dict: dict[str, XrmDataTypes] = {
     "PositionInfo/AxisNames": XrmDataTypes.XRM_STRING,
     "PositionInfo/AxisUnits": XrmDataTypes.XRM_STRING,
     "PositionInfo/MotorPositions": XrmDataTypes.XRM_FLOAT,
     "PositionInfo/TotalAxis": XrmDataTypes.XRM_INT,
 }
 
-alignment_dict = {
+alignment_dict: dict[str, XrmDataTypes] = {
     "Alignment/EncoderShiftsApplied": XrmDataTypes.XRM_INT,
     "Alignment/MetrologyShiftsApplied": XrmDataTypes.XRM_INT,
     "Alignment/ReferenceShiftsApplied": XrmDataTypes.XRM_INT,
@@ -71,14 +75,15 @@ alignment_dict = {
     "Alignment/Y-Shifts": XrmDataTypes.XRM_FLOAT,  # Pixels
 }
 
-misc = {"exeVersion": XrmDataTypes.XRM_STRING}
+misc: dict[str, XrmDataTypes] = {"exeVersion": XrmDataTypes.XRM_STRING}
 
-streams_dict = {}
-streams_dict.update(image_info_dict)
-streams_dict.update(reference_data_dict)
-streams_dict.update(ref_image_info_dict)
-streams_dict.update(dtypes_dict)
-streams_dict.update(annotations_dict)
-streams_dict.update(position_info_dict)
-streams_dict.update(alignment_dict)
-streams_dict.update(misc)
+streams_dict: dict[str, XrmDataTypes] = {
+    **image_info_dict,
+    **reference_data_dict,
+    **ref_image_info_dict,
+    **dtypes_dict,
+    **annotations_dict,
+    **position_info_dict,
+    **alignment_dict,
+    **misc,
+}

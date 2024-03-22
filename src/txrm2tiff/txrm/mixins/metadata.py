@@ -23,7 +23,8 @@ if TYPE_CHECKING:
     from collections.abc import Iterable
 
 
-class MetaMixin:
+class MetadataMixin:
+
     @txrm_property(fallback=0)
     def _ome_configured_camera_count(self) -> int:
         return self.read_stream(
@@ -140,16 +141,17 @@ class MetaMixin:
             for cam_objs in self._ome_configured_objectives.values()
             for obj in cam_objs.values()
         }
+        # mypy doesn't handle mixins super well
         return model.Instrument(
             id="Instrument:0",
             detectors=list(self._ome_configured_detectors.values()),
             microscope=self._ome_microscope,
             objectives=list(objectives),
-            light_source_group=self._ome_configured_light_sources,
+            light_source_group=self._ome_configured_light_sources,  # type: ignore[call-arg]
         )
 
     @property  # Just property as this doesn't rely on file, just _ome_instrument
-    def _ome_instrument_ref(self) -> model.InstrumentRef:
+    def _ome_instrument_ref(self) -> model.InstrumentRef | None:
         if self._ome_instrument is None:
             logging.info("No instrument to reference")
             return None

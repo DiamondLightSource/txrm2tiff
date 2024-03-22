@@ -18,118 +18,25 @@ from .. import txrm_functions
 from .txrm_property import txrm_property
 from ..utils.exceptions import TxrmError, TxrmFileError
 
+from .file import FileMixin
+
 if TYPE_CHECKING:
     from typing import Any, Self
     from os import PathLike
     from numpy.typing import DTypeLike, NDArray
 
 
-datetime_regex = re.compile(
-    r"(\d{2})\/(\d{2})\/(\d{2})?(\d{2}) (\d{2}):(\d{2}):(\d{2})(\.(\d{2}))?"
-)
-# Groups "1, 2, 4, 5, 6, 7, 9" are "mm, dd, yy, hh, mm, ss, ff"
-# (months, days, year, hours, minutes, seconds, decimal of seconds)
-# Note that v3 files do not include the century digits.
+class ImagesMixin(FileMixin):
 
-
-class AbstractTxrm(ABC):
     def __init__(
         self,
-        file_: str | PathLike[Any] | IOBase | bytes,
         /,
-        load_images: bool = True,
-        load_reference: bool = True,
         strict: bool = False,
     ):
-        """Abstract class for wrapping TXRM/XRM files
-
-        Args:
-            file (str | PathLike | IOBase | bytes): Path to valid txrm file, a file-like object, or the bytes from an opened file.
-            load_images (bool, optional): Load images to memory on init. Defaults to True.
-            load_reference (bool, optional): Load reference images (if available) to memory on init. Defaults to True.
-            strict (bool, optional): If True, all calls will be treated as strict (raising, not logging, errors). Defaults to False.
-        """
-        self._ole: OleFileIO | None = None
-        self.strict: bool = strict
         self._images: NDArray[Any] | None = None
         self._reference: NDArray[Any] | None = None
         self.referenced: bool = False
-        self.annotated_image: NDArray[Any] | None = None
-        self.path: Path | None = None
-        self.name: str | None = None
-        self._properties = {}
-
-        self.open(file_)
-
-        if load_images:
-            self.load_images()
-        if load_reference and self.has_reference:
-            self.load_reference()
-
-    def clear_all(self) -> None:
-        for name in self.properties.keys():
-            delattr(self, f"_{name}")
-
-    def _get_ole_if_open(self) -> OleFileIO:
-        ole = self._get_ole()
-        if ole.fp is None or ole.fp.closed:
-            raise IOError("File is not open")
-        return ole
-
-    @property
-    def file_is_open(self) -> bool:
-        try:
-            self._get_ole_if_open()
-            return True
-        except IOError:
-            return False
-
-    def has_stream(self, key: str) -> bool | None:
-        if not self.file_is_open:
-            logging.error("Cannot check stream from closed file")
-            return None
-        return self.ole.exists(key)
-
-    def list_streams(self) -> list[str]:
-        try:
-            ole = self._get_ole_if_open()
-            return [
-                "/".join(stream) for stream in ole.listdir(streams=True, storages=False)
-            ]
-        except TxrmFileError:
-            logging.error("Cannot list streams when file is closed")
-            return []
-
-    def read_stream(
-        self,
-        key: str,
-        dtype: XrmDataTypes | DTypeLike | None = None,
-        strict: bool | None = None,
-    ) -> list[str | float | int | bytes] | None:
-        if not self.file_is_open:
-            logging.error("Cannot get stream from closed file")
-            if self.strict:
-                raise IOError("Cannot get stream from closed file")
-            return None
-        if strict is None:
-            strict = self.strict
-        if dtype is None:
-            dtype = streams_dict.get(key)
-            if dtype is None:
-                logging.error("Stream does not have known dtype, one must be specified")
-                if self.strict:
-                    raise IOError(
-                        "Stream does not have known dtype, one must be specified"
-                    )
-        return txrm_functions.read_stream(self.ole, key, dtype, strict)
-
-    def read_single_value_from_stream(
-        self, key: str, idx: int = 0, dtype: DTypeLike | None = None
-    ) -> Any | None:
-        val = self.read_stream(key, dtype)
-        if val is None or len(val) <= idx:
-            return None
-        return val[idx]
+        super().__init__(strict=strict)
 
     def load_images(self) -> None:
         try:
@@ -188,6 +95,7 @@ class AbstractTxrm(ABC):
             self.load_reference()
         return self._reference
 
+    @FileMixin.uses_ole
     def _extract_single_image(
         self, image_num: int, strict: bool = False
     ) -> NDArray[Any]:
@@ -198,7 +106,7 @@ class AbstractTxrm(ABC):
             imgdata = None
             if not self.has_stream(img_key):
                 raise KeyError("Stream '%s' does not exist" % img_key)
-            img_stream_bytes = self.ole.openstream(img_key).getvalue()
+            img_stream_bytes = self._get_ole_if_open().openstream(img_key).getvalue()
             if self.image_dtype is not None:
                 try:
                     imgdata = txrm_functions.get_stream_from_bytes(
@@ -314,26 +222,6 @@ class AbstractTxrm(ABC):
             shape = self._image[0].shape
         return shape
 
-    @txrm_property(fallback=dict())
-    def image_info(self):
-        return txrm_functions.get_image_info_dict(
-            self.ole, ref=False, strict=self.strict
-        )
-
-    @txrm_property(fallback=dict())
-    def reference_info(self):
-        return txrm_functions.get_image_info_dict(
-            self.ole, ref=True, strict=self.strict
-        )
-
-    @txrm_property(fallback=dict())
-    def position_info(self):
-        return txrm_functions.get_position_dict(self.ole)
-
-    @txrm_property(fallback=None)
-    def version(self):
-        return txrm_functions.get_file_version(self.ole, strict=self.strict)
-
     @txrm_property(fallback=0)
     def zero_angle_index(self) -> float:
         angles = self.image_info.get("Angles", [])
@@ -351,47 +239,9 @@ class AbstractTxrm(ABC):
             self.image_info["MosiacRows"][0],
         ]
 
-    @txrm_property(fallback=[])
-    def energies(self) -> list[float]:
-        energies = self.image_info["Energy"]
-        if not np.sum(energies):
-            # position_info includes units
-            energies = self.position_info["Energy"][0]
-        if np.sum(energies):
-            return energies
-        raise ValueError("Could not get energies")
-
-    @txrm_property(fallback=[])
-    def exposures(self) -> list[float]:
-        """Returns list of exposures"""
-        if "ExpTimes" in self.image_info:
-            return self.image_info["ExpTimes"]
-        elif "ExpTime" in self.image_info:
-            return self.image_info["ExpTime"]
-        elif self.strict:
-            raise KeyError("No exposure time available in ole file.")
-        logging.error("No exposure time available in ole file.")
-        return []
-
     @txrm_property(fallback=None)
     def has_reference(self) -> bool:
         return self.has_stream("ReferenceData/Image")
-
-    @txrm_property(fallback=[])
-    def datetimes(self) -> list[datetime]:
-        dates = []
-        for date_str in self.image_info["Date"]:
-            m = datetime_regex.search(date_str)
-            if m:  # Ignore out any random characters that aren't dates
-                if m.group(3):  # Century digits
-                    pattern = r"%m%d%Y%H%M%S"
-                else:
-                    pattern = r"%m%d%y%H%M%S"
-                if m.group(9):  # Fraction of a second
-                    pattern += r"%f"
-                date_str = "".join([d for d in m.group(1, 2, 3, 4, 5, 6, 7, 9) if d])
-                dates.append(datetime.strptime(date_str, pattern))
-        return dates
 
     def get_single_image(self, idx: int) -> np.ndarray:
         """Get a single image (from memory if images are loaded). idx starts from 1."""
@@ -495,8 +345,3 @@ class AbstractTxrm(ABC):
 
         self._images = cast_to_dtype(self._images, dtype, allow_clipping=allow_clipping)
         return True
-
-    @property
-    def metadata(self) -> None:
-        logging.warning("Metadata creation is unavailable")
-        return None

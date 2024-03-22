@@ -1,6 +1,6 @@
 import enum
 import numpy as np
-from types import DynamicClassAttribute
+from typing import Any, Self
 
 
 class IntValueEnum(int, enum.Enum):
@@ -11,23 +11,31 @@ class IntValueEnum(int, enum.Enum):
     Based on https://stackoverflow.com/a/68400507
     """
 
-    def __new__(cls, value, number: int):
+    def __new__(cls, value: Any, number: int) -> Self:
         obj = int.__new__(cls, number)
         obj._value_ = value
-        obj.number = number
+        obj._number_ = number
         return obj
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"{self.name} ({self.value.__name__})"
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"{self.__class__.__name__}({self.name}, {self.value.__name__}, {self.number})"
 
-    def __format__(self, format_spec):
-        return str(self)
+    def __format__(self, format_spec: str) -> str:
+        return str.__format__(str(self), format_spec)
+
+    @property
+    def number(self) -> int:
+        return getattr(self, "_number_", -1)
+
+    @number.setter
+    def number(self, value: int) -> None:
+        self._number_ = value
 
     @classmethod
-    def from_number(cls, number: int, strict=False):
+    def from_number(cls, number: int, strict: bool = False) -> Self | None:
         for obj in cls:
             if obj.number == number:
                 return obj
@@ -38,6 +46,7 @@ class IntValueEnum(int, enum.Enum):
 
 class XrmDataTypes(IntValueEnum):
     """Integer Enumerator for Xradia's XrmDataTypes"""
+
     # XRM_BIT = None, 1
     XRM_CHAR = np.int8, 2
     XRM_UNSIGNED_CHAR = np.uint8, 3
@@ -96,7 +105,9 @@ class XrmSourceType(enum.Enum):
     XRM_KEVEX_90KV_8W = 7
     XRM_SOURCE_DAGE_MARKIII = 8
     XRM_HAMAMATSU_150_30W = 9
-    XRM_XRAYSOURCE_SIMULATED_DO_NOT_USE = 10  # obsolete, set simulation flag in config instead
+    XRM_XRAYSOURCE_SIMULATED_DO_NOT_USE = (
+        10  # obsolete, set simulation flag in config instead
+    )
     XRM_RIGAKU_SIMULATED_DO_NOT_USE = 11  # obsolete, use emulated XRM_RIGAKU_SOURCE
     XRM_HAMAMATSU_150_V2 = 12
     XRM_HAMAMATSU_150_30W_V2 = 13

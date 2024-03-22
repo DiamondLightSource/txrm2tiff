@@ -1,5 +1,6 @@
 import unittest
 from unittest.mock import MagicMock
+from parameterized import parameterized
 
 from txrm2tiff.txrm.txrm_property import txrm_property
 
@@ -9,16 +10,19 @@ class ToasterError(Exception):
 
 
 class Toaster:
-    def __init__(self):
+    def __init__(self, works: bool):
         self.ole = None
         self.strict = False
         self.file_is_open = True
+        self.works = works
 
     @txrm_property(fallback="bread")
-    def toast(self):
-        return self.heater()
+    def toast_bread(self):
+        if self.works:
+            return self.apply_heat()
+        raise Exception("toaster is broken")
 
-    def heater(self):
+    def apply_heat(self):
         return "nice toast"
 
 
@@ -29,9 +33,13 @@ class TestTxrmProperty(unittest.TestCase):
             t.toast()
             # Not a method
 
-    def test_txrm_property_works_as_property(self):
-        t = Toaster()
-        self.assertEqual(t.toast, "nice toast")
+    @parameterized.expand([("works", True), ("broken", False)])
+    def test_txrm_property_works_as_property(self, _name, works):
+        t = Toaster(works)
+        if works:
+            self.assertEqual(t.toast, "nice toast")
+        else:
+            self.assertEqual(t.toast, "bread")
 
     def test_delete_works(self):
         t = Toaster()

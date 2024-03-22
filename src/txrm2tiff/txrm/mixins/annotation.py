@@ -16,7 +16,10 @@ from ..xradia_properties import AnnotationTypes, XrmDataTypes as XDT
 font_path = Path(__file__).parent.parent / "font" / "CallingCode-Regular.otf"
 
 
-class AnnotatorMixin:
+class AnnotationMixin:
+    path: Path
+    get_output
+
     def __new__(cls, *args, **kwargs):
         cls.setup_ann_functions()
         return super().__new__(cls)
@@ -287,7 +290,7 @@ class AnnotatorMixin:
     def _plot_freehand(self, draw: ImageDraw, stream_stem: str) -> None:
         self._plot_polyline(draw, stream_stem, joint="curve")
 
-    def _flip_y(self, *xys: Iterable[Number]) -> Tuple[Tuple[Number]]:
+    def _flip_y(self, *xys: Iterable[float]) -> Tuple[Tuple[float, ...]]:
         """
         Stored x-y coordinates are assuming 0 is bottom left, whereas PIL assumes 0 is top left
         This flips any list of coordinates that alternate x, y

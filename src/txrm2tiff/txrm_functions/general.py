@@ -8,8 +8,10 @@ from typing import TYPE_CHECKING
 from .. import xradia_properties as xp
 
 if TYPE_CHECKING:
-    from typing import Any
+    from typing import Any, Never, TypeVar, cast
     from numpy.typing import DTypeLike, NDArray
+
+    T = TypeVar("T")
 
 hex_pattern = re.compile(r"[^\x20-\x7e]+")
 
@@ -17,9 +19,9 @@ hex_pattern = re.compile(r"[^\x20-\x7e]+")
 def read_stream(
     ole: of.OleFileIO,
     key: str,
-    dtype: xp.XrmDataTypes | DTypeLike | None = None,
+    dtype: xp.XrmDataTypes | DTypeLike | np.dtype[Any] | None = None,
     strict: bool = False,
-) -> list[str | float | int]:
+) -> list[str] | list[float] | list[int] | list[bytes] | list[Never]:
     """Reads and returns list containing stream specified by key, decoded as dtype"""
     try:
         if dtype is None:
@@ -28,12 +30,13 @@ def read_stream(
                 raise TypeError("No known data type found, one must be specified.")
         if isinstance(dtype, xp.XrmDataTypes):
             # streams_dict returns XrmDataTypes
-            dtype = dtype.value
+            dtype = cast(np.dtype[Any], dtype.value)
         dtype = np.dtype(dtype)  # cast to numpy dtype
         if ole.exists(key):
             if dtype == np.str_:
                 return _read_text_stream_to_list(ole, key)
             return _read_number_stream_to_list(ole, key, dtype)
+
         raise KeyError("Stream %s does not exist in ole file" % key)
     except Exception:
         if strict:
@@ -44,17 +47,19 @@ def read_stream(
         return []
 
 
-def get_stream_from_bytes(stream_bytes: bytes, dtype: DTypeLike) -> NDArray[Any]:
+def get_stream_from_bytes(
+    stream_bytes: bytes, dtype: np.dtype[Any]
+) -> NDArray[np.generic]:
     """Converts olefile bytes to np.ndarray of values of type dtype."""
     return np.frombuffer(stream_bytes, dtype)
 
 
 def _read_number_stream_to_list(
-    ole: of.OleFileIO, key: str, dtype: DTypeLike | None
-) -> list[int | float | bytes]:
+    ole: of.OleFileIO, key: str, dtype: np.dtype[Any]
+) -> list[float] | list[int] | list[bytes] | list[Never]:
     """Reads olefile stream and returns to list of values of type dtype."""
     stream_bytes = ole.openstream(key).getvalue()
-    return get_stream_from_bytes(stream_bytes, dtype).tolist()
+    return get_stream_from_bytes(stream_bytes, dtype).tolist()  # type: ignore[no-any-return]
 
 
 def _read_text_stream_to_list(ole: of.OleFileIO, key: str) -> list[str]:
@@ -74,7 +79,7 @@ def _read_text_stream_to_list(ole: of.OleFileIO, key: str) -> list[str]:
 
 def get_image_info_dict(
     ole: of.OleFileIO, ref: bool = False, strict: bool = False
-) -> dict[str, list[str | float | int]]:
+) -> dict[str, list[str] | list[float] | list[int] | list[bytes] | list[Never]]:
     """
     Reads a selection of useful ImageInfo streams from an XRM/TXRM file.
 
@@ -119,14 +124,14 @@ def get_position_dict(
     for key, dtype in xp.stream_dtypes.position_info_dict.items():
         tmp[key] = read_stream(ole, key, dtype)
 
-    num_axes = tmp["PositionInfo/TotalAxis"][0]
+    num_axes = cast(int, tmp["PositionInfo/TotalAxis"][0])
     positions_dict = {}
     # Motor positions are stored in list of all values for all images. It lists
     # all axes for each frame (in that order).
     for i in range(num_axes):
-        positions_dict[tmp["PositionInfo/AxisNames"][i]] = (
-            tmp["PositionInfo/MotorPositions"][i::num_axes],
-            tmp["PositionInfo/AxisUnits"][i],
+        positions_dict[cast(str, tmp["PositionInfo/AxisNames"][i])] = (
+            cast(list[float], tmp["PositionInfo/MotorPositions"][i::num_axes]),
+            cast(str, tmp["PositionInfo/AxisUnits"][i]),
         )
     return positions_dict
 
@@ -134,5 +139,5 @@ def get_position_dict(
 def get_file_version(ole: of.OleFileIO, strict: bool = False) -> float | None:
     v = read_stream(ole, "Version", xp.XrmDataTypes.XRM_FLOAT, strict=strict)
     if v:
-        return v[0]
+        return cast(float, v[0])
     return None

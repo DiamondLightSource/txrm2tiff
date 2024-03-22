@@ -1,10 +1,14 @@
+from __future__ import annotations
 import logging
-import typing
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from typing import Callable, Any
 
 
 def txrm_property(
-    function: typing.Optional[typing.Callable] = None,
-    fallback: typing.Any = None,
+    function: Callable[[], Any] | None = None,
+    fallback: Any = None,
     **kwargs,
 ):
     class TxrmProperty:
@@ -13,11 +17,11 @@ def txrm_property(
             self.fallback = fallback
             self.hidden_var_str = f"_{self.fn.__name__}"
 
-        def __get__(self, obj, object_type=None):
+        def __get__(self, obj: object, object_type=None):
             try:
-                if getattr(obj, self.hidden_var_str, None) is None:
+                if obj.__txrm_properties.get(self.hidden_var_str, None) is None:
                     try:
-                        setattr(obj, self.hidden_var_str, self.fn(obj))
+                        obj.__txrm_properties[self.hidden_var_str] = self.fn(obj)
                     except Exception:
                         if not obj.file_is_open:
                             raise IOError(
@@ -32,7 +36,7 @@ def txrm_property(
                     self.fn.__name__,
                     exc_info=True,
                 )
-            return getattr(obj, self.hidden_var_str, self.fallback)
+            return obj.__txrm_properties.get(self.hidden_var_str, self.fallback)
 
         def __set__(self, obj, value):
             raise AttributeError(f"{self.fn.__name__} cannot be set.")
@@ -41,7 +45,7 @@ def txrm_property(
             setattr(obj, self.hidden_var_str, None)
 
     if function:
-        return TxrmProperty(function)
+        return TxrmProperty(function, fallback, **kwargs)
     else:
 
         def wrapper(function):

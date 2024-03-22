@@ -8,4 +8,5 @@
     "debug.allowBreakpointsEverywhere": true,
     "debug.showBreakpointsInOverviewRuler": false,
     "livePreview.debugOnExternalPreview": false,
+    "ruff.importStrategy": "useBundled",
 }
