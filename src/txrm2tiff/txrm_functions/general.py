@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING
 from .. import xradia_properties as xp
 
 if TYPE_CHECKING:
-    from typing import Any, Never, TypeVar, cast
+    from typing import Any, Never, TypeVar, cast, overload
     from numpy.typing import DTypeLike, NDArray
 
     T = TypeVar("T")
@@ -19,7 +19,7 @@ hex_pattern = re.compile(r"[^\x20-\x7e]+")
 def read_stream(
     ole: of.OleFileIO,
     key: str,
-    dtype: xp.XrmDataTypes | DTypeLike | np.dtype[Any] | None = None,
+    dtype: xp.XrmDataTypes | DTypeLike | None = None,
     strict: bool = False,
 ) -> list[str] | list[float] | list[int] | list[bytes] | list[Never]:
     """Reads and returns list containing stream specified by key, decoded as dtype"""
@@ -31,11 +31,18 @@ def read_stream(
         if isinstance(dtype, xp.XrmDataTypes):
             # streams_dict returns XrmDataTypes
             dtype = cast(np.dtype[Any], dtype.value)
-        dtype = np.dtype(dtype)  # cast to numpy dtype
+        dtype = np.dtype(dtype)  # cast to np.dtype
         if ole.exists(key):
-            if dtype == np.str_:
+            if np.issubdtype(dtype, np.str_):
                 return _read_text_stream_to_list(ole, key)
-            return _read_number_stream_to_list(ole, key, dtype)
+            elif (
+                np.issubdtype(dtype, np.integer)
+                or np.issubdtype(dtype, np.floating)
+                or np.issubdtype(dtype, np.bytes_)
+            ):
+                return _read_number_stream_to_list(ole, key, dtype)
+            else:
+                raise TypeError(f'Cannot interpret stream with type "{dtype}"')
 
         raise KeyError("Stream %s does not exist in ole file" % key)
     except Exception:
@@ -47,16 +54,14 @@ def read_stream(
         return []
 
 
-def get_stream_from_bytes(
-    stream_bytes: bytes, dtype: np.dtype[Any]
-) -> NDArray[np.generic]:
+def get_stream_from_bytes(stream_bytes: bytes, dtype: np.dtype[Any]) -> NDArray[Any]:
     """Converts olefile bytes to np.ndarray of values of type dtype."""
     return np.frombuffer(stream_bytes, dtype)
 
 
 def _read_number_stream_to_list(
     ole: of.OleFileIO, key: str, dtype: np.dtype[Any]
-) -> list[float] | list[int] | list[bytes] | list[Never]:
+) -> list[Any]:
     """Reads olefile stream and returns to list of values of type dtype."""
     stream_bytes = ole.openstream(key).getvalue()
     return get_stream_from_bytes(stream_bytes, dtype).tolist()  # type: ignore[no-any-return]

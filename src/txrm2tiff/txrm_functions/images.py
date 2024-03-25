@@ -1,31 +1,36 @@
+from __future__ import annotations
 import logging
-import typing
+from typing import TYPE_CHECKING
 import numpy as np
-import olefile as of
 
 from ..xradia_properties import XrmDataTypes as XDT
 
 from . import general
 
+if TYPE_CHECKING:
+    from typing import Any, cast
+    from olefile import OleFileIO
+    from numpy.typing import NDArray
+
 
 def extract_image_dtype(
-    ole: of.OleFileIO, key_part: str, strict: bool = False, **kwargs
-) -> typing.Optional[XDT]:
+    ole: OleFileIO, key_part: str, strict: bool = False, **kwargs: Any
+) -> XDT | None:
     key = f"{key_part}/DataType"
-    integer_list = general.read_stream(ole, key, XDT.XRM_INT, strict)
+    integer_list = cast(list[int], general.read_stream(ole, key, XDT.XRM_INT, strict))
     if not integer_list:
         return None
     return XDT.from_number(integer_list[0], strict)
 
 
 def extract_single_image(
-    ole: of.OleFileIO,
+    ole: OleFileIO,
     image_num: int,
     numrows: int,
     numcols: int,
     strict: bool = False,
-    **kwargs,
-) -> np.ndarray:
+    **kwargs: Any,
+) -> NDArray[Any]:
     # Read the images - They are stored in the txrm as ImageData1 ...
     # Each folder contains 100 images 1-100, 101-200
     img_key = f"ImageData{int(np.ceil(image_num / 100.0))}/Image{image_num}"
@@ -64,7 +69,7 @@ def fallback_image_interpreter(
     stream_bytes: bytes,
     image_size: int,
     strict: bool = False,
-):
+) -> NDArray[Any]:
     stream_length = len(stream_bytes)
     if stream_length == image_size * 2:
         dtype = XDT.XRM_UNSIGNED_SHORT
