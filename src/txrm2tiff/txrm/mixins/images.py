@@ -1,22 +1,17 @@
 from __future__ import annotations
 from abc import ABC, abstractmethod
-from datetime import datetime
-import re
 import logging
 import itertools
 import numpy as np
-from io import IOBase
-from olefile import OleFileIO, isOleFile
-from pathlib import Path
 from typing import TYPE_CHECKING
 
-from ..xradia_properties.enums import XrmDataTypes
-from ..xradia_properties.stream_dtypes import streams_dict
-from ..utils.metadata import get_ome_pixel_type
-from ..utils.image_processing import cast_to_dtype
+from ...xradia_properties.enums import XrmDataTypes
+from ...xradia_properties.stream_dtypes import streams_dict
+from ...utils.metadata import get_ome_pixel_type
+from ...utils.image_processing import cast_to_dtype
 from .. import txrm_functions
-from .txrm_property import txrm_property
-from ..utils.exceptions import TxrmError, TxrmFileError
+from ..txrm_property import txrm_property
+from ...utils.exceptions import TxrmError, TxrmFileError
 
 from .file import FileMixin
 
@@ -26,7 +21,7 @@ if TYPE_CHECKING:
     from numpy.typing import DTypeLike, NDArray
 
 
-class ImagesMixin(FileMixin):
+class ImagesMixin(FileMixin, ABC):
 
     def __init__(
         self,

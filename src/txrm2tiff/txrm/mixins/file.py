@@ -1,5 +1,6 @@
 from __future__ import annotations
 import logging
+from abc import ABC
 from io import IOBase
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -18,8 +19,7 @@ if TYPE_CHECKING:
         Any,
         Self,
         ParamSpec,
-        ParamSpecArgs,
-        ParamSpecKwargs,
+        Never,
     )
     from types import TracebackType
     from os import PathLike
@@ -30,7 +30,7 @@ if TYPE_CHECKING:
     RetType = TypeVar("RetType")
 
 
-class FileMixin:
+class FileMixin(ABC):
 
     def __init__(
         self,
@@ -147,7 +147,7 @@ class FileMixin:
         key: str,
         dtype: enums.XrmDataTypes | DTypeLike | None = None,
         strict: bool | None = None,
-    ) -> list[str | float | int | bytes] | None:
+    ) -> list[str] | list[float] | list[int] | list[bytes] | list[Never]:
         if strict is None:
             strict = self.strict
         if dtype is None:
