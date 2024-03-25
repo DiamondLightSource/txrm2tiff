@@ -1,6 +1,7 @@
 from os import PathLike
 import typing
 import logging
+from abc import ABC
 from numbers import Number
 import numpy as np
 import tifffile as tf
@@ -15,7 +16,7 @@ from ..utils.image_processing import dynamic_despeckle_and_average_series
 from ..utils.functions import conditional_replace
 
 
-class ReferenceMixin:
+class ReferenceMixin(ABC):
     def apply_reference(
         self,
         custom_reference: typing.Optional[typing.Union[str, PathLike]] = None,

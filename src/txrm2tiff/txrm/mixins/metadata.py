@@ -1,5 +1,6 @@
 from __future__ import annotations
 import logging
+from abc import ABC
 from scipy import constants
 import numpy as np
 from xml.etree import ElementTree
@@ -23,7 +24,7 @@ if TYPE_CHECKING:
     from collections.abc import Iterable
 
 
-class MetadataMixin:
+class MetadataMixin(ABC):
 
     @txrm_property(fallback=0)
     def _ome_configured_camera_count(self) -> int:

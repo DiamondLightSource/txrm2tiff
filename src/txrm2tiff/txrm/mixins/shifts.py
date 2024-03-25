@@ -1,11 +1,19 @@
+from __future__ import annotations
 import logging
-from typing import List
+from abc import ABC
+from typing import TYPE_CHECKING
 import numpy as np
 
-from .txrm_property import txrm_property
+from ..txrm_property import txrm_property
+
+if TYPE_CHECKING:
+    from typing import Any, TypeVar
+    from numpy.typing import NDArray
+
+    T = TypeVar("T", bound=Any)
 
 
-class ShiftsMixin:
+class ShiftsMixin(ABC):
     @txrm_property(fallback=None)
     def has_shifts(self) -> bool:
         return (
@@ -15,18 +23,18 @@ class ShiftsMixin:
         )
 
     @txrm_property(fallback=None)
-    def shifts_applied(self):
+    def shifts_applied(self) -> bool:
         return np.any(self.x_shifts) or np.any(self.y_shifts)
 
     @txrm_property(fallback=None)
-    def x_shifts(self) -> List:
+    def x_shifts(self) -> list[float]:
         return self.read_stream("Alignment/X-Shifts")
 
     @txrm_property(fallback=None)
-    def y_shifts(self) -> List:
+    def y_shifts(self) -> list[float]:
         return self.read_stream("Alignment/Y-Shifts")
 
-    def apply_shifts_to_images(self, images: np.ndarray) -> np.ndarray:
+    def apply_shifts_to_images(self, images: NDArray[T]) -> NDArray[T]:
         if not self.shifts_applied:
             # if all shifts are 0, return the original image
             return images

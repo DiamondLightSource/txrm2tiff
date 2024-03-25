@@ -1,4 +1,5 @@
 import logging
+from abc import ABC
 import math
 from numbers import Number
 from pathlib import Path
@@ -16,9 +17,7 @@ from ..xradia_properties import AnnotationTypes, XrmDataTypes as XDT
 font_path = Path(__file__).parent.parent / "font" / "CallingCode-Regular.otf"
 
 
-class AnnotationMixin:
-    path: Path
-    get_output
+class AnnotationMixin(ABC):
 
     def __new__(cls, *args, **kwargs):
         cls.setup_ann_functions()

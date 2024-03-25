@@ -1,5 +1,5 @@
 import logging
-
+from abc import ABC
 from pathlib import Path
 from typing import Optional
 from numpy.typing import DTypeLike
@@ -7,7 +7,7 @@ from numpy.typing import DTypeLike
 from ..utils.file_handler import manual_save
 
 
-class SaveMixin:
+class SaveMixin(ABC):
     def save_images(
         self,
         filepath: Optional[Path] = None,
