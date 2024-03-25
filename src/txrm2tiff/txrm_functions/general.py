@@ -2,22 +2,22 @@ from __future__ import annotations
 import logging
 import re
 import numpy as np
-import olefile as of
 from typing import TYPE_CHECKING
 
 from .. import xradia_properties as xp
 
 if TYPE_CHECKING:
-    from typing import Any, Never, TypeVar, cast, overload
+    from typing import Any, Never, TypeVar, cast
     from numpy.typing import DTypeLike, NDArray
+    from olefile import OleFileIO
 
-    T = TypeVar("T")
+    U = TypeVar("U", bound=Any)
 
 hex_pattern = re.compile(r"[^\x20-\x7e]+")
 
 
 def read_stream(
-    ole: of.OleFileIO,
+    ole: OleFileIO,
     key: str,
     dtype: xp.XrmDataTypes | DTypeLike | None = None,
     strict: bool = False,
@@ -54,20 +54,20 @@ def read_stream(
         return []
 
 
-def get_stream_from_bytes(stream_bytes: bytes, dtype: np.dtype[Any]) -> NDArray[Any]:
+def get_stream_from_bytes(stream_bytes: bytes, dtype: np.dtype[U]) -> NDArray[U]:
     """Converts olefile bytes to np.ndarray of values of type dtype."""
     return np.frombuffer(stream_bytes, dtype)
 
 
 def _read_number_stream_to_list(
-    ole: of.OleFileIO, key: str, dtype: np.dtype[Any]
+    ole: OleFileIO, key: str, dtype: np.dtype[Any]
 ) -> list[Any]:
     """Reads olefile stream and returns to list of values of type dtype."""
     stream_bytes = ole.openstream(key).getvalue()
     return get_stream_from_bytes(stream_bytes, dtype).tolist()  # type: ignore[no-any-return]
 
 
-def _read_text_stream_to_list(ole: of.OleFileIO, key: str) -> list[str]:
+def _read_text_stream_to_list(ole: OleFileIO, key: str) -> list[str]:
     """
     Returns list of strings.
 
@@ -83,7 +83,7 @@ def _read_text_stream_to_list(ole: of.OleFileIO, key: str) -> list[str]:
 
 
 def get_image_info_dict(
-    ole: of.OleFileIO, ref: bool = False, strict: bool = False
+    ole: OleFileIO, ref: bool = False, strict: bool = False
 ) -> dict[str, list[str] | list[float] | list[int] | list[bytes] | list[Never]]:
     """
     Reads a selection of useful ImageInfo streams from an XRM/TXRM file.
@@ -114,13 +114,13 @@ def get_image_info_dict(
 
 
 def get_position_dict(
-    ole: of.OleFileIO,
+    ole: OleFileIO,
 ) -> dict[str, tuple[list[float], str]]:
     """
     Gets dictionary of motor positions.
 
     Args:
-        ole (of.OleFileIO)
+        ole (OleFileIO)
 
     Returns:
         typing.Dict[str, typing.Tuple[typing.Union[typing.List, str]]]: all positions for each motor in the form: {motor name string: ([values], unit string)}.
