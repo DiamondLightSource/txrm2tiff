@@ -11,6 +11,8 @@ from ...xradia_properties import enums, stream_dtypes
 from ... import txrm_functions
 from ...utils.exceptions import TxrmError, TxrmFileError
 
+from .base import TxrmBase
+
 if TYPE_CHECKING:
     from typing import (
         Callable,
@@ -30,7 +32,22 @@ if TYPE_CHECKING:
     RetType = TypeVar("RetType")
 
 
-class FileMixin(ABC):
+def uses_ole(
+    fn: Callable[Concatenate[FileMixin, Param], RetType],
+) -> Callable[Concatenate[FileMixin, Param], RetType | None]:
+    def wrapped(self: FileMixin, /, *args: Any, **kwargs: Any) -> RetType | None:
+        strict = kwargs.get("strict", self.strict)
+        try:
+            return fn(*args, **kwargs)
+        except TxrmFileError:
+            if strict:
+                raise TxrmFileError(f"{fn.__name__}: failed as file is not open.")
+            return None
+
+    return wrapped
+
+
+class FileMixin(TxrmBase):
 
     def __init__(
         self,
@@ -39,8 +56,8 @@ class FileMixin(ABC):
     ):
         self.path: Path | None = None
         self.name: str | None = None
-        self.strict: bool = strict
         self._ole: OleFileIO | None = None
+        TxrmBase.__init__(self, strict=strict)
 
     def __enter__(self) -> Self:
         return self
@@ -52,21 +69,6 @@ class FileMixin(ABC):
         traceback: TracebackType | None,
     ) -> None:
         self.close()
-
-    @staticmethod
-    def uses_ole(
-        fn: Callable[Concatenate[FileMixin, Param], RetType],
-    ) -> Callable[Concatenate[FileMixin, Param], RetType | None]:
-        def wrapped(self: FileMixin, /, *args: Any, **kwargs: Any) -> RetType | None:
-            strict = kwargs.get("strict", self.strict)
-            try:
-                return fn(*args, **kwargs)
-            except TxrmFileError:
-                if strict:
-                    raise TxrmFileError(f"{fn.__name__}: failed as file is not open.")
-                return None
-
-        return wrapped
 
     def open(self, f: str | PathLike[Any] | IOBase | bytes | None = None) -> None:
         """Opens txrm file using OleFileIO. Runs on init but can be used to reopen if closed (only PathLike inputs can be reopened without specifying 'file')."""
@@ -130,7 +132,7 @@ class FileMixin(ABC):
             return False
 
     @uses_ole
-    def has_stream(self, key: str) -> bool | None:
+    def has_stream(self, key: str) -> bool:
         exists: bool = self._get_ole_if_open().exists(key)
         return exists
 
@@ -162,9 +164,13 @@ class FileMixin(ABC):
         return txrm_functions.read_stream(ole, key, dtype, strict)
 
     def read_single_value_from_stream(
-        self, key: str, idx: int = 0, dtype: DTypeLike | None = None
-    ) -> Any | None:
-        val = self.read_stream(key, dtype)
+        self,
+        key: str,
+        idx: int = 0,
+        dtype: DTypeLike | None = None,
+        strict: bool | None = None,
+    ) -> str | float | int | bytes | None:
+        val = self.read_stream(key, dtype, strict=strict)
         if val is None or len(val) <= idx:
             return None
         return val[idx]
