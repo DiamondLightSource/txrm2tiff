@@ -6,22 +6,21 @@ import numpy as np
 from typing import TYPE_CHECKING
 
 from ...xradia_properties.enums import XrmDataTypes
-from ...xradia_properties.stream_dtypes import streams_dict
 from ...utils.metadata import get_ome_pixel_type
 from ...utils.image_processing import cast_to_dtype
-from .. import txrm_functions
+from ... import txrm_functions
 from ..txrm_property import txrm_property
 from ...utils.exceptions import TxrmError, TxrmFileError
 
-from .file import FileMixin
+from .file import uses_ole
+from .metadata import MetadataMixin
 
 if TYPE_CHECKING:
-    from typing import Any, Self
-    from os import PathLike
-    from numpy.typing import DTypeLike, NDArray
+    from typing import Any
+    from numpy.typing import NDArray
 
 
-class ImagesMixin(FileMixin, ABC):
+class ImagesMixin(MetadataMixin, ABC):
 
     def __init__(
         self,
@@ -90,7 +89,7 @@ class ImagesMixin(FileMixin, ABC):
             self.load_reference()
         return self._reference
 
-    @FileMixin.uses_ole
+    @uses_ole
     def _extract_single_image(
         self, image_num: int, strict: bool = False
     ) -> NDArray[Any]:
@@ -128,7 +127,7 @@ class ImagesMixin(FileMixin, ABC):
     def extract_images(
         self,
         start: int = 1,
-        end: int = None,
+        end: int | None = None,
     ) -> NDArray[Any]:
         """
         Extract only specified range of images using the arguments start and num_images
@@ -182,7 +181,7 @@ class ImagesMixin(FileMixin, ABC):
             logging.error("Error occurred extracting images", exc_info=True)
             return np.asarray([])
 
-    def get_central_image(self) -> np.ndarray:
+    def get_central_image(self) -> NDArray[Any]:
         """Returns central image of an odd count stack, or the first of the two central images if an even number"""
         images_taken = self.image_info["ImagesTaken"][0]
         central_img = 1 + images_taken // 2  # First image is 1
@@ -190,7 +189,7 @@ class ImagesMixin(FileMixin, ABC):
 
     def extract_reference_data(
         self,
-    ) -> NDArray | bytes | None:
+    ) -> NDArray[Any] | bytes | None:
         """Returns 2D numpy array of reference image in row-column order"""
         # Read the reference image.
         # Reference info is stored under 'ReferenceData/...'
