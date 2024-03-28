@@ -2,53 +2,73 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING
 
+from .mixins.file import FileMixin
+
 if TYPE_CHECKING:
-    from typing import Callable, Any
+    from typing import Generic, Callable, Any, Never, TypeVar, cast, overload
+
+    ClassVar = TypeVar("ClassVar", bound=FileMixin)
+    T = TypeVar("T", Any, None)
+    RetType = TypeVar("RetType")
+
+
+class TxrmProperty(Generic[RetType]):
+
+    def __init__(self, fn: Callable[[ClassVar], RetType], fallback: T) -> None:
+        self.fn = fn
+        self.fallback = fallback
+        self.hidden_var_str = f"_{self.fn.__name__}"
+
+    def __get__(self, obj: ClassVar, object_type: type | None = None) -> RetType | T:
+        try:
+            if not self.hidden_var_str in obj.__txrm_properties:
+                obj.__txrm_properties[self.hidden_var_str] = self.fn(obj)
+        except Exception:
+            if obj.strict:
+                raise
+            logging.error(
+                "Failed to get property '%s'",
+                self.fn.__name__,
+                exc_info=True,
+            )
+        return cast(
+            RetType | T, obj.__txrm_properties.get(self.hidden_var_str, self.fallback)
+        )
+
+    def __set__(self, obj: ClassVar, value: Any) -> Never:
+        raise AttributeError(f"{self.fn.__name__} cannot be set.")
+
+    def __delete__(self, obj: ClassVar) -> None:
+        setattr(obj, self.hidden_var_str, None)
+
+
+@overload
+def txrm_property(
+    function: None = None,
+    fallback: T = None,
+) -> Callable[[Callable[[ClassVar], RetType]], TxrmProperty[RetType]]: ...
+
+
+@overload
+def txrm_property(
+    function: Callable[[ClassVar], RetType],
+    fallback: T = None,
+) -> TxrmProperty[RetType]: ...
 
 
 def txrm_property(
-    function: Callable[[], Any] | None = None,
-    fallback: Any = None,
-    **kwargs,
+    function: Callable[[ClassVar], RetType] | None = None,
+    fallback: T | None = None,
+) -> (
+    TxrmProperty[RetType]
+    | Callable[[Callable[[ClassVar], RetType]], TxrmProperty[RetType]]
 ):
-    class TxrmProperty:
-        def __init__(self, fn, fallback):
-            self.fn = fn
-            self.fallback = fallback
-            self.hidden_var_str = f"_{self.fn.__name__}"
 
-        def __get__(self, obj: object, object_type=None):
-            try:
-                if obj.__txrm_properties.get(self.hidden_var_str, None) is None:
-                    try:
-                        obj.__txrm_properties[self.hidden_var_str] = self.fn(obj)
-                    except Exception:
-                        if not obj.file_is_open:
-                            raise IOError(
-                                f"Cannot get {self.fn.__name__} while file is closed"
-                            )
-                        raise
-            except Exception:
-                if obj.strict:
-                    raise
-                logging.error(
-                    "Failed to get property '%s'",
-                    self.fn.__name__,
-                    exc_info=True,
-                )
-            return obj.__txrm_properties.get(self.hidden_var_str, self.fallback)
+    if function is None:
 
-        def __set__(self, obj, value):
-            raise AttributeError(f"{self.fn.__name__} cannot be set.")
-
-        def __delete__(self, obj):
-            setattr(obj, self.hidden_var_str, None)
-
-    if function:
-        return TxrmProperty(function, fallback, **kwargs)
-    else:
-
-        def wrapper(function):
-            return TxrmProperty(function, fallback, **kwargs)
+        def wrapper(function: Callable[[ClassVar], RetType]) -> TxrmProperty[RetType]:
+            return TxrmProperty(function, fallback)
 
         return wrapper
+
+    return TxrmProperty(function, fallback)
