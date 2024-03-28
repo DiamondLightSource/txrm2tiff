@@ -141,7 +141,7 @@ def get_position_dict(
     return positions_dict
 
 
-def get_file_version(ole: of.OleFileIO, strict: bool = False) -> float | None:
+def get_file_version(ole: OleFileIO, strict: bool = False) -> float | None:
     v = read_stream(ole, "Version", xp.XrmDataTypes.XRM_FLOAT, strict=strict)
     if v:
         return cast(float, v[0])
