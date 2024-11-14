@@ -7,9 +7,9 @@ from typing import TYPE_CHECKING
 from .. import xradia_properties as xp
 
 if TYPE_CHECKING:
-    from typing import Any, Never, TypeVar, cast
+    from typing import Any, TypeVar, cast
     from numpy.typing import DTypeLike, NDArray
-    from olefile import OleFileIO
+    from olefile import OleFileIO  # type: ignore[import-untyped]
 
     U = TypeVar("U", bound=Any)
 
@@ -21,7 +21,7 @@ def read_stream(
     key: str,
     dtype: xp.XrmDataTypes | DTypeLike | None = None,
     strict: bool = False,
-) -> list[str] | list[float] | list[int] | list[bytes] | list[Never]:
+) -> list[str] | list[float] | list[int] | list[bytes]:
     """Reads and returns list containing stream specified by key, decoded as dtype"""
     try:
         if dtype is None:
@@ -60,8 +60,8 @@ def get_stream_from_bytes(stream_bytes: bytes, dtype: np.dtype[U]) -> NDArray[U]
 
 
 def _read_number_stream_to_list(
-    ole: OleFileIO, key: str, dtype: np.dtype[Any]
-) -> list[Any]:
+    ole: OleFileIO, key: str, dtype: np.dtype[U]
+) -> list[U]:
     """Reads olefile stream and returns to list of values of type dtype."""
     stream_bytes = ole.openstream(key).getvalue()
     return get_stream_from_bytes(stream_bytes, dtype).tolist()  # type: ignore[no-any-return]
@@ -84,7 +84,7 @@ def _read_text_stream_to_list(ole: OleFileIO, key: str) -> list[str]:
 
 def get_image_info_dict(
     ole: OleFileIO, ref: bool = False, strict: bool = False
-) -> dict[str, list[str] | list[float] | list[int] | list[bytes] | list[Never]]:
+) -> dict[str, list[str] | list[float] | list[int] | list[bytes]]:
     """
     Reads a selection of useful ImageInfo streams from an XRM/TXRM file.
 

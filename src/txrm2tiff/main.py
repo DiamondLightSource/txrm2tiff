@@ -1,24 +1,27 @@
+from __future__ import annotations
 from os import PathLike
 from pathlib import Path
 import logging
-from typing import Optional, Union
-from numpy.typing import DTypeLike
+import typing
 
 from .txrm import open_txrm
-from .txrm.abstract import AbstractTxrm
 from .utils.logging import create_logger
+
+if typing.TYPE_CHECKING:
+    from .txrm.main import Txrm3, Txrm5
+    from numpy.typing import DTypeLike
 
 
 def convert_and_save(
-    input_path: Union[str, PathLike],
-    output_path: Optional[Union[str, PathLike]] = None,
-    custom_reference: Optional[Union[str, PathLike]] = None,
+    input_path: str | PathLike[str],
+    output_path: str | PathLike[str] | None = None,
+    custom_reference: str | PathLike[str] | None = None,
     annotate: bool = False,
     flip: bool = False,
-    data_type: Optional[str] = None,
+    data_type: str | None = None,
     apply_shifts: bool = False,
     ignore_reference: bool = False,
-    logging_level: Union[str, int] = "info",
+    logging_level: str | int = "info",
 ) -> None:
     """
     Converts xrm or txrm file then saves as it as .ome.tiff file.
@@ -32,7 +35,7 @@ def convert_and_save(
         ignore_reference (bool, optional): Ignore any internal reference. Defaults to False.
         logging_level (str, optional): Defaults to "info".
     """
-    create_logger(str(logging_level).lower())
+    create_logger(logging_level)
     logging.debug(
         "Running with arguments: "
         "input_path=%s, custom_reference=%s, output_path=%s, annotate=%s, flip=%s, data_type=%s, apply_shifts=%s, ignore_reference=%s, logging_level=%s",
@@ -90,10 +93,10 @@ def convert_and_save(
 
 def _batch_convert_files(
     input_directory: Path,
-    output: Optional[Path] = None,
+    output: Path | None = None,
     annotate: bool = True,
     flip: bool = False,
-    data_type: Optional[DTypeLike] = None,
+    data_type: DTypeLike | None = None,
     shifts: bool = False,
     ignore_reference: bool = False,
 ) -> None:
@@ -129,30 +132,30 @@ def _batch_convert_files(
         )
 
 
-def _find_files(directory: Path):
+def _find_files(directory: Path) -> list[Path]:
     return list(directory.rglob("*xrm"))
 
 
 def _convert_and_save(
     input_path: Path,
-    output_path: Optional[Path] = None,
-    custom_reference: Optional[Union[str, PathLike]] = None,
+    output_path: Path | None = None,
+    custom_reference: str | PathLike[str] | None = None,
     annotate: bool = True,
     flip: bool = False,
-    data_type: Optional[DTypeLike] = None,
+    data_type: DTypeLike | None = None,
     shifts: bool = False,
     ignore_reference: bool = False,
 ) -> None:
     with open_txrm(input_path) as txrm:
         _convert_file(txrm, custom_reference, ignore_reference, annotate)
-        output_path = _decide_output_path(txrm.path, output_path)
+        output_path = _decide_output_path(input_path, output_path)
         output_path.parent.mkdir(parents=True, exist_ok=True)  # Make output directory
         txrm.save_images(output_path, data_type, flip=flip, shifts=shifts, mkdir=True)
 
 
 def _convert_file(
-    txrm: AbstractTxrm,
-    custom_reference: Optional[Union[str, PathLike]] = None,
+    txrm: Txrm3 | Txrm5,
+    custom_reference: str | PathLike[str] | None = None,
     ignore_reference: bool = False,
     annotate: bool = True,
 ) -> None:
@@ -162,11 +165,11 @@ def _convert_file(
         txrm.apply_reference(
             custom_reference
         )  # Called with None applies internal reference
-    if annotate:
+    if annotate and hasattr(txrm, "annotate"):
         txrm.annotate()
 
 
-def _decide_output_path(input_path: Path, output_path: Optional[Path]) -> Path:
+def _decide_output_path(input_path: Path, output_path: Path | None) -> Path:
     # If no output is supplied
     if output_path is None:
         output_path = input_path
@@ -179,7 +182,7 @@ def _decide_output_path(input_path: Path, output_path: Optional[Path]) -> Path:
     return _set_output_suffix(output_path, current_suffix=input_path.suffix)
 
 
-def _set_output_suffix(filepath: Path, current_suffix: Optional[str] = None) -> Path:
+def _set_output_suffix(filepath: Path, current_suffix: str | None = None) -> Path:
     if current_suffix is None:
         current_suffix = filepath.suffix
     if current_suffix.lower() in (".txrm", ".xrm"):

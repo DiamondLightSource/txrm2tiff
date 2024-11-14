@@ -35,13 +35,11 @@ class IntValueEnum(int, enum.Enum):
         self._number_ = value
 
     @classmethod
-    def from_number(cls, number: int, strict: bool = False) -> Self | None:
+    def from_number(cls, number: int) -> Self:
         for obj in cls:
             if obj.number == number:
                 return obj
-        if strict:
-            raise ValueError(f"{cls.__name__} has no value matching {number}")
-        return None
+        raise ValueError(f"{cls.__name__} has no value matching {number}")
 
 
 class XrmDataTypes(IntValueEnum):

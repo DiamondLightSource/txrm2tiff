@@ -3,31 +3,33 @@ import logging
 from typing import TYPE_CHECKING
 import numpy as np
 
-from ..xradia_properties import XrmDataTypes as XDT
+from ..xradia_properties import XrmDataTypes as XDTypes
 
 from . import general
 
 if TYPE_CHECKING:
     from typing import Any, cast
-    from olefile import OleFileIO
+    from olefile import OleFileIO  # type: ignore[import-untyped]
     from numpy.typing import NDArray
 
 
 def extract_image_dtype(
     ole: OleFileIO, key_part: str, strict: bool = False, **kwargs: Any
-) -> XDT | None:
+) -> XDTypes | None:
     key = f"{key_part}/DataType"
-    integer_list = cast(list[int], general.read_stream(ole, key, XDT.XRM_INT, strict))
+    integer_list = cast(
+        list[int], general.read_stream(ole, key, XDTypes.XRM_INT, strict)
+    )
     if not integer_list:
         return None
-    return XDT.from_number(integer_list[0], strict)
+    return XDTypes.from_number(integer_list[0])
 
 
 def extract_single_image(
     ole: OleFileIO,
     image_num: int,
-    numrows: int,
-    numcols: int,
+    numrows: int | np.integer[Any],
+    numcols: int | np.integer[Any],
     strict: bool = False,
     **kwargs: Any,
 ) -> NDArray[Any]:
@@ -61,20 +63,26 @@ def extract_single_image(
                 logging.error("Exception occurred getting %s", img_key, exc_info=True)
                 if strict:
                     raise
-        imgdata.shape = (numrows, numcols)
+        imgdata.shape = (int(numrows), int(numcols))
         return imgdata
+
+
+def get_image_key(image_number: int) -> str:
+    # They are stored in the txrm as ImageData<folder number>/Image<image number>...
+    # Each folder contains 100 images 1-100, 101-200
+    return f"ImageData{int(np.ceil(image_number / 100.0))}/Image{image_number}"
 
 
 def fallback_image_interpreter(
     stream_bytes: bytes,
-    image_size: int,
+    image_size: int | np.integer[Any],
     strict: bool = False,
 ) -> NDArray[Any]:
     stream_length = len(stream_bytes)
     if stream_length == image_size * 2:
-        dtype = XDT.XRM_UNSIGNED_SHORT
+        dtype = XDTypes.XRM_UNSIGNED_SHORT
     elif stream_length == image_size * 4:
-        dtype = XDT.XRM_FLOAT
+        dtype = XDTypes.XRM_FLOAT
     else:
         logging.error(
             "Unexpected data type with %g bytes per pixel",

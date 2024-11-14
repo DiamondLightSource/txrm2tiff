@@ -11,14 +11,14 @@ from ome_types.model.simple_types import PixelType
 
 
 from txrm2tiff.utils.file_handler import manual_save
-from txrm2tiff.txrm.ref_mixin import ReferenceMixin
+from txrm2tiff.txrm.ref_mixin import TxrmWithReferencing
 from txrm2tiff.txrm.v3 import Txrm3
 from txrm2tiff.txrm.v5 import Txrm5
 
 
 class TestReferencerMixin(unittest.TestCase):
     def test_apply_reference_defaults_with_internal(self):
-        referencer = ReferenceMixin()
+        referencer = TxrmWithReferencing()
         referencer.has_reference = True
         with patch.object(
             referencer, "apply_internal_reference"
@@ -29,7 +29,7 @@ class TestReferencerMixin(unittest.TestCase):
             )
 
     def test_apply_reference_defaults_no_internal(self):
-        referencer = ReferenceMixin()
+        referencer = TxrmWithReferencing()
         referencer.has_reference = False
         with patch.object(
             referencer, "apply_internal_reference"
@@ -39,7 +39,7 @@ class TestReferencerMixin(unittest.TestCase):
 
     @patch("txrm2tiff.txrm.ref_mixin.file_can_be_opened", MagicMock(return_value=True))
     def test_apply_reference_tiff(self):
-        referencer = ReferenceMixin()
+        referencer = TxrmWithReferencing()
         with patch.object(
             referencer, "apply_custom_reference_from_array"
         ) as mocked_apply_array:
@@ -57,7 +57,7 @@ class TestReferencerMixin(unittest.TestCase):
 
     @patch("txrm2tiff.txrm.ref_mixin.file_can_be_opened", MagicMock(return_value=True))
     def test_apply_reference_tiff_compensate_exposure(self):
-        referencer = ReferenceMixin()
+        referencer = TxrmWithReferencing()
         with patch.object(
             referencer, "apply_custom_reference_from_array"
         ) as mocked_apply_array:
@@ -107,7 +107,7 @@ class TestReferencerMixin(unittest.TestCase):
     @patch("txrm2tiff.txrm.ref_mixin.isOleFile", MagicMock(return_value=True))
     @patch("txrm2tiff.txrm.ref_mixin.main.open_txrm")
     def test_apply_refererence_txrm(self, TxrmClass, mocked_open_txrm):
-        referencer = ReferenceMixin()
+        referencer = TxrmWithReferencing()
         txrm = MagicMock(auto_spec=TxrmClass)
         mocked_open_txrm.return_value.__enter__.return_value = txrm
 

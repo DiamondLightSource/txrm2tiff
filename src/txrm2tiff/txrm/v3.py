@@ -1,61 +1,77 @@
+from __future__ import annotations
 import typing
 import logging
 import numpy as np
 
-from .abstract import AbstractTxrm
-from .ref_mixin import ReferenceMixin
-from .save_mixin import SaveMixin
-from .shifts_mixin import ShiftsMixin
-from .meta_mixin import MetaMixin
-from .txrm_property import txrm_property
-from ..txrm_functions.images import fallback_image_interpreter
+from .abc.ome import TxrmWithOME
+
+from .wrappers import txrm_property
 from ..utils.functions import convert_to_int
-from ..utils.metadata import get_ome_pixel_type
+
+if typing.TYPE_CHECKING:
+    from os import PathLike
+    from io import IOBase
+    from numpy.typing import NDArray
 
 
-class Txrm3(ShiftsMixin, SaveMixin, ReferenceMixin, MetaMixin, AbstractTxrm):
+class Txrm3(TxrmWithOME):
+    def __init__(
+        self,
+        f: str | PathLike[typing.Any] | IOBase | bytes,
+        /,
+        load_images: bool = True,
+        load_reference: bool = True,
+        strict: bool = True,
+    ) -> None:
+        super().__init__(
+            f,
+            load_images=load_images,
+            load_reference=load_reference,
+            strict=strict,
+        )
+
     @txrm_property(fallback=None)
     def is_mosaic(self) -> bool:
         return self.image_info.get("MosiacMode", [0])[0] == 1
 
-    @txrm_property(fallback=[])
-    def image_dims(self) -> typing.List[int]:
-        img_dims = [
-            self.image_info["ImageWidth"][0],
-            self.image_info["ImageHeight"][0],
-        ]
+    @txrm_property(fallback=None)
+    def image_dims(self) -> tuple[int, int]:
+        img_dims = (
+            int(self.image_info["ImageWidth"][0]),
+            int(self.image_info["ImageHeight"][0]),
+        )
         if self.is_mosaic:
             img_dims = self._mosaic_to_single_image_dims(img_dims)
         return img_dims
 
-    @txrm_property(fallback=[])
-    def reference_dims(self) -> typing.List[int]:
-        return (
-            self.image_dims
-        )  # Same for both (reference width/height isn't stored separately for v3)
+    @txrm_property(fallback=None)
+    def reference_dims(self) -> tuple[int, int]:
+        dims = self.image_dims
+        assert dims is not None
+        return dims  # Same for both (reference width/height isn't stored separately for v3)
 
-    def _mosaic_to_single_image_dims(self, dims) -> typing.List[int]:
-        return [
-            convert_to_int(dim / mos_dim)
-            for dim, mos_dim in zip(dims, self.mosaic_dims)
-        ]
+    def _mosaic_to_single_image_dims(self, dims) -> tuple[int, int]:
+        mosaic_dims = self.mosaic_dims
+        assert mosaic_dims is not None
+        return (
+            convert_to_int(dims[0] / mosaic_dims[0]),
+            convert_to_int(dims[1] / mosaic_dims[1]),
+        )
 
     @txrm_property(fallback=None)
-    def reference_exposure(self) -> typing.Optional[float]:
-        return self.read_single_value_from_stream("ReferenceData/ExpTime")
+    def reference_exposure(self) -> float | None:
+        return typing.cast(
+            float | None, self.read_single_value_from_stream("ReferenceData/ExpTime")
+        )
 
-    def extract_reference_image(self) -> np.ndarray:
-        ref_data = self.extract_reference_data()
-
-        if isinstance(ref_data, bytes):  # If unable to extract dtype
-            img_size = np.prod(self.reference_dims)
-            ref_data = fallback_image_interpreter(ref_data, int(img_size), self.strict)
-
-        ref_data.shape = self.reference_dims[::-1]
-
-        if self.is_mosaic:
-            ref_data = np.tile(ref_data, self.mosaic_dims[::-1])
-        return ref_data
+    def load_reference(self) -> None:
+        super().load_reference()
+        if (
+            self._reference is not None
+            and self.is_mosaic
+            and self.mosaic_dims is not None
+        ):
+            self._reference = np.tile(self._reference, self.mosaic_dims[::-1])
 
     def get_output(
         self,
@@ -63,7 +79,7 @@ class Txrm3(ShiftsMixin, SaveMixin, ReferenceMixin, MetaMixin, AbstractTxrm):
         shifts: bool = False,
         flip: bool = False,
         clear_images: bool = True,
-    ) -> typing.Optional[np.ndarray]:
+    ) -> NDArray[typing.Any] | None:
         """
         Returns output image as ndarray with axes [idx, y, x]. If a reference has been applied, the referenced image will be returned.
 
@@ -85,7 +101,3 @@ class Txrm3(ShiftsMixin, SaveMixin, ReferenceMixin, MetaMixin, AbstractTxrm):
             # The default state is flipped with respect to how it's displayed in XRM Data Explorer
             return np.flip(images, axis=1)
         return images
-
-    def set_dtype(self, dtype, allow_clipping: bool = False):
-        if super().set_dtype(dtype, allow_clipping=allow_clipping):
-            self._ome_pixels.type = get_ome_pixel_type(dtype)

@@ -1,9 +1,15 @@
+from __future__ import annotations
 import os
 import logging
 from pathlib import Path
 from sys import executable
+from typing import TYPE_CHECKING
 
-def _get_Windows_home_path():
+if TYPE_CHECKING:
+    from os import PathLike
+
+
+def _get_Windows_home_path() -> Path:
     home = os.getenv("USERPROFILE")
     if home is None:
         homedrive = os.getenv("HOMEDRIVE")
@@ -19,11 +25,15 @@ def _get_Windows_home_path():
             return home_path
         except FileNotFoundError:
             pass
-    logging.error("Cannot find valid home path. The following path was found: '%s'", home)
-    raise FileNotFoundError(f"Cannot find valid home path. The following path was found: '{home}''")
+    logging.error(
+        "Cannot find valid home path. The following path was found: '%s'", home
+    )
+    raise FileNotFoundError(
+        f"Cannot find valid home path. The following path was found: '{home}''"
+    )
 
 
-def _create_lnk_file(shortcut_path):
+def _create_lnk_file(shortcut_path: str | PathLike[str]) -> None:
     try:
         # win23com is from the package pywin32, only available in Windows
         import win32com.client
@@ -42,7 +52,7 @@ def _create_lnk_file(shortcut_path):
     logging.info(msg)
 
 
-def create_Windows_shortcut():
+def create_Windows_shortcut() -> None:
     if os.name != "nt":
         logging.error("This command is only valid on Windows installations.")
         return
@@ -61,6 +71,9 @@ def create_Windows_shortcut():
             logging.info("The existing shortcut will not be modified.")
             return
         else:
-            logging.info("Invalid input: %s. The existing shortcut will not be modified.", user_input)
+            logging.info(
+                "Invalid input: %s. The existing shortcut will not be modified.",
+                user_input,
+            )
             return
     _create_lnk_file(shortcut_path)

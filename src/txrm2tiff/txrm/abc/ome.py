@@ -13,50 +13,61 @@ from ome_types.model.simple_types import (
 )
 from typing import TYPE_CHECKING
 
-from ..info import __version__
-from .txrm_property import txrm_property
-from ..xradia_properties.enums import (
+from ...info import __version__
+from ..wrappers import txrm_property, uses_ole
+from ...xradia_properties.enums import (
     XrmDataTypes,
     XrmSourceType,
 )
-from .metadata import MetadataMixin
+from .images import TxrmWithImages
+from ...utils.metadata import get_ome_pixel_type
 
 if TYPE_CHECKING:
+    import typing
     from collections.abc import Iterable
+    from numpy.typing import DTypeLike
 
 
-class OMEMixin(MetadataMixin, ABC):
+class TxrmWithOME(TxrmWithImages, ABC):
+    def __init__(self, *args: typing.Any, **kwargs: typing.Any) -> None:
+        super().__init__(*args, **kwargs)
 
     @txrm_property(fallback=0)
     def _ome_configured_camera_count(self) -> int:
         return self.read_stream(
-            "ConfigureBackup/ConfigCamera/NumberOfCamera", XrmDataTypes.XRM_UNSIGNED_INT
+            "ConfigureBackup/ConfigCamera/NumberOfCamera",
+            XrmDataTypes.XRM_UNSIGNED_INT,
+            strict=True,
         )[0]
 
     @txrm_property(fallback=dict())
     def _ome_configured_detectors(self) -> dict[int, model.Detector]:
-        return {
-            self._camera_ids[i]: self._get_detector(i)
-            for i in range(self._ome_configured_camera_count)
-        }
+        detector_dict: dict[int, model.Detector] = {}
+        for i in range(self._ome_configured_camera_count):
+            detector = self._get_detector(i)
+            camera_id = typing.cast(int, self._camera_ids[i])
+            if detector is not None and camera_id is not None:
+                detector_dict[camera_id] = detector
+        return detector_dict
 
+    @uses_ole(strict=False)
     def _get_detector(self, index: int) -> model.Detector:
         stream_stem = f"ConfigureBackup/ConfigCamera/Camera {index + 1}"
         logging.debug("Getting detector %i info", index)
         return model.Detector(
             id=f"Detector:{index}",
-            gain=self.read_stream(f"{stream_stem}/PreAmpGain", XrmDataTypes.XRM_FLOAT)[
-                0
-            ],
+            gain=self.read_stream(
+                f"{stream_stem}/PreAmpGain", XrmDataTypes.XRM_FLOAT, strict=True
+            )[0],
             amplification_gain=self.read_stream(
-                f"{stream_stem}/OutputAmplifier", XrmDataTypes.XRM_FLOAT
+                f"{stream_stem}/OutputAmplifier", XrmDataTypes.XRM_FLOAT, strict=True
             )[0],
             model=self.read_stream(
-                f"{stream_stem}/CameraName", XrmDataTypes.XRM_STRING
+                f"{stream_stem}/CameraName", XrmDataTypes.XRM_STRING, strict=True
             )[0],
         )
 
-    @txrm_property(fallback=[])
+    @txrm_property(fallback=list())
     def _camera_ids(self) -> list[int]:
         return [
             self._get_camera_id(i) for i in range(self._ome_configured_camera_count)
@@ -170,11 +181,11 @@ class OMEMixin(MetadataMixin, ABC):
         zp_name = self.image_info.get("ZonePlateName", [None])[0]
         if zp_name:
             obj_name = f"{obj_name}_{zp_name}"
-        objective = self._get_objectives[camera_id][obj_name]
+        objective = self._get_objectives(camera_id)[obj_name]
         return objective
 
     @txrm_property(fallback=None)
-    def _ome_objective_settings(self) -> model.ObjectiveSettings:
+    def _ome_objective_settings(self) -> model.ObjectiveSettings | None:
         if self._ome_objective is None:
             logging.info("No objective to reference")
             return None
@@ -202,21 +213,20 @@ class OMEMixin(MetadataMixin, ABC):
         )
         id_ = f"LightSource:{index}"
         name = self.read_stream(f"{stream_stem}/SourceName", XrmDataTypes.XRM_STRING)[0]
-        kwargs = {}
-        if source_type == XrmSourceType.XRM_VISUAL_LIGHT_SOURCE:
-            source = model.LightEmittingDiode
-        else:
-            source = model.GenericExcitationSource
 
-            m = []
+        if source_type == XrmSourceType.XRM_VISUAL_LIGHT_SOURCE:
+            return model.LightEmittingDiode(id=id_, model=name)
+        else:
+
+            ms: list[model.Map.M] = []
             current, current_units = self.position_info.get("Current", [[], None])
             if current and current_units:
-                m.append(model.Map.M(k="Current", value=", ".join(map(str, current))))
-                m.append(model.Map.M(k="CurrentUnits", value=str(current_units)))
-            if m:
-                kwargs["map"] = model.Map(k="BeamProperties", m=m)
+                ms.append(model.Map.M(k="Current", value=", ".join(map(str, current))))
+                ms.append(model.Map.M(k="CurrentUnits", value=str(current_units)))
 
-        return source(id=id_, model=name, **kwargs)
+            return model.GenericExcitationSource(
+                id=id_, model=name, map=model.Map(ms=ms)
+            )
 
     @txrm_property(fallback=None)
     def _ome_light_source(self) -> model.LightSource:
@@ -247,7 +257,7 @@ class OMEMixin(MetadataMixin, ABC):
     def _ome_detector_settings(self) -> model.DetectorSettings | None:
         if self._ome_detector is None:
             return None
-        kwargs = {}
+        kwargs: dict[str, typing.Any] = {}
         binning = self.image_info.get("CameraBinning", [None])[0]
         if binning is not None:
             binning_str = "{0}x{0}".format(binning)
@@ -284,6 +294,7 @@ class OMEMixin(MetadataMixin, ABC):
         # Get image shape
         # number of frames (T in tilt series), Y, X:
         shape = self.output_shape
+        assert shape is not None
 
         # Get metadata variables from ole file:
         exposures = self.exposures.copy()
@@ -300,7 +311,7 @@ class OMEMixin(MetadataMixin, ABC):
             coord * 1.0e3 for coord in self.image_info["ZPosition"]
         ]  # micron to nm
 
-        if self.is_mosaic:
+        if self.is_mosaic and self.mosaic_dims is not None:
             mosaic_columns, mosaic_rows = self.mosaic_dims
             # Calculates:
             # - Mean exposure, throwing away any invalid 0 values
@@ -415,34 +426,38 @@ class OMEMixin(MetadataMixin, ABC):
 
     @txrm_property(fallback=None)
     def _ome_image(self) -> model.Image:
-        kwargs = {}
+        kwargs: dict[str, typing.Any] = {}
         if self._ome_modulo is not None:
             kwargs["annotation_ref"] = [model.AnnotationRef(id=self._ome_modulo.id)]
-        return model.Image(
-            id="Image:0",
-            acquisition_date=self.datetimes[0],
-            description=f"An OME-TIFF file converted from {self.name}",
-            pixels=self._ome_pixels,
-            instrument_ref=self._ome_instrument_ref,
-            objective_settings=self._ome_objective_settings,
-            **kwargs,
-        )
+        if self._ome_pixels is not None:
+            return model.Image(
+                id="Image:0",
+                acquisition_date=self.datetimes[0],
+                description=f"An OME-TIFF file converted from {self.name}",
+                pixels=self._ome_pixels,
+                instrument_ref=self._ome_instrument_ref,
+                objective_settings=self._ome_objective_settings,
+                **kwargs,
+            )
+        raise ValueError("Failed to get OME Pixels metadata")
 
     @txrm_property(fallback=None)
     def metadata(self) -> model.OME:
-        kwargs = {}
+        kwargs: dict[str, typing.Any] = {}
         if self._ome_instrument is not None:
             # If ome instrument metadata fails due to a bad config,
             # it's still worth appending the image info
             kwargs["instruments"] = [self._ome_instrument]
         if self._ome_modulo is not None:
             kwargs["structured_annotations"] = [self._ome_modulo]
+        if self._ome_image is None:
+            raise ValueError("Failed to get OME Image metadata")
         return model.OME(
             creator=f"txrm2tiff {__version__}", images=[self._ome_image], **kwargs
         )
 
     @txrm_property(fallback=None)
-    def _ome_modulo(self) -> model.XMLAnnotation:
+    def _ome_modulo(self) -> model.XMLAnnotation | None:
         el = ElementTree.Element(
             "Modulo",
             namespace="http://www.openmicroscopy.org/Schemas/Additions/2011-09",
@@ -482,3 +497,29 @@ class OMEMixin(MetadataMixin, ABC):
         for ang in angles:
             label_sub_el = ElementTree.SubElement(sub_el, "Label")
             label_sub_el.text = str(ang)
+
+    def set_dtype(
+        self,
+        dtype: DTypeLike,
+        allow_clipping: bool = False,
+    ) -> bool:
+        images = self.get_images(load=False)
+        if images is None:
+            logging.error("Image dtype cannot be set if images haven't been loaded")
+            return False
+        try:
+            # Check this can be handled when saving
+            get_ome_pixel_type(dtype)
+        except TypeError:
+            logging.error(
+                "Casting images to '%s' failed. Images will remain '%s'.",
+                dtype,
+                images[0].dtype,
+                exc_info=True,
+            )
+            return False
+        if super().set_dtype(dtype, allow_clipping=allow_clipping):
+            if self._ome_pixels is not None:
+                self._ome_pixels.type = get_ome_pixel_type(dtype)
+                return True
+        return False

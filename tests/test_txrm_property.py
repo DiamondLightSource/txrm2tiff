@@ -2,7 +2,7 @@ import unittest
 from unittest.mock import MagicMock
 from parameterized import parameterized
 
-from txrm2tiff.txrm.txrm_property import txrm_property
+from txrm2tiff.txrm.wrappers import txrm_property
 
 
 class ToasterError(Exception):

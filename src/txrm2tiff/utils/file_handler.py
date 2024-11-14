@@ -4,38 +4,39 @@ import tifffile as tf
 import numpy as np
 from os import access, R_OK
 from pathlib import Path
-from typing import Optional, Union, List
-from olefile import OleFileIO, isOleFile
+from typing import Union, List
+from olefile import OleFileIO, isOleFile  # type: ignore[import-untyped]
 
 from ..txrm_functions import read_stream
-from ..xradia_properties import XrmDataTypes as XDT
+from ..xradia_properties import XrmDataTypes as XDTypes
 from .metadata import handle_tiff_resolution, get_ome_pixel_type
 from ..info import __version__
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
+    from typing import Any
     from ome_types import OME
-    from numpy.typing import DTypeLike
+    from numpy.typing import NDArray
     from os import PathLike
 
 
-def file_can_be_opened(path: Union[str, PathLike]) -> bool:
+def file_can_be_opened(path: str | PathLike[str]) -> bool:
     if access(str(path), R_OK):
         return True
     logging.error("File %s cannot be opened", path)
     return False
 
 
-def ole_file_works(path: Union[str, PathLike]) -> bool:
+def ole_file_works(path: str | PathLike[str]) -> bool:
     path = Path(path)
     if path.is_file() and ((path.suffix == ".txrm") or (path.suffix == ".xrm")):
         if isOleFile(str(path)):
             with OleFileIO(str(path)) as ole_file:
                 number_frames_taken = read_stream(
-                    ole_file, "ImageInfo/ImagesTaken", XDT.XRM_INT
+                    ole_file, "ImageInfo/ImagesTaken", XDTypes.XRM_INT
                 )[0]
                 expected_number_frames = read_stream(
-                    ole_file, "ImageInfo/NoOfImages", XDT.XRM_INT
+                    ole_file, "ImageInfo/NoOfImages", XDTypes.XRM_INT
                 )[0]
                 # Returns true even if all frames aren't written, throwing warning.
                 if number_frames_taken != expected_number_frames:
@@ -58,14 +59,18 @@ def ole_file_works(path: Union[str, PathLike]) -> bool:
 
 
 def manual_save(
-    filepath: Union[str, PathLike],
-    image: Union[np.ndarray, List[np.ndarray]],
-    metadata: Optional[OME] = None,
-):
+    filepath: Union[str, PathLike[str]],
+    image: Union[NDArray[Any], List[NDArray[Any]]],
+    metadata: OME | None = None,
+) -> None:
+    metadata_string: str | None
+
     filepath = Path(filepath)
     image = np.asarray(image)
-    tiff_kwargs = {}
-    if metadata is not None:
+    tiff_kwargs: dict[str, Any] = {}
+    if metadata is None:
+        metadata_string = None
+    else:
         meta_img = metadata.images[0]
         meta_img.pixels.type = get_ome_pixel_type(image.dtype)
         meta_img.name = filepath.name
@@ -74,17 +79,17 @@ def manual_save(
         )  # Must use CENTIMETER for maximum compatibility
         try:
             resolution = handle_tiff_resolution(metadata, resolution_unit)
-            if tf.__version__ >= "2022.7.28":
+            if tf.__version__ >= "2022.7.28":  # type: ignore[attr-defined]
                 # 2022.7.28: Deprecate third resolution argument on write (use resolutionunit)
+                tiff_kwargs["resolution"] = resolution
                 tiff_kwargs["resolutionunit"] = resolution_unit
             else:
-                resolution.append(resolution_unit)
-            tiff_kwargs["resolution"] = tuple(resolution)
+                tiff_kwargs["resolution"] = (*resolution, resolution_unit)
         except Exception:
             logging.warning(
                 "Failed to include resolution info in tiff tags", exc_info=True
             )
-        metadata = metadata.to_xml()
+        metadata_string = metadata.to_xml()
 
     num_frames = len(image)
     bigtiff = (
@@ -100,16 +105,14 @@ def manual_save(
         tif.write(
             image,
             photometric="MINISBLACK",
-            description=metadata,
+            description=metadata_string,
             metadata={"axes": "ZYX"},
             software=f"txrm2tiff {__version__}",
             **tiff_kwargs,
         )
 
 
-def manual_annotation_save(
-    filepath: Union[str, PathLike], image: Union[np.ndarray, List[np.ndarray]]
-):
+def manual_annotation_save(filepath: str | PathLike[str], image: NDArray[Any]) -> None:
     filepath = Path(filepath)
     num_frames = len(image)
     logging.info(

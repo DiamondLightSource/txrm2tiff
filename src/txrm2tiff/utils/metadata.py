@@ -6,6 +6,7 @@ from ome_types.model.simple_types import PixelType, UnitsLength
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
+    from typing import cast
     from numpy.typing import DTypeLike
     from ome_types import OME
 
@@ -113,17 +114,19 @@ def convert_to_unit(
     return float(multipler * Decimal(value))
 
 
-def handle_tiff_resolution(metadata: OME, resolution_unit: int) -> list[float, float]:
+def handle_tiff_resolution(metadata: OME, resolution_unit: int) -> tuple[float, float]:
     pixels = metadata.images[0].pixels
+
     x_size_info = (pixels.physical_size_x, pixels.physical_size_x_unit)
     y_size_info = (pixels.physical_size_y, pixels.physical_size_y_unit)
+
     if None in x_size_info or None in y_size_info:
         raise ValueError("Failed to interpret physical size from OME metadata")
     try:
         new_unit = __TIFF_TO_OME_UNITS_MAPPING[resolution_unit]
     except KeyError:
         raise ValueError(f"Unit {resolution_unit} is not a supported TIFF unit")
-    return [
-        1.0 / convert_to_unit(size_info[0], size_info[1], new_unit)
-        for size_info in (x_size_info, y_size_info)
-    ]
+    return (
+        1.0 / convert_to_unit(cast(float, x_size_info[0]), x_size_info[1], new_unit),
+        1.0 / convert_to_unit(cast(float, y_size_info[0]), y_size_info[1], new_unit),
+    )

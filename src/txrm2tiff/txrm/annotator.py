@@ -1,10 +1,8 @@
+from __future__ import annotations
 import logging
-from abc import ABC
 import math
-from numbers import Number
 from pathlib import Path
-from collections import defaultdict
-from typing import Iterable, Optional, Tuple, Union
+import typing
 
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
@@ -12,38 +10,43 @@ from PIL.ImageOps import autocontrast
 
 from ..utils.image_processing import rescale_image
 from ..utils.file_handler import manual_annotation_save
-from ..xradia_properties import AnnotationTypes, XrmDataTypes as XDT
+from ..xradia_properties import AnnotationTypes, XrmDataTypes as XDTypes
 
 font_path = Path(__file__).parent.parent / "font" / "CallingCode-Regular.otf"
 
+if typing.TYPE_CHECKING:
+    from collections.abc import Callable
+    from os import PathLike
+    from numpy.typing import NDArray
 
-class AnnotationMixin(ABC):
+    from .abc.images import TxrmWithImages
 
-    def __new__(cls, *args, **kwargs):
-        cls.setup_ann_functions()
-        return super().__new__(cls)
+    TxrmWithImagesType = typing.TypeVar("TxrmWithImagesType", bound=TxrmWithImages)
+    FloatOrInt = typing.TypeVar("FloatOrInt", float, int)
 
-    @classmethod
-    def setup_ann_functions(cls):
-        cls.ann_funcs = defaultdict(
-            lambda: cls._not_implemented,
-            {
-                AnnotationTypes.ANN_LINE: cls._plot_line,
-                AnnotationTypes.ANN_RECT: cls._plot_rect,
-                AnnotationTypes.ANN_ELLIPSE: cls._plot_ellipse,
-                AnnotationTypes.ANN_CIRCLE: cls._plot_ellipse,
-                AnnotationTypes.ANN_POLYGON: cls._plot_polygon,
-                AnnotationTypes.ANN_POLYLINE: cls._plot_polyline,
-                AnnotationTypes.ANN_FREE_HAND_SKETCH: cls._plot_freehand,
-            },
-        )
+
+class Annotator:
+
+    def __init__(self, txrm: TxrmWithImagesType) -> None:
+        self._txrm = txrm
+        self.annotated_image: NDArray[np.uint8] | None = None
+        self._ann_funcs: dict[
+            AnnotationTypes, Callable[[ImageDraw.ImageDraw, str], None]
+        ] = {
+            AnnotationTypes.ANN_LINE: self._plot_line,
+            AnnotationTypes.ANN_RECT: self._plot_rect,
+            AnnotationTypes.ANN_ELLIPSE: self._plot_ellipse,
+            AnnotationTypes.ANN_CIRCLE: self._plot_ellipse,
+            AnnotationTypes.ANN_POLYGON: self._plot_polygon,
+            AnnotationTypes.ANN_POLYLINE: self._plot_polyline,
+            AnnotationTypes.ANN_FREE_HAND_SKETCH: self._plot_freehand,
+        }
 
     def annotate(
         self,
         scale_bar: bool = True,
-        clip_percentiles: Tuple[Union[int, float], Union[int, float]] = (2, 98),
-    ) -> Optional[np.ndarray]:
-        """Annotate output image. Please ensure that the image has been referenced first, if applicable."""
+        clip_percentiles: tuple[float, float] = (2, 98),
+    ) -> NDArray[np.uint8] | None:
         annotations = self.extract_annotations(scale_bar=scale_bar)
         # Checks if anything has been added
         if annotations is None:
@@ -51,7 +54,10 @@ class AnnotationMixin(ABC):
             self.annotated_image = None
         else:
             # Annotations will be in the wrong place if flipped
-            images = self.get_output(flip=False, clear_images=False)
+            images = self._txrm.get_output(flip=False, clear_images=False)
+            if images is None:
+                logging.warning("No images to annotate")
+                return None
             lower_percentile, upper_percentile = np.percentile(images, clip_percentiles)
             images = rescale_image(
                 images,
@@ -63,24 +69,27 @@ class AnnotationMixin(ABC):
             self.annotated_image = self.apply_annotations(images, annotations)
         return self.annotated_image
 
-    @property
-    def thickness_modifier(self) -> float:
+    def get_thickness_modifier(self) -> float:
         """This set a multiplier so that lines are visible when the image is at a sensible size"""
-        if not hasattr(self, "output_shape"):
-            return 1.0
-        return np.mean(self.output_shape[1:]) / 500.0
+        output_shape = self._txrm.output_shape
+        assert output_shape is not None
+        return float(np.mean(output_shape[1:]) / 500.0)
 
-    def _create_image_and_draw(self):
+    def _create_image_and_draw(self) -> tuple[Image.Image, ImageDraw.ImageDraw]:
         """Create transparent RGBA image with appropriate 2D dimensions for output image(s)"""
-        im = Image.new("RGBA", self.output_shape[:0:-1], (0, 0, 0, 0))
+        output_shape = self._txrm.output_shape
+        assert output_shape is not None
+        im = Image.new("RGBA", output_shape[:0:-1], (0, 0, 0, 0))
         draw = ImageDraw.Draw(im, mode="RGBA")
         return im, draw
 
-    def extract_annotations(self, scale_bar: bool = True) -> Optional[np.ndarray]:
+    def extract_annotations(self, scale_bar: bool = True) -> Image.Image | None:
         annotations, draw = self._create_image_and_draw()
         annotated = False
-        if self.has_stream("Annot/TotalAnn"):
-            num_annotations = self.read_stream("Annot/TotalAnn", strict=True)[0]
+        if self._txrm.has_stream("Annot/TotalAnn"):
+            num_annotations = int(
+                self._txrm.read_stream("Annot/TotalAnn", strict=True)[0]
+            )
             if num_annotations is not None and num_annotations > 0:
                 for i in range(num_annotations):
                     try:
@@ -97,7 +106,9 @@ class AnnotationMixin(ABC):
             return None
         return annotations
 
-    def apply_annotations(self, images: np.ndarray, annotations: Image) -> np.ndarray:
+    def apply_annotations(
+        self, images: NDArray[typing.Any], annotations: Image.Image
+    ) -> NDArray[np.uint8] | None:
         """
         Apply annotations to images returning a numpy.ndarray
 
@@ -114,7 +125,11 @@ class AnnotationMixin(ABC):
                 # Make 'L' type PIL image from 2D array, autocontrast, then convert to RGBA
                 image = Image.fromarray(image).convert("L")
                 image_auto_contrasted = autocontrast(image)
-                if np.mean(image_auto_contrasted) == np.max(image_auto_contrasted):
+                image_auto_contrasted_array = np.asarray(image_auto_contrasted)
+                if (
+                    image_auto_contrasted_array.mean()
+                    == image_auto_contrasted_array.max()
+                ):
                     image = image_auto_contrasted
                 else:
                     del image_auto_contrasted
@@ -126,31 +141,43 @@ class AnnotationMixin(ABC):
             return output_images
         except Exception:
             logging.error("Failed to apply annotations", exc_info=True)
+        return None
 
-    def _draw_annotation(self, draw: ImageDraw, index: int) -> None:
+    def _draw_annotation(self, draw: ImageDraw.ImageDraw, index: int) -> None:
         stream_stem = "Annot/Ann%i" % index
-        ann_type_int = self.read_stream(
-            f"{stream_stem}/AnnType", XDT.XRM_INT, strict=True
-        )[0]
-        self.ann_funcs.get(AnnotationTypes(ann_type_int))(self, draw, stream_stem)
+        ann_type_int = int(
+            self._txrm.read_stream(
+                f"{stream_stem}/AnnType", XDTypes.XRM_INT, strict=True
+            )[0]
+        )
+        self._ann_funcs.get(AnnotationTypes(ann_type_int), self._not_implemented)(
+            draw, stream_stem
+        )
 
-    def _add_scale_bar(self, draw: ImageDraw) -> bool:
-        pixel_size = self.image_info["PixelSize"][0]  # microns
+    def _add_scale_bar(self, draw: ImageDraw.ImageDraw) -> bool:
+        pixel_size = self._txrm.image_info["PixelSize"][0]  # microns
         if pixel_size is not None and pixel_size > 0:
             try:
                 colour = (0, 255, 0, 255)  # Solid green
                 # Set up scale bar dims:
+                assert self._txrm.output_shape is not None
                 x0, y0 = self._flip_y(
-                    (self.output_shape[2] // 50, self.output_shape[1] // 30)
+                    (
+                        self._txrm.output_shape[2] // 50,
+                        self._txrm.output_shape[1] // 30,
+                    ),
+                    output_shape=self._txrm.output_shape,
                 )[0]
-                bar_width = int(6 * self.thickness_modifier)
+                thickness_modifier = self.get_thickness_modifier()
+                bar_width = int(6 * thickness_modifier)
                 # Set up scale bar text:
                 f = ImageFont.truetype(
-                    str(font_path), int(15 * self.thickness_modifier)
+                    str(font_path),
+                    int(15 * thickness_modifier),
                 )
 
                 tmp_bar_length = (
-                    self.output_shape[2] / 5.0
+                    self._txrm.output_shape[2] / 5.0
                 )  # Get initial bar length based on image width
                 tmp_bar_size = tmp_bar_length * pixel_size  # Calculate physical size
 
@@ -183,113 +210,155 @@ class AnnotationMixin(ABC):
 
     def _get_thickness(self, stream_stem: str) -> int:
         return int(
-            self.read_stream(
-                f"{stream_stem}/AnnStrokeThickness", XDT.XRM_DOUBLE, strict=True
-            )[0]
-            * self.thickness_modifier
+            float(
+                self._txrm.read_stream(
+                    f"{stream_stem}/AnnStrokeThickness", XDTypes.XRM_DOUBLE, strict=True
+                )[0]
+            )
+            * self.get_thickness_modifier()
         )
 
-    def _get_colour(self, stream_stem: str) -> Tuple:
-        colours = self.read_stream(f"{stream_stem}/AnnColor", XDT.XRM_UNSIGNED_CHAR)
-        return (*colours[2::-1], colours[3])
+    def _get_colour(self, stream_stem: str) -> tuple[int, int, int, int]:
+        colours = self._txrm.read_stream(
+            f"{stream_stem}/AnnColor", XDTypes.XRM_UNSIGNED_CHAR
+        )
+        return (colours[2], colours[1], colours[0], colours[3])
 
     @staticmethod
-    def _not_implemented(*args):
+    def _not_implemented(*args: typing.Any) -> None:
         """Do nothing"""
         pass
 
-    def _plot_line(self, draw: ImageDraw, stream_stem: str) -> None:
+    def _plot_line(self, draw: ImageDraw.ImageDraw, stream_stem: str) -> None:
         colour = self._get_colour(stream_stem)
         thickness = self._get_thickness(stream_stem)
-        x1 = self.read_stream(f"{stream_stem}/X1", XDT.XRM_FLOAT, strict=True)[0]
-        x2 = self.read_stream(f"{stream_stem}/X2", XDT.XRM_FLOAT, strict=True)[0]
-        y1 = self.read_stream(f"{stream_stem}/Y1", XDT.XRM_FLOAT, strict=True)[0]
-        y2 = self.read_stream(f"{stream_stem}/Y2", XDT.XRM_FLOAT, strict=True)[0]
+        x1 = self._txrm.read_stream(
+            f"{stream_stem}/X1", XDTypes.XRM_FLOAT, strict=True
+        )[0]
+        x2 = self._txrm.read_stream(
+            f"{stream_stem}/X2", XDTypes.XRM_FLOAT, strict=True
+        )[0]
+        y1 = self._txrm.read_stream(
+            f"{stream_stem}/Y1", XDTypes.XRM_FLOAT, strict=True
+        )[0]
+        y2 = self._txrm.read_stream(
+            f"{stream_stem}/Y2", XDTypes.XRM_FLOAT, strict=True
+        )[0]
 
-        draw.line(self._flip_y((x1, y1), (x2, y2)), fill=colour, width=thickness)
+        assert self._txrm.output_shape is not None
+        draw.line(
+            self._flip_y((x1, y1), (x2, y2), output_shape=self._txrm.output_shape),
+            fill=colour,
+            width=thickness,
+        )
 
-    def __extract_rectangle_coords(self, stream_stem: str) -> Tuple[Tuple[int]]:
+    def __extract_rectangle_coords(
+        self, stream_stem: str
+    ) -> tuple[tuple[int, int], tuple[int, int]]:
         x = []
         y = []
         x.append(
-            self.read_stream(f"{stream_stem}/Rectangle/Left", XDT.XRM_INT, strict=True)[
-                0
-            ]
+            self._txrm.read_stream(
+                f"{stream_stem}/Rectangle/Left", XDTypes.XRM_INT, strict=True
+            )[0]
         )
         y.append(
-            self.read_stream(
-                f"{stream_stem}/Rectangle/Bottom", XDT.XRM_INT, strict=True
+            self._txrm.read_stream(
+                f"{stream_stem}/Rectangle/Bottom", XDTypes.XRM_INT, strict=True
             )[0]
         )
         x.append(
-            self.read_stream(
-                f"{stream_stem}/Rectangle/Right", XDT.XRM_INT, strict=True
+            self._txrm.read_stream(
+                f"{stream_stem}/Rectangle/Right", XDTypes.XRM_INT, strict=True
             )[0]
         )
         y.append(
-            self.read_stream(f"{stream_stem}/Rectangle/Top", XDT.XRM_INT, strict=True)[
-                0
-            ]
+            self._txrm.read_stream(
+                f"{stream_stem}/Rectangle/Top", XDTypes.XRM_INT, strict=True
+            )[0]
         )
         x.sort()
         y.sort(reverse=True)
         # Values in the first tuple must be smaller than their respective second tuple value.
         # Therefore y1 must be first and y0 second because they are flipped.
-        return self._flip_y(*zip(x, y))
+        assert self._txrm.output_shape is not None
+        coords = self._flip_y(*zip(x, y), output_shape=self._txrm.output_shape)
+        return (coords[0], coords[1])
 
-    def _plot_rect(self, draw: ImageDraw, stream_stem: str) -> None:
+    def _plot_rect(self, draw: ImageDraw.ImageDraw, stream_stem: str) -> None:
         colour = self._get_colour(stream_stem)
         thickness = self._get_thickness(stream_stem)
         xy = self.__extract_rectangle_coords(stream_stem)
 
         draw.rectangle(xy, outline=colour, width=thickness)
 
-    def _plot_ellipse(self, draw: ImageDraw, stream_stem: str) -> None:
+    def _plot_ellipse(self, draw: ImageDraw.ImageDraw, stream_stem: str) -> None:
         colour = self._get_colour(stream_stem)
         thickness = self._get_thickness(stream_stem)
         xy = self.__extract_rectangle_coords(stream_stem)
 
         draw.ellipse(xy, outline=colour, width=thickness)
 
-    def _plot_polygon(self, draw: ImageDraw, stream_stem: str) -> None:
+    def _plot_polygon(self, draw: ImageDraw.ImageDraw, stream_stem: str) -> None:
         colour = self._get_colour(stream_stem)
         thickness = self._get_thickness(stream_stem)
-        total_points = self.read_stream(
-            f"{stream_stem}/TotalPts", XDT.XRM_UNSIGNED_INT
+        total_points = self._txrm.read_stream(
+            f"{stream_stem}/TotalPts", XDTypes.XRM_UNSIGNED_INT
         )[0]
-        xs = self.read_stream(f"{stream_stem}/PointX", XDT.XRM_FLOAT, strict=True)[
-            :total_points
-        ]
-        ys = self.read_stream(f"{stream_stem}/PointY", XDT.XRM_FLOAT, strict=True)[
-            :total_points
-        ]
+
+        xs = self._txrm.read_stream(
+            f"{stream_stem}/PointX", XDTypes.XRM_FLOAT, strict=True
+        )[:total_points]
+        ys = self._txrm.read_stream(
+            f"{stream_stem}/PointY", XDTypes.XRM_FLOAT, strict=True
+        )[:total_points]
         xs.append(xs[0])  # Link beginning and end points
         ys.append(ys[0])
 
-        draw.line(self._flip_y(*zip(xs, ys)), fill=colour, width=thickness)
+        output_shape = self._txrm.output_shape
+        assert output_shape is not None
+        draw.line(
+            self._flip_y(*zip(xs, ys), output_shape=output_shape),
+            fill=colour,
+            width=thickness,
+        )
 
     def _plot_polyline(
-        self, draw: ImageDraw, stream_stem: str, joint: Optional[str] = None
-    ):
+        self,
+        draw: ImageDraw.ImageDraw,
+        stream_stem: str,
+        joint: typing.Literal["curve"] | None = None,
+    ) -> None:
         colour = self._get_colour(stream_stem)
         thickness = self._get_thickness(stream_stem)
-        total_points = self.read_stream(
-            f"{stream_stem}/TotalPts", XDT.XRM_UNSIGNED_INT
+        total_points = self._txrm.read_stream(
+            f"{stream_stem}/TotalPts", XDTypes.XRM_UNSIGNED_INT
         )[0]
-        xs = self.read_stream(f"{stream_stem}/PointX", XDT.XRM_FLOAT, strict=True)
-        ys = self.read_stream(f"{stream_stem}/PointY", XDT.XRM_FLOAT, strict=True)
+        xs = self._txrm.read_stream(
+            f"{stream_stem}/PointX", XDTypes.XRM_FLOAT, strict=True
+        )
+        ys = self._txrm.read_stream(
+            f"{stream_stem}/PointY", XDTypes.XRM_FLOAT, strict=True
+        )
 
+        output_shape = self._txrm.output_shape
+        assert output_shape is not None
         draw.line(
-            self._flip_y(*zip(xs[:total_points], ys[:total_points])),
+            self._flip_y(
+                *zip(xs[:total_points], ys[:total_points]),
+                output_shape=output_shape,
+            ),
             fill=colour,
             width=thickness,
             joint=joint,
         )
 
-    def _plot_freehand(self, draw: ImageDraw, stream_stem: str) -> None:
+    def _plot_freehand(self, draw: ImageDraw.ImageDraw, stream_stem: str) -> None:
         self._plot_polyline(draw, stream_stem, joint="curve")
 
-    def _flip_y(self, *xys: Iterable[float]) -> Tuple[Tuple[float, ...]]:
+    def _flip_y(
+        self, *xys: tuple[FloatOrInt, FloatOrInt], output_shape: tuple[int, int, int]
+    ) -> tuple[tuple[FloatOrInt, FloatOrInt], ...]:
         """
         Stored x-y coordinates are assuming 0 is bottom left, whereas PIL assumes 0 is top left
         This flips any list of coordinates that alternate x, y
@@ -300,28 +369,19 @@ class AnnotationMixin(ABC):
         Returns:
             Tuple of tuples: x-y coordinates with a flipped y
         """
-        return tuple((x, self.output_shape[1] - 1 - y) for x, y in xys)
+        return tuple((x, output_shape[1] - 1 - y) for x, y in xys)
 
-    def save_annotations(
+    def save(
         self,
-        filepath: Optional[Path] = None,
+        filepath: str | PathLike[str],
         mkdir: bool = False,
-        strict: Optional[bool] = None,
+        strict: bool = True,
     ) -> bool:
         """Saves images (if available) returning True if successful."""
-        if strict is None:
-            strict = self.strict
         try:
+            filepath = Path(filepath)
             if self.annotated_image is None:
                 raise AttributeError("No annotated image to save")
-            if filepath is None:
-                if self.path is None:
-                    raise ValueError(
-                        "An output filepath must be given if an input path was not given."
-                    )
-                filepath = self.path.resolve()
-                filepath = filepath.parent / f"{filepath.stem}_Annotated.tiff"
-
             if mkdir:
                 filepath.parent.mkdir(parents=True, exist_ok=True)
 

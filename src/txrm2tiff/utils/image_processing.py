@@ -1,17 +1,26 @@
+from __future__ import annotations
 import logging
-from typing import List
 import numpy as np
-from numpy.typing import DTypeLike, NDArray
+import typing
+
 
 from .functions import convert_to_int
+
+if typing.TYPE_CHECKING:
+    from numpy.typing import DTypeLike, NDArray
+
+    __NpIntFloatType: typing.TypeAlias = (
+        np.integer[typing.Any] | np.floating[typing.Any]
+    )
+    NpIntFloatType = typing.TypeVar("NpIntFloatType", bound=__NpIntFloatType)
 
 
 class RangeClipError(ValueError): ...
 
 
 def dynamic_despeckle_and_average_series(
-    images: np.ndarray, average: bool = True
-) -> np.ndarray:
+    images: NDArray[typing.Any], average: bool = True
+) -> NDArray[typing.Any]:
     """
     Despeckle and average a series of images (requires min 3 images)
     This uses the same or similar logic to Xradia/Zeiss' API.
@@ -25,8 +34,7 @@ def dynamic_despeckle_and_average_series(
     """
     nimages, height, width = images.shape
     if nimages < 3:
-        logging.error("Despeckle averaging requires a minimum of 3 images")
-        return None
+        raise ValueError("Despeckle averaging requires a minimum of 3 images")
     # Takes a list of XradiaData.FloatArray as input
     # outputs a 2D ndarray
     block = images.astype(np.float32).reshape((nimages, height * width))
@@ -52,12 +60,12 @@ def dynamic_despeckle_and_average_series(
     output_image = np.nanmean(vals, axis=0, dtype=np.float32)
     if not average:
         output_image *= nimages
-    return output_image.reshape(height, width)
+    return output_image.reshape(height, width)  # type: ignore[no-any-return]
 
 
 def normalise_to_datatype(
-    array: np.ndarray, datatype: DTypeLike, clip: bool = False
-) -> np.ndarray:
+    array: NDArray[typing.Any], datatype: DTypeLike, clip: bool = False
+) -> NDArray[typing.Any]:
     logging.debug("Re-scaling array to %s", datatype)
     array = array.astype(np.float64)  # Convert to float for rescaling
 
@@ -82,8 +90,16 @@ def normalise_to_datatype(
 
 
 def rescale_image(
-    array, minimum, maximum, previous_minimum=None, previous_maximum=None
-):
+    array: NDArray[NpIntFloatType],
+    minimum: float | np.integer[typing.Any] | np.floating[typing.Any],
+    maximum: float | np.integer[typing.Any] | np.floating[typing.Any],
+    previous_minimum: (
+        float | np.integer[typing.Any] | np.floating[typing.Any] | None
+    ) = None,
+    previous_maximum: (
+        float | np.integer[typing.Any] | np.floating[typing.Any] | None
+    ) = None,
+) -> NDArray[NpIntFloatType]:
     if previous_minimum is None:
         previous_minimum = np.min(array)
     if previous_maximum is None:
@@ -97,13 +113,14 @@ def rescale_image(
 
 
 def cast_to_dtype(
-    image: np.ndarray, data_type: DTypeLike, allow_clipping: bool = True
-) -> np.ndarray:
+    image: NDArray[typing.Any], data_type: DTypeLike, allow_clipping: bool = True
+) -> NDArray[typing.Any]:
     try:
         dtype = np.dtype(data_type)
         if dtype is image.dtype:
             logging.debug("Image is already %s", dtype)
         else:
+            dtype_info: np.iinfo | np.finfo
             if np.issubdtype(dtype, np.integer):
                 dtype_info = np.iinfo(dtype)
             elif np.issubdtype(dtype, np.floating):
@@ -112,6 +129,9 @@ def cast_to_dtype(
                 raise TypeError(f"Cannot cast to invalid data type {data_type}")
             # Round min/max to avoid this warning when the issue is just going to be rounded away.
             img_min, img_max = image.min(), image.max()
+
+            dtype_min: int | np.floating[typing.Any] | None
+            dtype_max: int | np.floating[typing.Any] | None
             dtype_min, dtype_max = dtype_info.min, dtype_info.max
             if dtype_min > img_min:
                 if not allow_clipping:
@@ -160,19 +180,21 @@ def cast_to_dtype(
 
 
 def tile_image_data_to_mosaic(
-    refdata: np.ndarray,
+    refdata: NDArray[typing.Any],
     image_rows: int,
     image_columns: int,
     mosaic_rows: int,
     mosaic_columns: int,
-) -> np.ndarray:
+) -> NDArray[typing.Any]:
     ref_num_rows = convert_to_int(image_rows / mosaic_rows)
     ref_num_columns = convert_to_int(image_columns / mosaic_columns)
     refdata.shape = (ref_num_rows, ref_num_columns)
     return np.tile(refdata, (mosaic_rows, mosaic_columns))
 
 
-def stitch_images(images: np.ndarray, mosaic_dims: List[int]) -> np.ndarray:
+def stitch_images(
+    images: NDArray[typing.Any], mosaic_dims: tuple[int, int]
+) -> NDArray[typing.Any]:
     """
     Stitches images into a mosaic stored as a 2D array.
 
