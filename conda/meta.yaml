@@ -37,10 +37,10 @@ test:
   source_files:
     - tests
   requires:
-    - pytest
-    - parameterized
+    - pytest-cov >=6.0.0
+    - parameterized >=0.9.0
   commands:
-    - python -m pytest .
+    - python -m pytest
 
 about:
   home: https://github.com/DiamondLightSource/{{ name }}
