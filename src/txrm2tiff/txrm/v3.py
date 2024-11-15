@@ -67,11 +67,13 @@ class Txrm3(TxrmWithOME):
     def load_reference(self) -> None:
         super().load_reference()
         if (
-            self._reference is not None
+            self._reference is not None  # type: ignore[has-type]
             and self.is_mosaic
             and self.mosaic_dims is not None
         ):
-            self._reference = np.tile(self._reference, self.mosaic_dims[::-1])
+            self._reference = np.tile(
+                self._reference, self.mosaic_dims[::-1]  # type: ignore[has-type]
+            )
 
     def get_output(
         self,

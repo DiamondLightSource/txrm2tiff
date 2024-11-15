@@ -4,7 +4,12 @@ import sys
 import os
 
 if os.name == "nt":
-    sys.stdout.reconfigure(encoding="utf-8")
+    try:
+        # Forces stream to use utf-8 (only necessary on Windows)
+        # https://docs.python.org/3/library/io.html#io.TextIOWrapper.reconfigure
+        sys.stdout.reconfigure(encoding="utf-8")  # type: ignore[union-attr]
+    except Exception:
+        pass
 
 from .info import __version__
 from .utils.metadata import CLI_DTYPES

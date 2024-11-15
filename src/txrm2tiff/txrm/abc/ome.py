@@ -1,7 +1,7 @@
 from __future__ import annotations
 import logging
 from abc import ABC
-from scipy import constants
+from scipy import constants  # type: ignore[import-untyped]
 import numpy as np
 from xml.etree import ElementTree
 from ome_types import model
