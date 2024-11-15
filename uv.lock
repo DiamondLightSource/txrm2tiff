@@ -452,4 +452,5 @@ requires-dist = [
 dev = [
     { name = "parameterized", specifier = ">=0.9.0" },
     { name = "pytest-cov", specifier = ">=6.0.0" },
+    { name = "ruff", specifier = ">=0.7.4" },
 ]
