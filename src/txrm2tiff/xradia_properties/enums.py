@@ -37,6 +37,7 @@ class IntValueEnum(int, enum.Enum):
 
 class XrmDataTypes(IntValueEnum):
     """Integer Enumerator for Xradia's XrmDataTypes"""
+
     # XRM_BIT = None, 1
     XRM_CHAR = np.int8, 2
     XRM_UNSIGNED_CHAR = np.uint8, 3

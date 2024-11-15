@@ -13,7 +13,7 @@ level_dict = {
     "warning": logging.WARNING,
     "error": logging.ERROR,
     "critical": logging.CRITICAL,
-    }
+}
 
 
 def create_logger(input_level):
@@ -33,4 +33,3 @@ def create_logger(input_level):
     handler.setFormatter(logging_format)
 
     logger.addHandler(handler)
-

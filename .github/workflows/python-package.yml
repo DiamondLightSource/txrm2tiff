@@ -1,0 +1,66 @@
+# This workflow will install Python dependencies, run tests and lint with a variety of Python versions
+# For more information see: https://help.github.com/actions/language-and-framework-guides/using-python-with-github-actions
+
+name: Python package
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+  pull_request:
+    types: [review_requested, synchronize]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.11", "3.12", "3.13"]
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install the latest version of uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          enable-cache: true
+      - name: Set up Python ${{ matrix.python-version }}
+        run: uv python install ${{ matrix.python-version }}
+      - name: Install dependencies
+        run: uv sync
+      - name: Lint with ruff
+        uses: astral-sh/ruff-action@v1
+      - name: Test
+        run: uv run --frozen -m pytest
+      - name: Build sdist and wheel
+        run: uv build
+      - name: Upload sdist and wheel as artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist
+          retention-days: 1
+          overwrite: true
+
+  pypi-publish:
+    name: Upload release to PyPI
+    runs-on: ubuntu-latest
+    # Specify the GitHub Environment to publish to
+    environment:
+      name: pypi
+      url: https://pypi.org/p/txrm2tiff
+    # upload to PyPI and make a release on every tag
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags')
+    needs: [build]
+    permissions:
+      # this permission is mandatory for trusted publishing To PyPI
+      id-token: write
+      # This permission allows the CI to create the release environment
+      contents: write
+
+    steps:
+      # download sdist and wheel from dist job
+      - uses: actions/download-artifact@v4
+      # publish to PyPI using trusted publishing
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1

@@ -2,6 +2,7 @@
 import argparse
 import sys
 import os
+
 if os.name == "nt":
     sys.stdout.reconfigure(encoding="utf-8")
 

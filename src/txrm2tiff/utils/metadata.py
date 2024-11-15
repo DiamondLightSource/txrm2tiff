@@ -1,12 +1,10 @@
 import logging
 import numpy as np
-from oxdls import OMEXML, DO_XYZCT, PT_UINT16, PT_UINT16, PT_FLOAT, PT_DOUBLE
+from oxdls import OMEXML, DO_XYZCT, PT_UINT16, PT_FLOAT, PT_DOUBLE
 
 from ..txrm import abstract
 
 dtype_dict = {"uint16": PT_UINT16, "float32": PT_FLOAT, "float64": PT_DOUBLE}
-
-
 
 
 def create_ome_metadata(txrm: abstract.AbstractTxrm, filename: str = None) -> OMEXML:
@@ -33,7 +31,9 @@ def create_ome_metadata(txrm: abstract.AbstractTxrm, filename: str = None) -> OM
 
     image = ox.image()
     image.set_ID("Image:0")
-    image.set_AcquisitionDate(txrm.datetimes[0].isoformat())  # formatted as: "yyyy-mm-ddThh:mm:ss"
+    image.set_AcquisitionDate(
+        txrm.datetimes[0].isoformat()
+    )  # formatted as: "yyyy-mm-ddThh:mm:ss"
     if filename is not None:
         image.set_Name(filename)
 
@@ -89,7 +89,9 @@ def create_ome_metadata(txrm: abstract.AbstractTxrm, filename: str = None) -> OM
         y_positions = [
             y_positions[0] + (1.0 - 1.0 / mosaic_rows) * (pixel_size * shape[1] / 2.0)
         ]
-        z_positions = [np.mean(np.asarray(z_positions)[valid_idxs])]  # Average Z for a stitched mosaic
+        z_positions = [
+            np.mean(np.asarray(z_positions)[valid_idxs])
+        ]  # Average Z for a stitched mosaic
         # # NOTE: the number of mosaic rows & columns and the pixel size are all written before acquisition but
         # the xy positions are written during, so only the first frame can be relied upon to have an xy
         # position.

@@ -5,7 +5,7 @@ from numpy.testing import assert_array_equal
 
 import numpy as np
 
-from txrm2tiff.txrm.abstract import AbstractTxrm, txrm_property
+from txrm2tiff.txrm.abstract import AbstractTxrm
 from txrm2tiff.xradia_properties.enums import XrmDataTypes
 
 
@@ -154,23 +154,12 @@ class AbstractTxrmTest(unittest.TestCase):
         self.assertEqual(output, img)
 
     @patch("txrm2tiff.txrm.abstract.AbstractTxrm.get_images")
-    def test_get_single_image_is_loaded(self, mocked_get_images):
-        txrm = AbstractTxrm("test/path", load_images=False, load_reference=False)
-        img = "test_img"
-        images = [img]
-        mocked_get_images.return_value = images
-        output = txrm.get_single_image(1)
-        mocked_get_images.assert_called_once_with(load=False)
-        self.assertEqual(output, img)
-
-    @patch("txrm2tiff.txrm.abstract.AbstractTxrm.get_images")
     @patch("txrm2tiff.txrm.abstract.AbstractTxrm._extract_single_image")
     def test_get_single_image_is_not_loaded(
         self, mocked_extract_single, mocked_get_images
     ):
         txrm = AbstractTxrm("test/path", load_images=False, load_reference=False)
         img = "test_img"
-        images = [img]
         mocked_extract_single.return_value = img
         mocked_get_images.return_value = None
         output = txrm.get_single_image(1)
@@ -192,7 +181,9 @@ class AbstractTxrmTest(unittest.TestCase):
 
         mocked_frombytes.return_value = "output"
         output = txrm.extract_reference_data()
-        mocked_frombytes.assert_called_once_with("ref_data", dtype=txrm.reference_dtype.value)
+        mocked_frombytes.assert_called_once_with(
+            "ref_data", dtype=txrm.reference_dtype.value
+        )
         self.assertEqual(output, "output")
 
     @patch("txrm2tiff.txrm.abstract.AbstractTxrm.has_reference", new=True)
@@ -234,17 +225,26 @@ class AbstractTxrmTest(unittest.TestCase):
         txrm = AbstractTxrm("test/path", load_images=False, load_reference=False)
         self.assertEqual(txrm.output_shape, [1, 7 * 3, 6 * 2])
 
-    @patch("txrm2tiff.txrm.abstract.AbstractTxrm.image_info", new={"Date": ["ksfs$oio12/30/2021 23:55:59!j#f"]})
+    @patch(
+        "txrm2tiff.txrm.abstract.AbstractTxrm.image_info",
+        new={"Date": ["ksfs$oio12/30/2021 23:55:59!j#f"]},
+    )
     def test_datetimes(self):
         txrm = AbstractTxrm("test/path", load_images=False, load_reference=False)
         self.assertEqual(txrm.datetimes[0], datetime(2021, 12, 30, 23, 55, 59))
 
-    @patch("txrm2tiff.txrm.abstract.AbstractTxrm.image_info", new={"Date": ["ksfs$oio12/30/21 23:55:59!j#f"]})
+    @patch(
+        "txrm2tiff.txrm.abstract.AbstractTxrm.image_info",
+        new={"Date": ["ksfs$oio12/30/21 23:55:59!j#f"]},
+    )
     def test_datetimes_without_century(self):
         txrm = AbstractTxrm("test/path", load_images=False, load_reference=False)
         self.assertEqual(txrm.datetimes[0], datetime(2021, 12, 30, 23, 55, 59))
 
-    @patch("txrm2tiff.txrm.abstract.AbstractTxrm.image_info", new={"Date": ["ksfs$oio12/30/2021 23:55:59.83!j#f"]})
+    @patch(
+        "txrm2tiff.txrm.abstract.AbstractTxrm.image_info",
+        new={"Date": ["ksfs$oio12/30/2021 23:55:59.83!j#f"]},
+    )
     def test_datetimes_with_milliseconds(self):
         txrm = AbstractTxrm("test/path", load_images=False, load_reference=False)
         self.assertEqual(txrm.datetimes[0], datetime(2021, 12, 30, 23, 55, 59, 830000))

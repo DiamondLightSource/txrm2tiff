@@ -1,8 +1,6 @@
 from datetime import datetime
 import unittest
-from unittest.mock import patch, MagicMock
-
-import numpy as np
+from unittest.mock import MagicMock
 
 from txrm2tiff.utils.metadata import create_ome_metadata
 

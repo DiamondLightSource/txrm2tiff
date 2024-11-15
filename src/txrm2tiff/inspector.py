@@ -1,5 +1,4 @@
 import traceback
-from dataclasses import dataclass
 
 from txrm2tiff.xradia_properties import stream_dtypes
 
@@ -9,8 +8,7 @@ from .xradia_properties import XrmDataTypes
 
 
 class Inspector:
-
-    def __init__(self, txrm:AbstractTxrm):
+    def __init__(self, txrm: AbstractTxrm):
         self.txrm = txrm
         self._output_text = ""
 
@@ -35,9 +33,11 @@ class Inspector:
             num_str = f"{images_taken} images"
         self._output_text += "{0} of type {1} with dimensions: {2}\n".format(
             num_str,
-            self.txrm.image_dtype
-            if self.txrm.image_dtype is None
-            else self.txrm.image_dtype,
+            (
+                self.txrm.image_dtype
+                if self.txrm.image_dtype is None
+                else self.txrm.image_dtype
+            ),
             ", ".join([str(i) for i in self.txrm.image_dims]),
         )
         if self.txrm.shape[::-1] != self.txrm.image_dims:
@@ -127,7 +127,7 @@ class Inspector:
                             )
                             self.inspect_unknown_dtype_stream(key)
                     else:
-                        self._output_text += f"\nUnknown data type. "
+                        self._output_text += "\nUnknown data type. "
                         self.inspect_unknown_dtype_stream(key)
                 else:
                     self._output_text += f"\nStream '{key}' does not exist.\n"

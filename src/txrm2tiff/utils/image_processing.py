@@ -1,7 +1,7 @@
 import logging
 from typing import List
 import numpy as np
-from numpy.typing import DTypeLike, NDArray
+from numpy.typing import DTypeLike
 
 from .functions import convert_to_int
 

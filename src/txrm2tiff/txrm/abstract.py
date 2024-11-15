@@ -206,7 +206,6 @@ class AbstractTxrm(ABC):
                 raise
             logging.error("Error occurred extracting reference image", exc_info=True)
 
-
     def get_reference(self, load: bool = True) -> typing.Optional[np.ndarray]:
         """Get images from file (numpy ndarray with shape [idx, y, x]).
 
