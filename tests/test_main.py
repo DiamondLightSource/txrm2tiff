@@ -40,12 +40,6 @@ class TestRun(unittest.TestCase):
         with self.assertRaises(NameError):
             _set_output_suffix(Path("file.bad_extension"), None)
 
-    def test_set_output_suffix(self):
-        txrm_output = _set_output_suffix(Path("file.txrm"))
-        xrm_output = _set_output_suffix(Path("file.xrm"))
-        self.assertEqual("file.ome.tiff", str(txrm_output))
-        self.assertEqual("file.ome.tiff", str(xrm_output))
-
     @parameterized.expand([(Txrm3,), (Txrm5,)])
     @patch("txrm2tiff.main.open_txrm")
     def test_convert_and_save(self, TxrmClass, mocked_open_txrm):
@@ -363,7 +357,15 @@ class TestRun(unittest.TestCase):
         logging_level = "debug"
 
         convert_and_save(
-            input_path, output_path, None, True, False, dtype, True, False, logging_level
+            input_path,
+            output_path,
+            None,
+            True,
+            False,
+            dtype,
+            True,
+            False,
+            logging_level,
         )
 
         mocked_create_logger.assert_called_once_with(logging_level)

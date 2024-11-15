@@ -21,7 +21,7 @@ class TestCommandlineEntryPoint(unittest.TestCase):
     def setUpClass(cls):
         # Set maximum difference string length to None (infinite)
         cls.maxDiff = None
-        # Add local intall to path for testing with development install
+        # Add local install to path for testing with development install
         if os.name == "posix":
             os.environ["PATH"] += os.pathsep + os.path.join(
                 os.path.expanduser("~"), ".local", "bin"
@@ -125,7 +125,7 @@ class TestCommandlineEntryPoint(unittest.TestCase):
         with Popen(run_args, stdout=PIPE, stderr=STDOUT, universal_newlines=True) as p:
             stdout, _ = p.communicate()
         # Get the last line (ignore the input)
-        stdout = [l.strip() for l in stdout.strip("\n").split("\n")][-1]
+        stdout = [_.strip() for _ in stdout.strip("\n").split("\n")][-1]
         self.assertEqual(
             f"txrm2tiff {__version__}", stdout, msg=f"Actual stdout: {stdout}"
         )
@@ -154,7 +154,6 @@ class TestCommandlineEntryPoint(unittest.TestCase):
 
     def test_module_without_arguments_returns_help(self):
         run_args = [sys.executable, "-m", "txrm2tiff"]
-        path = os.environ["PATH"]
         with Popen(run_args, stdout=PIPE, stderr=STDOUT, universal_newlines=True) as p:
             stdout, _ = p.communicate()
         stdout = stdout.strip("\r\n").strip("\n")
@@ -241,7 +240,7 @@ class TestCommandlineEntryPoint(unittest.TestCase):
         with Popen(run_args, stdout=PIPE, stderr=STDOUT, universal_newlines=True) as p:
             stdout, _ = p.communicate()
         # Get the last line (ignore the input)
-        stdout = [l.strip() for l in stdout.strip("\n").split("\n")][-1]
+        stdout = [_.strip() for _ in stdout.strip("\n").split("\n")][-1]
         self.assertEqual(
             f"txrm2tiff {__version__}", stdout, msg=f"Actual stdout: {stdout}"
         )
@@ -252,5 +251,5 @@ class TestCommandlineEntryPoint(unittest.TestCase):
             stdout, _ = p.communicate()
         stdout = stdout.strip("\r\n").strip("\n")
         self.assertIn(
-            f"txrm2tiff setup [-w] [-h]", stdout, msg=f"Actual stdout: {stdout}"
+            "txrm2tiff setup [-w] [-h]", stdout, msg=f"Actual stdout: {stdout}"
         )

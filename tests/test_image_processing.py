@@ -1,6 +1,5 @@
 from random import randint
 import unittest
-from unittest.mock import MagicMock, patch
 from numpy.testing import (
     assert_array_equal,
     assert_array_almost_equal,
@@ -21,8 +20,6 @@ class TestImageProcessing(unittest.TestCase):
     def test_stitch_mosaic(self):
         mosaic_xy_shape = (3, 4)
         image_size = (400, 400)
-        fast_axis = 1
-        slow_axis = 1 - fast_axis
         images = np.zeros(
             (
                 mosaic_xy_shape[0] * mosaic_xy_shape[1],

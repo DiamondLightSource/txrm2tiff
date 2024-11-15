@@ -3,6 +3,7 @@ import logging
 from pathlib import Path
 from sys import executable
 
+
 def _get_Windows_home_path():
     home = os.getenv("USERPROFILE")
     if home is None:
@@ -19,8 +20,12 @@ def _get_Windows_home_path():
             return home_path
         except FileNotFoundError:
             pass
-    logging.error("Cannot find valid home path. The following path was found: '%s'", home)
-    raise FileNotFoundError(f"Cannot find valid home path. The following path was found: '{home}''")
+    logging.error(
+        "Cannot find valid home path. The following path was found: '%s'", home
+    )
+    raise FileNotFoundError(
+        f"Cannot find valid home path. The following path was found: '{home}''"
+    )
 
 
 def _create_lnk_file(shortcut_path):
@@ -61,6 +66,9 @@ def create_Windows_shortcut():
             logging.info("The existing shortcut will not be modified.")
             return
         else:
-            logging.info("Invalid input: %s. The existing shortcut will not be modified.", user_input)
+            logging.info(
+                "Invalid input: %s. The existing shortcut will not be modified.",
+                user_input,
+            )
             return
     _create_lnk_file(shortcut_path)

@@ -1,5 +1,4 @@
 import unittest
-from unittest.mock import patch, MagicMock
 
 from pathlib import Path
 from datetime import datetime
@@ -125,13 +124,13 @@ class TestFileHandler(unittest.TestCase):
             self.assertTrue(im_path.exists())
             with tf.TiffFile(im_path) as tiff:
                 saved_arr = tiff.asarray()
-                x_resolution = tiff.pages[0].tags['XResolution'].value
-                y_resolution = tiff.pages[0].tags['YResolution'].value
-                resolution_unit = tiff.pages[0].tags['ResolutionUnit'].value
+                x_resolution = tiff.pages[0].tags["XResolution"].value
+                y_resolution = tiff.pages[0].tags["YResolution"].value
+                resolution_unit = tiff.pages[0].tags["ResolutionUnit"].value
 
         assert_array_equal(saved_arr, image)
-        self.assertEqual(x_resolution, (int(1.e7), 1))
-        self.assertEqual(y_resolution, (int(5.e6), 1))
+        self.assertEqual(x_resolution, (int(1.0e7), 1))
+        self.assertEqual(y_resolution, (int(5.0e6), 1))
         self.assertEqual(resolution_unit, int(tf.RESUNIT.CENTIMETER))
 
     def test_manual_annotation_save(self):
