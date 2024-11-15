@@ -9,11 +9,6 @@ from .functions import convert_to_int
 if typing.TYPE_CHECKING:
     from numpy.typing import DTypeLike, NDArray
 
-    __NpIntFloatType: typing.TypeAlias = (
-        np.integer[typing.Any] | np.floating[typing.Any]
-    )
-    NpIntFloatType = typing.TypeVar("NpIntFloatType", bound=__NpIntFloatType)
-
 
 class RangeClipError(ValueError): ...
 
@@ -90,7 +85,7 @@ def normalise_to_datatype(
 
 
 def rescale_image(
-    array: NDArray[NpIntFloatType],
+    array: NDArray[np.integer[typing.Any] | np.floating[typing.Any]],
     minimum: float | np.integer[typing.Any] | np.floating[typing.Any],
     maximum: float | np.integer[typing.Any] | np.floating[typing.Any],
     previous_minimum: (
@@ -99,21 +94,25 @@ def rescale_image(
     previous_maximum: (
         float | np.integer[typing.Any] | np.floating[typing.Any] | None
     ) = None,
-) -> NDArray[NpIntFloatType]:
+) -> NDArray[np.float64]:
     if previous_minimum is None:
         previous_minimum = np.min(array)
     if previous_maximum is None:
         previous_maximum = np.max(array)
 
+    previous_range = np.asarray((previous_minimum, previous_maximum))
+    new_range = np.asarray((minimum, maximum))
     return np.interp(
         np.clip(array, a_min=previous_minimum, a_max=previous_maximum),
-        (previous_minimum, previous_maximum),
-        (minimum, maximum),
+        previous_range,
+        new_range,
     )
 
 
 def cast_to_dtype(
-    image: NDArray[typing.Any], data_type: DTypeLike, allow_clipping: bool = True
+    image: NDArray[np.integer[typing.Any] | np.floating[typing.Any]],
+    data_type: DTypeLike,
+    allow_clipping: bool = True,
 ) -> NDArray[typing.Any]:
     try:
         dtype = np.dtype(data_type)
@@ -122,9 +121,11 @@ def cast_to_dtype(
         else:
             dtype_info: np.iinfo | np.finfo
             if np.issubdtype(dtype, np.integer):
+                dtype = dtype
                 dtype_info = np.iinfo(dtype)
             elif np.issubdtype(dtype, np.floating):
-                dtype_info = np.finfo(dtype)
+                dtype = dtype
+                dtype_info = np.finfo(dtype)  # type: ignore[arg-type]
             else:
                 raise TypeError(f"Cannot cast to invalid data type {data_type}")
             # Round min/max to avoid this warning when the issue is just going to be rounded away.
