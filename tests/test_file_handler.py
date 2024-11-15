@@ -132,8 +132,7 @@ class TestFileHandler(unittest.TestCase):
         assert_array_equal(saved_arr, image)
         self.assertEqual(x_resolution, (int(1.e7), 1))
         self.assertEqual(y_resolution, (int(5.e6), 1))
-        self.assertEqual(resolution_unit, int(tf.TIFF.RESUNIT.CENTIMETER))
-
+        self.assertEqual(resolution_unit, int(tf.RESUNIT.CENTIMETER))
 
     def test_manual_annotation_save(self):
         with TemporaryDirectory(
