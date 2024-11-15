@@ -22,7 +22,7 @@ dynamic = [
     "readme",
 ]
 dependencies = [
-    "tifffile>=2020.9.30",
+    "tifffile>=2022.7.28",
     "numpy>=1.24.4",
     "omexml-dls>=1.1.0",
     "olefile>=0.46",
