@@ -74,7 +74,7 @@ def manual_save(
         resolution = [pixels.get_PhysicalSizeX(), pixels.get_PhysicalSizeY()]
         if None not in resolution:  # Check that both have values
             resolution = [1.e7 / (pixel_size)  for pixel_size in resolution]  # Pixels per resolution unit (converted from nm to cm)
-            resolution_unit = tf.TIFF.RESUNIT.CENTIMETER  # Must use CENTIMETER for maximum compatibility
+            resolution_unit = tf.RESUNIT.CENTIMETER  # Must use CENTIMETER for maximum compatibility
             if tf.__version__ >= "2022.7.28":
                 # 2022.7.28: Deprecate third resolution argument on write (use resolutionunit)
                 tiff_kwargs["resolutionunit"] = resolution_unit
