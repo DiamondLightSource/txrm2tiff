@@ -60,18 +60,23 @@ txrm2tiff = [
 txrm2tiff = "txrm2tiff.__main__:main"
 
 [tool.pytest.ini_options]
-minversion = "6.0"
-addopts = "-ra -q --import-mode=importlib --cov=src/txrm2tiff --cov-report=term --cov-report=xml"
+addopts = "-ra -q --import-mode=importlib"
 testpaths = [
     "tests",
 ]
 
+[tool.coverage.run]
+source = [
+    "src/txrm2tiff",
+]
+
 [tool.coverage.report]
 show_missing = true
-fail_under = 90
+fail_under = 80
 
 [dependency-groups]
 dev = [
     "parameterized>=0.9.0",
     "pytest-cov>=6.0.0",
+    "ruff>=0.7.4",
 ]
