@@ -38,9 +38,7 @@ image_info_dict = {
     "ImageInfo/ZonePlateName": XrmDataTypes.XRM_STRING,
 }
 
-reference_data_dict = {
-    "ReferenceData/ExpTime": XrmDataTypes.XRM_FLOAT
-    }
+reference_data_dict = {"ReferenceData/ExpTime": XrmDataTypes.XRM_FLOAT}
 
 ref_image_info_dict = {f"ReferenceData/{k}": v for k, v in image_info_dict.items()}
 
@@ -66,11 +64,11 @@ alignment_dict = {
     "Alignment/ReferenceShiftsApplied": XrmDataTypes.XRM_INT,
     "Alignment/StageShiftsApplied": XrmDataTypes.XRM_INT,
     "Alignment/StaticRunoutApplied": XrmDataTypes.XRM_INT,
-    "Alignment/X-Shifts": XrmDataTypes.XRM_FLOAT, # Pixels
-    "Alignment/Y-Shifts": XrmDataTypes.XRM_FLOAT, # Pixels
+    "Alignment/X-Shifts": XrmDataTypes.XRM_FLOAT,  # Pixels
+    "Alignment/Y-Shifts": XrmDataTypes.XRM_FLOAT,  # Pixels
 }
 
-misc = {"exeVersion": XrmDataTypes.XRM_STRING}
+misc_dict = {"exeVersion": XrmDataTypes.XRM_STRING}
 
 streams_dict = {}
 streams_dict.update(image_info_dict)
@@ -80,4 +78,4 @@ streams_dict.update(dtypes_dict)
 streams_dict.update(annotations_dict)
 streams_dict.update(position_info_dict)
 streams_dict.update(alignment_dict)
-streams_dict.update(misc)
+streams_dict.update(misc_dict)

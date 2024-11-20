@@ -141,11 +141,10 @@ class AnnotatorMixin:
                 x0, y0 = self._flip_y(
                     (self.output_shape[2] // 50, self.output_shape[1] // 30)
                 )[0]
-                bar_width = int(6 * self.thickness_modifier)
+                bar_width = math.ceil(6 * self.thickness_modifier)
                 # Set up scale bar text:
-                f = ImageFont.truetype(
-                    str(font_path), int(15 * self.thickness_modifier)
-                )
+                font_size = math.ceil(15 * self.thickness_modifier)
+                f = ImageFont.truetype(str(font_path), font_size)
 
                 tmp_bar_length = (
                     self.output_shape[2] / 5.0
@@ -180,7 +179,7 @@ class AnnotatorMixin:
         return False
 
     def _get_thickness(self, stream_stem: str) -> int:
-        return int(
+        return math.ceil(
             self.read_stream(
                 f"{stream_stem}/AnnStrokeThickness", XDT.XRM_DOUBLE, strict=True
             )[0]
