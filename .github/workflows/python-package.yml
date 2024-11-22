@@ -50,7 +50,7 @@ jobs:
     runs-on: ubuntu-latest
     # Specify the GitHub Environment to publish to
     environment:
-      name: pypi
+      name: release
       url: https://pypi.org/p/txrm2tiff
     # upload to PyPI and make a release on every tag
     if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags')
