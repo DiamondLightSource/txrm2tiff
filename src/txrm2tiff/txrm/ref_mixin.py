@@ -84,7 +84,7 @@ class ReferenceMixin:
             )
         try:
             ref_img = ReferenceMixin._flatten_reference(custom_reference)
-            ref_img = self._tile_reference_if_needed(custom_reference)
+            ref_img = self._tile_reference_if_needed(ref_img)
         except Exception:
             if self.strict:
                 raise
