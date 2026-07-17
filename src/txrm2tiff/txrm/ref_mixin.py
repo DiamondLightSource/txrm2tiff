@@ -110,7 +110,7 @@ class ReferenceMixin:
         """Applies image(s) to txrm image(s), returning the images as a numpy ndarray and overwrites the txrm image(s) if overwrite is True."""
         self.apply_custom_reference_from_array(
             txrm.get_images(load=True)[0],
-            compensate_exposure,
+            np.mean(txrm.exposures) if compensate_exposure else None,
             overwrite,
         )
 
@@ -145,7 +145,7 @@ class ReferenceMixin:
             round(img_dim / mos_dim, 2)
             for img_dim, mos_dim in zip(self.shape, self.mosaic_dims[::-1])
         ]  # True if it's a mosaic and the correct dims to be tiled to mosaic
-        assert list(custom_reference.shape) == list(self.shape) or needs_stitching, (
+        assert list(custom_reference.shape) == self.shape or needs_stitching, (
             "Invalid reference shape for %s" % self.name
         )
         # Checks that reference is either the size of the image or can be stitched to that size
