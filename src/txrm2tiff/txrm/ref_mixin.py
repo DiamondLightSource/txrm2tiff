@@ -25,7 +25,9 @@ class ReferenceMixin:
         if custom_reference is not None and file_can_be_opened(custom_reference):
             if isOleFile(str(custom_reference)):
                 with main.open_txrm(custom_reference) as ref_txrm:
-                    self.apply_reference_from_txrm(ref_txrm)
+                    self.apply_reference_from_txrm(
+                        ref_txrm, compensate_exposure, overwrite
+                    )
             else:
                 return self._apply_reference_from_tiff(
                     custom_reference, compensate_exposure, overwrite

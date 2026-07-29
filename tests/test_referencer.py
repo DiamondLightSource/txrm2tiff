@@ -86,6 +86,24 @@ class TestReferencer(unittest.TestCase):
         txrm = MagicMock(auto_spec=TxrmClass)
         mocked_open_txrm.return_value.__enter__.return_value = txrm
 
+        # First check that the txrm reference function is called
         with patch.object(referencer, "apply_reference_from_txrm") as mocked_from_txrm:
-            referencer.apply_reference("test/path.txrm")
-            mocked_from_txrm.assert_called_once_with(txrm)
+            referencer.apply_reference(
+                "test/path.txrm", compensate_exposure=False, overwrite=False
+            )
+            mocked_from_txrm.assert_called_once_with(txrm, False, False)
+
+        # Second check no failures occur during the function execution
+        referencer._images = None
+        referencer.referenced = False
+        # Set up the attributes of the referencer
+        referencer.shape = []
+        referencer.get_images = lambda : []
+        referencer.is_mosaic = False
+        referencer.strict = True
+        referencer.apply_reference(
+            "test/path.txrm", compensate_exposure=False, overwrite=True
+        )
+        # Check that the file is now marked as referenced with images
+        assert referencer.referenced
+        assert referencer._images is not None
