@@ -341,8 +341,8 @@ class AbstractTxrm(ABC):
             return [self.image_info["ImageHeight"][0], self.image_info["ImageWidth"][0]]
         shape = self._images.shape
         if len(shape) > 2:
-            shape = self._image[0].shape
-        return shape
+            shape = self._images[0].shape
+        return list(shape)
 
     @txrm_property(fallback=dict())
     def image_info(self):

@@ -25,7 +25,9 @@ class ReferenceMixin:
         if custom_reference is not None and file_can_be_opened(custom_reference):
             if isOleFile(str(custom_reference)):
                 with main.open_txrm(custom_reference) as ref_txrm:
-                    self.apply_reference_from_txrm(ref_txrm)
+                    self.apply_reference_from_txrm(
+                        ref_txrm, compensate_exposure, overwrite
+                    )
             else:
                 return self._apply_reference_from_tiff(
                     custom_reference, compensate_exposure, overwrite
@@ -84,7 +86,7 @@ class ReferenceMixin:
             )
         try:
             ref_img = ReferenceMixin._flatten_reference(custom_reference)
-            ref_img = self._tile_reference_if_needed(custom_reference)
+            ref_img = self._tile_reference_if_needed(ref_img)
         except Exception:
             if self.strict:
                 raise
@@ -109,9 +111,8 @@ class ReferenceMixin:
     ) -> np.ndarray:
         """Applies image(s) to txrm image(s), returning the images as a numpy ndarray and overwrites the txrm image(s) if overwrite is True."""
         self.apply_custom_reference_from_array(
-            txrm.get_images(load=True),
-            np.mean(txrm.exposures),
-            compensate_exposure,
+            txrm.get_images(load=True)[0],
+            np.mean(txrm.exposures) if compensate_exposure else None,
             overwrite,
         )
 
@@ -146,7 +147,7 @@ class ReferenceMixin:
             round(img_dim / mos_dim, 2)
             for img_dim, mos_dim in zip(self.shape, self.mosaic_dims[::-1])
         ]  # True if it's a mosaic and the correct dims to be tiled to mosaic
-        assert custom_reference.shape == self.shape or needs_stitching, (
+        assert list(custom_reference.shape) == self.shape or needs_stitching, (
             "Invalid reference shape for %s" % self.name
         )
         # Checks that reference is either the size of the image or can be stitched to that size

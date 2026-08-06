@@ -31,6 +31,8 @@ jobs:
         run: uv sync
       - name: Lint with ruff
         uses: astral-sh/ruff-action@v1
+        with:
+          version: "0.15.22"
       - name: Test
         run: uv run --frozen -m pytest
       - name: Build sdist and wheel
