@@ -94,8 +94,14 @@ def manual_save(
     )  # Check if data bigger than 4GB TIFF limit
 
     mode = "RGB" if num_frames == 1 else "MINISBLACK"
-    converted_image = np.array(Image.fromarray(image[0]).convert("RGB")) if num_frames == 1 else image
-    logging.info(f"Saving image as {filepath.name} with {num_frames} frames and mode {mode}")
+    converted_image = (
+        np.array(Image.fromarray(image[0]).convert("RGB"))
+        if num_frames == 1
+        else image
+    )
+    logging.info(
+        f"Saving image as {filepath.name} with {num_frames} frames and mode {mode}"
+    )
 
     if filepath.exists():
         logging.warning("Overwriting existing file %s", filepath)
