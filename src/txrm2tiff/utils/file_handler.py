@@ -2,6 +2,7 @@ import logging
 import tifffile as tf
 import numpy as np
 from numpy.typing import DTypeLike
+from PIL import Image
 from os import access, R_OK, PathLike
 from pathlib import Path
 from typing import Optional, Union, List
@@ -92,15 +93,23 @@ def manual_save(
         image.size * image.itemsize >= np.iinfo(np.uint32).max
     )  # Check if data bigger than 4GB TIFF limit
 
-    logging.info("Saving image as %s with %i frames", filepath.name, num_frames)
+    mode = "RGB" if num_frames == 1 else "MINISBLACK"
+    converted_image = (
+        np.array(Image.fromarray(image[0]).convert("RGB"))
+        if num_frames == 1
+        else image
+    )
+    logging.info(
+        f"Saving image as {filepath.name} with {num_frames} frames and mode {mode}"
+    )
 
     if filepath.exists():
         logging.warning("Overwriting existing file %s", filepath)
 
     with tf.TiffWriter(str(filepath), bigtiff=bigtiff, ome=False, imagej=False) as tif:
         tif.write(
-            image,
-            photometric="MINISBLACK",
+            converted_image,
+            photometric=mode,
             description=metadata,
             metadata={"axes": "ZYX"},
             software=f"txrm2tiff {__version__}",
