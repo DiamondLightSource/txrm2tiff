@@ -70,7 +70,7 @@ class Txrm5(ShiftsMixin, SaveMixin, ReferenceMixin, AnnotatorMixin, AbstractTxrm
         if shifts and self.has_shifts:
             images = self.apply_shifts_to_images(images)
         if self.is_mosaic:
-            images = stitch_images(images, self.mosaic_dims)
+            images = stitch_images(images, self.mosaic_dims[::-1])
         if clear_images:
             self.clear_images()
             self.clear_reference()
