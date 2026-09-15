@@ -109,7 +109,7 @@ def manual_save(
     with tf.TiffWriter(str(filepath), bigtiff=bigtiff, ome=False, imagej=False) as tif:
         tif.write(
             converted_image,
-            mode,
+            photometric=mode,
             description=metadata,
             metadata={"axes": "ZYX"},
             software=f"txrm2tiff {__version__}",
